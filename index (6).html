@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP Foundation - Secure Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --scp-black: #0a0a0a;
+            --scp-red: #c00000;
+            --scp-white: #e0e0e0;
+            --scp-green: #00ff00;
+        }
+
+        body {
+            background-color: var(--scp-black);
+            color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Flicker effect */
+        @keyframes flicker {
+            0% { opacity: 0.9; }
+            5% { opacity: 0.8; }
+            10% { opacity: 0.95; }
+            15% { opacity: 0.7; }
+            20% { opacity: 0.9; }
+            25% { opacity: 0.8; }
+            30% { opacity: 0.95; }
+            35% { opacity: 0.9; }
+            40% { opacity: 0.8; }
+            45% { opacity: 0.95; }
+            50% { opacity: 0.9; }
+            55% { opacity: 0.8; }
+            60% { opacity: 0.95; }
+            65% { opacity: 0.9; }
+            70% { opacity: 0.8; }
+            75% { opacity: 0.95; }
+            80% { opacity: 0.9; }
+            85% { opacity: 0.8; }
+            90% { opacity: 0.95; }
+            95% { opacity: 0.9; }
+            100% { opacity: 0.9; }
+        }
+
+        .crt {
+            animation: flicker 0.15s infinite;
+        }
+
+        .terminal-header {
+            border-bottom: 2px solid var(--scp-white);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scp-logo {
+            width: 75px;
+            height: 75px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .scp-logo img {
+            width: 100%;
+            height: 100%;
+            /* Invert the black logo to a slightly off-white to match the terminal text */
+            filter: invert(90%);
+        }
+
+        .terminal-content {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-line {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .text-red { color: var(--scp-red); }
+        .text-green { color: var(--scp-green); }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .prompt {
+            margin-right: 0.5rem;
+            color: var(--scp-white);
+        }
+
+        input[type="text"] {
+            background: transparent;
+            border: none;
+            color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            flex-grow: 1;
+            outline: none;
+            caret-color: var(--scp-white);
+        }
+
+        input[type="text"]::placeholder {
+            color: #555;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: var(--scp-white);
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Image Display */
+        .image-container {
+            max-width: 80%;
+            margin: 1rem 0;
+            border: 1px solid var(--scp-white);
+            padding: 5px;
+            background-color: #000;
+        }
+        
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            filter: grayscale(100%) contrast(1.2); /* Make images look like old surveillance */
+        }
+
+        /* Glitch text effect for redacted items */
+        .glitch {
+            position: relative;
+            display: inline-block;
+        }
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--scp-black);
+        }
+        .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 red;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim 3s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 blue;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(72px, 9999px, 73px, 0); }
+            5% { clip: rect(61px, 9999px, 86px, 0); }
+            10% { clip: rect(81px, 9999px, 66px, 0); }
+            15% { clip: rect(71px, 9999px, 6px, 0); }
+            20% { clip: rect(93px, 9999px, 32px, 0); }
+            25% { clip: rect(98px, 9999px, 99px, 0); }
+            30% { clip: rect(8px, 9999px, 81px, 0); }
+            35% { clip: rect(69px, 9999px, 87px, 0); }
+            40% { clip: rect(59px, 9999px, 7px, 0); }
+            45% { clip: rect(85px, 9999px, 4px, 0); }
+            50% { clip: rect(21px, 9999px, 5px, 0); }
+            55% { clip: rect(100px, 9999px, 20px, 0); }
+            60% { clip: rect(4px, 9999px, 53px, 0); }
+            65% { clip: rect(80px, 9999px, 49px, 0); }
+            70% { clip: rect(64px, 9999px, 63px, 0); }
+            75% { clip: rect(9px, 9999px, 83px, 0); }
+            80% { clip: rect(47px, 9999px, 94px, 0); }
+            85% { clip: rect(51px, 9999px, 34px, 0); }
+            90% { clip: rect(41px, 9999px, 34px, 0); }
+            95% { clip: rect(38px, 9999px, 69px, 0); }
+            100% { clip: rect(86px, 9999px, 63px, 0); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #444; 
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+        
+        #boot-sequence {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--scp-black);
+            z-index: 10;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #hacking-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--scp-black);
+            z-index: 15;
+            display: none;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        /* Heuristic Logic Hacking Styles */
+        #memory-dump {
+            word-break: break-all;
+            color: #666;
+            line-height: 1.2;
+        }
+        
+        .hack-symbol {
+            cursor: pointer;
+            transition: color 0.1s;
+        }
+        
+        .hack-symbol:hover {
+            color: var(--scp-white);
+            background-color: #333;
+        }
+
+        .hack-word {
+            color: var(--scp-white);
+            cursor: pointer;
+            transition: all 0.1s;
+            display: inline;
+        }
+        
+        .hack-word:hover {
+            color: var(--scp-black);
+            background-color: var(--scp-green);
+        }
+    </style>
+</head>
+<body class="crt">
+
+    <div id="hacking-screen">
+        <h2 class="text-red text-2xl font-bold tracking-widest mb-2 glitch" data-text="WARNING: FOUNDATION ICE ACTIVE">WARNING: FOUNDATION ICE ACTIVE</h2>
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 border-b border-gray-700 pb-4">
+            <div>
+                <p class="text-sm">UNAUTHORIZED CONNECTION DETECTED. HEURISTIC LOCK ENGAGED.</p>
+                <p class="text-green text-sm mt-1">INSTRUCTION: ISOLATE DECRYPTION CIPHER FROM MEMORY DUMP.</p>
+            </div>
+            <div class="mt-4 sm:mt-0 text-left sm:text-right">
+                <p class="text-xs text-gray-400 mb-1">ATTEMPTS REMAINING</p>
+                <p id="hack-attempts-display" class="text-xl text-red tracking-widest"></p>
+            </div>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row gap-6 flex-grow overflow-hidden h-full mt-4">
+            <div id="memory-dump" class="w-full sm:w-2/3 flex flex-wrap content-start text-lg md:text-xl font-mono tracking-widest overflow-y-auto pr-4 pb-12"></div>
+            <div id="hack-log" class="w-full sm:w-1/3 flex flex-col text-sm font-mono overflow-y-auto border-t sm:border-t-0 sm:border-l border-gray-800 pt-4 sm:pt-0 sm:pl-4 space-y-1 pb-12 h-48 sm:h-auto"></div>
+        </div>
+    </div>
+
+    <div id="boot-sequence">
+        <div id="boot-text"></div>
+    </div>
+
+    <div class="terminal-header" style="display: none;" id="main-header">
+        <div>
+            <h1 class="text-2xl font-bold tracking-widest">SCP FOUNDATION</h1>
+            <p class="text-sm opacity-75">SECURE. CONTAIN. PROTECT.</p>
+        </div>
+        <div class="scp-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo">
+        </div>
+        <div class="text-right flex flex-col items-end">
+            <p class="text-sm text-red mb-1" id="clearance-display">CLEARANCE: LEVEL 0</p>
+            <button id="override-btn" class="override-btn text-xs mb-1">[ SECURE OVERRIDE ]</button>
+            <p class="text-xs" id="clock">00:00:00</p>
+        </div>
+    </div>
+
+    <div id="override-screen" class="hidden absolute top-0 left-0 right-0 bottom-0 z-20 flex-col justify-center items-center" style="background-color: var(--scp-black);">
+        <h2 class="text-red text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
+        
+        <div class="flex gap-2 sm:gap-4 mb-8" onclick="document.getElementById('override-input').focus()">
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
+        </div>
+        
+        <!-- Hidden input field that captures the typing -->
+        <input type="text" id="override-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" spellcheck="false" maxlength="5">
+        
+        <p class="text-gray-500 text-sm mb-8 tracking-[0.2em]">INPUT 5-CHARACTER HASH</p>
+        
+        <button id="cancel-override" class="text-gray-500 hover:text-white transition-colors tracking-widest text-sm">[ CANCEL ]</button>
+    </div>
+
+    <div class="terminal-content" id="terminal-output" style="display: none;" onclick="document.getElementById('cmd-input').focus()">
+        <div class="output-line">WARNING: THE FOUNDATION DATABASE IS <span class="text-red font-bold">CLASSIFIED</span>.</div>
+        <div class="output-line">ACCESS BY UNAUTHORIZED PERSONNEL IS STRICTLY PROHIBITED.</div>
+        <div class="output-line">PERPETRATORS WILL BE TRACKED, LOCATED, AND DETAINED.</div>
+        <div class="output-line mt-4">Type 'help' for available commands.</div>
+        
+        <div class="input-line">
+            <span class="prompt">C:\SCiPNET\USER></span>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        // Track the user's level
+        let currentClearanceLevel = 0;
+
+        // --- SOUND EFFECTS (Tone.js) ---
+        let audioContextStarted = false;
+        
+        const typeSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "square" },
+            envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.01 }
+        }).toDestination();
+        typeSynth.volume.value = -20;
+
+        const alertSynth = new Tone.Synth({
+            oscillator: { type: "sawtooth" },
+            envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 1 }
+        }).toDestination();
+        alertSynth.volume.value = -15;
+        
+        const noiseSynth = new Tone.NoiseSynth({
+            noise: { type: 'pink' },
+            envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 }
+        }).toDestination();
+        noiseSynth.volume.value = -15;
+
+        function playTypeSound() {
+            if (!audioContextStarted) return;
+            const notes = ["C4", "C#4", "D4", "D#4"];
+            const note = notes[Math.floor(Math.random() * notes.length)];
+            typeSynth.triggerAttackRelease(note, "32n");
+        }
+
+        function playSuccessSound() {
+            if (!audioContextStarted) return;
+            alertSynth.triggerAttackRelease("C5", "8n");
+            setTimeout(() => alertSynth.triggerAttackRelease("E5", "4n"), 150);
+        }
+
+        function playErrorSound() {
+            if (!audioContextStarted) return;
+            alertSynth.triggerAttackRelease("G2", "4n");
+            noiseSynth.triggerAttackRelease("8n", "+0.1");
+        }
+
+        async function initAudio() {
+            if (!audioContextStarted) {
+                await Tone.start();
+                audioContextStarted = true;
+            }
+        }
+
+        // --- PUZZLE & CODE DATABASE ---
+        const scpDatabase = {
+            "help": {
+                level: 0,
+                type: "text",
+                content: [
+                    "AVAILABLE COMMANDS:",
+                    "  help     - Display this message",
+                    "  clear    - Clear terminal output",
+                    "  status   - Display system status",
+                    "  [CODE]   - Input a code directly to access files",
+                    "----------------------------------------",
+                    "HINT: New Level 0 personnel should enter 'ORIENTATION' to begin."
+                ]
+            },
+            "status": {
+                level: 0,
+                type: "text",
+                content: [
+                    "SYSTEM STATUS: <span class='text-green'>ONLINE</span>",
+                    "CONNECTION: SECURE (PROTOCOL 110-MONTAUK)",
+                    "DATABASE ENCRYPTION: AES-256 (LEVEL 4)",
+                    "WARNING: <span class='glitch' data-text='MULTIPLE BREACHES DETECTED'>MULTIPLE BREACHES DETECTED</span> IN SECTOR 4."
+                ]
+            },
+            "ORIENTATION": {
+                level: 0,
+                type: "text",
+                content: [
+                    "WELCOME TO THE FOUNDATION.",
+                    "To attain Level 1 clearance, you must prove your knowledge of primary containment protocols.",
+                    "Input the correct designation protocols directly into the terminal to proceed.",
+                    " ",
+                    "QUERY 1: The face of disaster. Exactly how many pixels of the subject's face were required to trigger the infamous mountain incident?",
+                    "QUERY 2: The cure is most effective. What specific affliction does the plague doctor sense in humanity?",
+                    "QUERY 3: Containment relies on destruction. What specific acid is used to constantly dissolve the hard-to-destroy reptile?",
+                    "QUERY 4: The clockwork machine. Which specific dial setting is strictly forbidden for testing on biological matter?",
+                    "QUERY 5: The infinite retail space. What real-world furniture franchise traps customers in an endless, geometry-defying store?",
+                    " ",
+                    "Each correct answer will provide a fragment of the Level 1 Override Code."
+                ]
+            },
+            "4-PIXELS": {
+                level: 0,
+                type: "text",
+                content: [
+                    "QUERY 1 CORRECT: The 'Shy Guy'.",
+                    "Fragment 1/5: <span class='text-green font-bold'>[ F - - - - ]</span>"
+                ]
+            },
+            "PESTILENCE": {
+                level: 0,
+                type: "text",
+                content: [
+                    "QUERY 2 CORRECT: Plague Doctor.",
+                    "Fragment 2/5: <span class='text-green font-bold'>[ - 0 - - - ]</span>"
+                ]
+            },
+            "HYDROCHLORIC": {
+                level: 0,
+                type: "text",
+                content: [
+                    "QUERY 3 CORRECT: Hard-to-Destroy Reptile.",
+                    "Fragment 3/5: <span class='text-green font-bold'>[ - - A - - ]</span>"
+                ]
+            },
+            "VERY-FINE": {
+                level: 0,
+                type: "text",
+                content: [
+                    "QUERY 4 CORRECT: The Clockworks.",
+                    "Fragment 4/5: <span class='text-green font-bold'>[ - - - 9 - ]</span>"
+                ]
+            },
+            "IKEA": {
+                level: 0,
+                type: "text",
+                content: [
+                    "QUERY 5 CORRECT: A Perfectly Normal, Regular Old IKEA.",
+                    "Fragment 5/5: <span class='text-green font-bold'>[ - - - - 5 ]</span>"
+                ]
+            },
+            "F0A95": {
+                level: 0,
+                upgradeTo: 1,
+                type: "text",
+                content: [
+                    "OVERRIDE CODE ACCEPTED.",
+                    "IDENTITY VERIFIED.",
+                    "PROCESSING CLEARANCE UPGRADE...",
+                    "Welcome to Level 1.",
+                    "Type 'L1-HUB' to view your new assignments."
+                ]
+            },
+            "L1-HUB": {
+                level: 1,
+                type: "text",
+                content: [
+                    "<span class='text-green font-bold'>LEVEL 1 SECURE HUB</span>",
+                    "This area is under construction.",
+                    "More files will be added here as the ARG progresses...",
+                    "(You can add more puzzles here!)"
+                ]
+            }
+        };
+
+        // --- TERMINAL LOGIC ---
+        const terminalOutput = document.getElementById('terminal-output');
+        const cmdInput = document.getElementById('cmd-input');
+        const inputLine = document.querySelector('.input-line');
+        const clockEl = document.getElementById('clock');
+        const bootSequence = document.getElementById('boot-sequence');
+        const bootText = document.getElementById('boot-text');
+        const mainHeader = document.getElementById('main-header');
+
+        setInterval(() => {
+            const now = new Date();
+            clockEl.textContent = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        function scrollToBottom() {
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function printLine(text, isHtml = false, speed = 20) {
+            return new Promise(resolve => {
+                const line = document.createElement('div');
+                line.className = 'output-line';
+                terminalOutput.insertBefore(line, inputLine);
+
+                if (isHtml) {
+                    line.innerHTML = text;
+                    scrollToBottom();
+                    resolve();
+                } else {
+                    let i = 0;
+                    function typeChar() {
+                        if (i < text.length) {
+                            line.textContent += text.charAt(i);
+                            i++;
+                            scrollToBottom();
+                            setTimeout(typeChar, speed);
+                        } else {
+                            resolve();
+                        }
+                    }
+                    typeChar();
+                }
+            });
+        }
+
+        function printImage(url, alt) {
+            return new Promise(resolve => {
+                const container = document.createElement('div');
+                container.className = 'image-container';
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = alt;
+                
+                img.onload = () => {
+                    container.appendChild(img);
+                    terminalOutput.insertBefore(container, inputLine);
+                    scrollToBottom();
+                    resolve();
+                };
+                
+                img.onerror = () => {
+                    printLine("<span class='text-red'>ERROR: FAILED TO LOAD IMAGE DATA.</span>", true);
+                    resolve();
+                };
+            });
+        }
+
+        async function processCommand(cmd, isOverride = false) {
+            initAudio();
+            const fullCmd = cmd.trim();
+            if (!fullCmd) return;
+
+            // Echo command (skip echo if it's coming from the secure uplink panel)
+            if (!isOverride) {
+                await printLine(`C:\\SCiPNET\\USER> ${fullCmd}`, false, 10);
+            } else {
+                await printLine(`> PROCESSING EXTERNAL OVERRIDE HASH...`, false, 10);
+            }
+            
+            const parts = fullCmd.split(' ');
+            const action = parts[0].toLowerCase();
+
+            // Handle system commands first
+            if (action === 'clear') {
+                Array.from(terminalOutput.children).forEach(child => {
+                    if (child !== inputLine) child.remove();
+                });
+                return;
+            }
+
+            if (action === 'status') {
+                await printLine(`SYSTEM STATUS: <span class='text-green'>ONLINE</span>`, true);
+                await printLine(`CURRENT CLEARANCE: <span class='text-red font-bold'>LEVEL ${currentClearanceLevel}</span>`, true);
+                await printLine(`CONNECTION: SECURE (PROTOCOL 110-MONTAUK)`, true);
+                await printLine(`DATABASE ENCRYPTION: AES-256`, true);
+                await printLine(`WARNING: <span class='glitch' data-text='MULTIPLE BREACHES DETECTED'>MULTIPLE BREACHES DETECTED</span> IN SECTOR 4.`, true);
+                return;
+            }
+
+            if (action === 'help') {
+                const data = scpDatabase[action];
+                for (const line of data.content) {
+                     await printLine(line, true);
+                }
+                return;
+            }
+
+            // If it's not a standard command, treat the entire input as an access code.
+            // Allow backwards compatibility if they DO type "access" first.
+            let potentialCode = fullCmd;
+            if (action === 'access') {
+                potentialCode = parts.slice(1).join(' ');
+            }
+
+            // Normalize user input (remove all spaces, dashes, underscores, etc.)
+            const normalizedInput = potentialCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            if (!normalizedInput) {
+                playErrorSound();
+                await printLine("<span class='text-red'>ERROR: Missing input. Type 'help' for commands.</span>", true);
+                return;
+            }
+
+            // Find matching code in database by normalizing keys as well
+            let entry = null;
+            for (const key in scpDatabase) {
+                const normalizedKey = key.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (normalizedKey === normalizedInput) {
+                    entry = scpDatabase[key];
+                    break;
+                }
+            }
+
+            if (entry) {
+                const requiredLevel = entry.level !== undefined ? entry.level : 0;
+
+                // CHECK IF USING AN OVERRIDE CODE IN THE NORMAL TERMINAL
+                if (entry.upgradeTo !== undefined && !isOverride) {
+                    playErrorSound();
+                    await printLine("<span class='text-red'>ERROR: CLEARANCE OVERRIDE HASHES MUST BE ENTERED VIA THE SECURE UPLINK.</span>", true);
+                    await printLine("HINT: Click the red [ OVERRIDE ] button in the top right.", true);
+                    return;
+                }
+
+                // CHECK IF USING A NORMAL CODE IN THE OVERRIDE PANEL
+                if (entry.upgradeTo === undefined && isOverride) {
+                    playErrorSound();
+                    await printLine("<span class='text-red'>ERROR: INVALID OVERRIDE HASH. NO CLEARANCE UPGRADE ATTACHED.</span>", true);
+                    return;
+                }
+
+                // CHECK CLEARANCE LEVEL
+                if (currentClearanceLevel < requiredLevel) {
+                    playErrorSound();
+                    await printLine("VERIFYING CREDENTIALS...", false, 30);
+                    await new Promise(r => setTimeout(r, 500));
+                    await printLine(`<span class='text-red'>ACCESS DENIED. CLEARANCE LEVEL ${requiredLevel} OR HIGHER REQUIRED.</span>`, true);
+                    return;
+                }
+
+                playSuccessSound();
+                await printLine("VERIFYING CREDENTIALS...", false, 30);
+                await new Promise(r => setTimeout(r, 500));
+                
+                // PROCESS CLEARANCE UPGRADE WIPE FIRST
+                if (entry.upgradeTo !== undefined && entry.upgradeTo > currentClearanceLevel) {
+                    currentClearanceLevel = entry.upgradeTo;
+                    const clearanceDisplay = document.getElementById('clearance-display');
+                    if(clearanceDisplay) {
+                        clearanceDisplay.textContent = `CLEARANCE: LEVEL ${currentClearanceLevel}`;
+                    }
+                    
+                    await new Promise(r => setTimeout(r, 400));
+                    
+                    // Clear the terminal completely to create a "new screen" feel
+                    Array.from(terminalOutput.children).forEach(child => {
+                        if (child !== inputLine) child.remove();
+                    });
+                    
+                    // Update command prompt path
+                    document.querySelector('.prompt').textContent = `C:\\SCiPNET\\LEVEL-${currentClearanceLevel}>`;
+                    
+                    // Print Level Workspace Banner
+                    const levelBanner = `
+                    <div class="my-6 border-y-2 border-red-700 py-4 text-center bg-red-900 bg-opacity-20 w-full">
+                        <h2 class="text-3xl font-bold text-red-500 glitch" data-text="LEVEL ${currentClearanceLevel} SECURE WORKSPACE">LEVEL ${currentClearanceLevel} SECURE WORKSPACE</h2>
+                        <p class="mt-2 text-gray-400">ENCRYPTION LIFTED. NEW DIRECTORIES ACCESSIBLE.</p>
+                    </div>`;
+                    await printLine(levelBanner, true);
+                    
+                    // Hide tracker once upgraded
+                    const trackerEl = document.getElementById('fragment-tracker');
+                    if(trackerEl) trackerEl.style.display = 'none';
+                }
+
+                // Update tracker if applicable
+                if (entry.fragmentIndex !== undefined) {
+                    unlockedFragments[entry.fragmentIndex] = entry.fragmentChar;
+                    const trackerEl = document.getElementById('fragment-tracker');
+                    if (trackerEl) trackerEl.textContent = `[${unlockedFragments.join('')}]`;
+                }
+
+                for (const line of entry.content) {
+                    await printLine(line, true);
+                    await new Promise(r => setTimeout(r, 200)); 
+                }
+
+                if (entry.type === 'image' && entry.imageUrl) {
+                    await printLine("DOWNLOADING VISUAL DATA...", false, 30);
+                    await printImage(entry.imageUrl, entry.imageAlt);
+                }
+            } else {
+                playErrorSound();
+                await printLine("VERIFYING CREDENTIALS...", false, 30);
+                await new Promise(r => setTimeout(r, 500));
+                await printLine(`<span class='text-red'>ACCESS DENIED. Invalid code: ${potentialCode}</span>`, true);
+                await printLine("<span class='text-red'>WARNING: Failed attempts are logged.</span>", true);
+            }
+        }
+
+        // --- SECURE UPLINK MODAL LOGIC ---
+        const overrideScreen = document.getElementById('override-screen');
+        const overrideInput = document.getElementById('override-input');
+        const overrideBtn = document.getElementById('override-btn');
+        const cancelOverrideBtn = document.getElementById('cancel-override');
+        const dashChars = document.querySelectorAll('.dash-char');
+
+        function openOverride() {
+            overrideScreen.classList.remove('hidden');
+            overrideScreen.classList.add('flex');
+            overrideInput.value = '';
+            updateDashes();
+            
+            // Disable the main terminal input so it doesn't steal focus
+            cmdInput.disabled = true;
+            
+            // Tiny delay ensures the screen is fully visible before focusing
+            setTimeout(() => overrideInput.focus(), 10);
+            playTypeSound();
+        }
+
+        function closeOverride() {
+            overrideScreen.classList.add('hidden');
+            overrideScreen.classList.remove('flex');
+            
+            // Re-enable the main terminal input
+            cmdInput.disabled = false;
+            
+            if (terminalOutput.style.display !== 'none') cmdInput.focus();
+            playTypeSound();
+        }
+
+        function updateDashes() {
+            const val = overrideInput.value;
+            dashChars.forEach((el, i) => {
+                el.textContent = val[i] || '';
+                // Light up the dash if it has a letter
+                if (val[i]) {
+                    el.classList.add('border-white', 'text-white');
+                    el.classList.remove('border-gray-700');
+                    el.style.textShadow = '0 0 10px rgba(255,255,255,0.5)';
+                } else {
+                    el.classList.remove('border-white', 'text-white');
+                    el.classList.add('border-gray-700');
+                    el.style.textShadow = 'none';
+                }
+            });
+        }
+
+        overrideInput.addEventListener('input', function() {
+            // Strip out invalid characters
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            updateDashes();
+            playTypeSound();
+            
+            // Auto-submit when exactly 5 characters are entered
+            if (this.value.length === 5) {
+                // Short delay so the player can see the last letter appear before it submits
+                setTimeout(submitOverride, 400);
+            }
+        });
+
+        async function submitOverride() {
+            const val = overrideInput.value;
+            if (val.length < 5) return; // Prevent early submission
+            
+            closeOverride();
+            
+            inputLine.style.display = 'none';
+            cmdInput.disabled = true;
+            
+            await processCommand(val, true);
+            
+            inputLine.style.display = 'flex';
+            cmdInput.disabled = false;
+            cmdInput.focus();
+            scrollToBottom();
+        }
+
+        overrideBtn.addEventListener('click', openOverride);
+        cancelOverrideBtn.addEventListener('click', closeOverride);
+
+        overrideInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeOverride();
+            }
+        });
+
+        // Input Handling
+        cmdInput.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                const val = this.value;
+                this.value = '';
+                this.disabled = true;
+                
+                inputLine.style.display = 'none';
+                
+                await processCommand(val);
+                
+                inputLine.style.display = 'flex';
+                this.disabled = false;
+                this.focus();
+                scrollToBottom();
+            } else {
+                playTypeSound();
+            }
+        });
+
+        // Update the global click listener so it respects the override screen
+        document.body.addEventListener('click', () => {
+            if (!overrideScreen.classList.contains('hidden')) {
+                overrideInput.focus();
+            } else if (!cmdInput.disabled && terminalOutput.style.display !== 'none') {
+                cmdInput.focus();
+            }
+        });
+
+        // --- ADVANCED HACKING MINIGAME (Heuristic Logic) ---
+        const HACK_WORD_POOL = [
+            "PROTOCOL", "INCIDENT", "BREACHED", "MEMETICS",
+            "AMNESIAC", "OVERRIDE", "SECURITY", "RESEARCH",
+            "DIRECTOR", "TERMINAL", "EXPUNGED", "REDACTED",
+            "ANOMALYS", "CONTAINX", "SUBJECTS", "CLASSIFY",
+            "DATABASE", "COGNITIV", "HAZARDOX", "EUCLIDXX"
+        ];
+        const SYMBOLS = "!@#$%^&*()-=_+[]{}|;:,.<>/?`~";
+        const TOTAL_DUMP_LENGTH = 384; 
+        const WORDS_TO_PLACE = 10;
+        
+        let hackAttemptsRemaining = 4;
+        let targetPassword = "";
+        let isHackingActive = false;
+
+        function initHacking() {
+            initAudio();
+            document.getElementById('boot-sequence').style.display = 'none';
+            const screen = document.getElementById('hacking-screen');
+            screen.style.display = 'flex';
+            
+            hackAttemptsRemaining = 4;
+            updateAttemptsDisplay();
+            isHackingActive = true;
+            
+            const memoryDump = document.getElementById('memory-dump');
+            const hackLog = document.getElementById('hack-log');
+            memoryDump.innerHTML = '';
+            hackLog.innerHTML = '<div>> INIT HEURISTIC SCAN...</div>';
+
+            let selectedWords = [];
+            let poolCopy = [...HACK_WORD_POOL];
+            for (let i = 0; i < WORDS_TO_PLACE; i++) {
+                const randIndex = Math.floor(Math.random() * poolCopy.length);
+                selectedWords.push(poolCopy.splice(randIndex, 1)[0]);
+            }
+            
+            targetPassword = selectedWords[Math.floor(Math.random() * selectedWords.length)];
+
+            let dumpMap = new Array(TOTAL_DUMP_LENGTH).fill(null);
+            
+            selectedWords.forEach(word => {
+                let placed = false;
+                while (!placed) {
+                    let startIndex = Math.floor(Math.random() * (TOTAL_DUMP_LENGTH - word.length));
+                    let canPlace = true;
+                    for (let i = -1; i <= word.length; i++) {
+                        if (dumpMap[startIndex + i] !== null) {
+                            canPlace = false;
+                            break;
+                        }
+                    }
+                    if (canPlace) {
+                        for (let i = 0; i < word.length; i++) {
+                            dumpMap[startIndex + i] = { type: 'word', char: word[i], fullWord: word };
+                        }
+                        placed = true;
+                    }
+                }
+            });
+
+            let currentWordSpans = null;
+            let currentWordString = "";
+
+            for (let i = 0; i < TOTAL_DUMP_LENGTH; i++) {
+                if (dumpMap[i] === null) {
+                    const sym = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+                    const span = document.createElement('span');
+                    span.textContent = sym;
+                    span.className = 'hack-symbol';
+                    span.onclick = () => playTypeSound(); 
+                    memoryDump.appendChild(span);
+                } else {
+                    const data = dumpMap[i];
+                    if (currentWordString !== data.fullWord) {
+                        currentWordString = data.fullWord;
+                        currentWordSpans = document.createElement('span');
+                        currentWordSpans.className = 'hack-word';
+                        currentWordSpans.onclick = () => handleHackGuess(data.fullWord);
+                        memoryDump.appendChild(currentWordSpans);
+                    }
+                    
+                    const charSpan = document.createElement('span');
+                    charSpan.textContent = data.char;
+                    currentWordSpans.appendChild(charSpan);
+                }
+            }
+        }
+
+        function updateAttemptsDisplay() {
+            const display = document.getElementById('hack-attempts-display');
+            let squares = "";
+            for(let i=0; i<4; i++) {
+                squares += (i < hackAttemptsRemaining) ? "■ " : "<span class='text-gray-800'>■</span> ";
+            }
+            display.innerHTML = squares.trim();
+        }
+
+        function logHackEvent(text, colorClass = "text-green") {
+            const log = document.getElementById('hack-log');
+            const entry = document.createElement('div');
+            entry.className = colorClass;
+            entry.textContent = text;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function handleHackGuess(guess) {
+            if (!isHackingActive) return;
+
+            logHackEvent(`> ${guess}`);
+
+            if (guess === targetPassword) {
+                isHackingActive = false;
+                playSuccessSound();
+                logHackEvent("> EXACT MATCH DETECTED.", "text-green font-bold");
+                logHackEvent("> DECRYPTING OVERRIDE...", "text-green");
+                
+                setTimeout(() => {
+                    const screen = document.getElementById('hacking-screen');
+                    screen.innerHTML = "<div style='margin: auto; text-align: center;'><h2 class='text-green text-4xl font-bold'>OVERRIDE ACCEPTED.</h2><p class='mt-4'>ICE FIREWALL DEACTIVATED.</p></div>";
+                    setTimeout(() => {
+                        screen.style.display = 'none';
+                        finishBootSequence();
+                    }, 2000);
+                }, 1000);
+
+            } else {
+                playErrorSound();
+                hackAttemptsRemaining--;
+                updateAttemptsDisplay();
+
+                let likeness = 0;
+                for (let i = 0; i < guess.length; i++) {
+                    if (guess[i] === targetPassword[i]) {
+                        likeness++;
+                    }
+                }
+
+                logHackEvent("> ENTRY DENIED.", "text-red");
+                logHackEvent(`> Likeness: ${likeness}/${targetPassword.length}`, "text-yellow-500");
+
+                if (hackAttemptsRemaining <= 0) {
+                    isHackingActive = false;
+                    logHackEvent("> SECURITY LOCKOUT ENGAGED.", "text-red font-bold");
+                    
+                    setTimeout(() => {
+                        const screen = document.getElementById('hacking-screen');
+                        screen.innerHTML = "<div style='margin: auto; text-align: center;'><h2 class='text-red text-5xl font-bold glitch' data-text='MEMETIC KILL AGENT DEPLOYED'>MEMETIC KILL AGENT DEPLOYED</h2><p class='mt-4 text-xl'>CONNECTION TERMINATED.</p></div>";
+                        setTimeout(() => location.reload(), 4000);
+                    }, 1500);
+                }
+            }
+        }
+
+        // --- BOOT SEQUENCE ---
+        async function runBootSequence() {
+            const bootLines = [
+                "SCiPNET OS v4.9.1 (Build 8820)",
+                "Loading kernel drivers.................. DONE",
+                "Initializing secure connection.......... DONE",
+                "Verifying cryptographic signatures...... DONE",
+                "Mounting secure volume [\\\\SITE-19\\DATA].. DONE",
+                "Establishing uplink to Command.......... DONE",
+                "",
+                "<span class='text-red font-bold'>WARNING: UNAUTHORIZED ACCESS ATTEMPT DETECTED.</span>",
+                "ROUTING TO INTRUSION COUNTERMEASURES (ICE)..."
+            ];
+
+            for (const line of bootLines) {
+                const el = document.createElement('div');
+                el.innerHTML = line;
+                el.style.fontFamily = "'Share Tech Mono', monospace";
+                el.style.marginBottom = '4px';
+                bootText.appendChild(el);
+                
+                await new Promise(r => setTimeout(r, Math.random() * 200 + 50));
+            }
+
+            await new Promise(r => setTimeout(r, 1000));
+            
+            initHacking();
+        }
+
+        async function finishBootSequence() {
+            bootSequence.style.display = 'none';
+            mainHeader.style.display = 'flex';
+            terminalOutput.style.display = 'flex';
+            cmdInput.focus();
+        }
+
+        window.onload = () => {
+            runBootSequence();
+        };
+
+    </script>
+</body>
+</html>
