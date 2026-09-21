@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP Foundation - Level 1 Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --scp-black: #050505; 
+            --scp-red: #ff3333;
+            --scp-white: #e0e0e0;
+            --scp-green: #33ff33;
+            --scp-blue: #4da6ff;
+        }
+
+        body {
+            background-color: var(--scp-black); color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace; overflow: hidden;
+            display: flex; flex-direction: column; height: 100vh; margin: 0; user-select: none;
+        }
+
+        body::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.9; } 5% { opacity: 0.8; } 10% { opacity: 0.95; }
+            15% { opacity: 0.7; } 20% { opacity: 0.9; } 25% { opacity: 0.8; }
+            30% { opacity: 0.95; } 35% { opacity: 0.9; } 40% { opacity: 0.8; }
+            50% { opacity: 0.9; } 60% { opacity: 0.95; } 70% { opacity: 0.8; }
+            80% { opacity: 0.9; } 90% { opacity: 0.95; } 100% { opacity: 0.9; }
+        }
+        .crt { animation: flicker 0.15s infinite; }
+
+        .terminal-header {
+            border-bottom: 2px solid var(--scp-red);
+            padding: 1rem; display: flex; justify-content: space-between; align-items: center;
+        }
+        .scp-logo { width: 75px; height: 75px; }
+        .scp-logo img { width: 100%; height: 100%; filter: invert(90%) sepia(100%) hue-rotate(310deg) saturate(300%); }
+
+        .terminal-content { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
+        .output-line { margin-bottom: 0.5rem; line-height: 1.4; }
+        .text-red { color: var(--scp-red); }
+        .text-green { color: var(--scp-green); }
+
+        .input-line { display: flex; align-items: center; margin-top: 1rem; }
+        .prompt { margin-right: 0.5rem; color: var(--scp-red); }
+        input[type="text"] {
+            background: transparent; border: none; color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace; font-size: 1rem;
+            flex-grow: 1; outline: none; caret-color: var(--scp-white);
+        }
+        
+        .glitch { position: relative; display: inline-block; }
+        .glitch::before, .glitch::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--scp-black);
+        }
+        .glitch::before { left: 2px; text-shadow: -2px 0 red; clip: rect(24px, 550px, 90px, 0); animation: glitch-anim 3s infinite linear alternate-reverse; }
+        .glitch::after { left: -2px; text-shadow: -2px 0 blue; clip: rect(85px, 550px, 140px, 0); animation: glitch-anim 2s infinite linear alternate-reverse; }
+        @keyframes glitch-anim {
+            0% { clip: rect(72px, 9999px, 73px, 0); } 20% { clip: rect(93px, 9999px, 32px, 0); }
+            40% { clip: rect(59px, 9999px, 7px, 0); } 60% { clip: rect(4px, 9999px, 53px, 0); }
+            80% { clip: rect(47px, 9999px, 94px, 0); } 100% { clip: rect(86px, 9999px, 63px, 0); }
+        }
+
+        ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #111; } ::-webkit-scrollbar-thumb { background: #444; }
+    </style>
+</head>
+<body class="crt relative">
+
+    <!-- Auth Verification Screen -->
+    <div id="auth-screen" class="absolute inset-0 bg-[#050505] z-50 flex justify-center items-center">
+        <h2 class="text-white text-2xl font-mono animate-pulse">VERIFYING CLEARANCE TOKENS...</h2>
+    </div>
+
+    <!-- Red Assessment Screen (L1-HUB) -->
+    <div id="assessment-screen" class="hidden absolute inset-0 bg-[#220000] z-30 flex-col items-center justify-center p-4 sm:p-8">
+        <div class="w-full max-w-4xl border-2 border-red-900 p-8 bg-[#140000] shadow-[0_0_30px_rgba(255,0,0,0.2)] flex flex-col items-center relative">
+            <h2 class="text-red-500 text-2xl sm:text-4xl font-bold mb-4 tracking-[0.2em] text-center glitch" data-text="SECURE ASSESSMENT ENVIRONMENT">SECURE ASSESSMENT ENVIRONMENT</h2>
+            <p class="text-red-300 text-sm tracking-widest mb-8 border-b border-red-900 pb-4 w-full text-center">LEVEL 1 ADVANCED PROTOCOL INITIATED</p>
+            
+            <div id="assessment-log" class="w-full h-64 overflow-y-auto mb-6 text-red-200 font-mono text-sm sm:text-base flex flex-col gap-4 p-4 border border-red-900 bg-black bg-opacity-50">
+                <!-- Assessment queries appear here -->
+            </div>
+            
+            <div class="w-full flex items-center border-b-2 border-red-500 pb-2">
+                <span class="text-red-500 mr-4 font-bold">></span>
+                <input type="text" id="assessment-input" class="w-full bg-transparent border-none text-red-100 outline-none text-xl font-mono" placeholder="INPUT ANSWER..." autocomplete="off">
+            </div>
+            
+            <button id="close-assessment" class="mt-8 text-red-800 hover:text-red-400 transition-colors tracking-widest text-sm">[ ABORT SESSION ]</button>
+        </div>
+    </div>
+
+    <!-- Dark Red Override Screen -->
+    <div id="override-screen" class="hidden absolute inset-0 bg-[#050505] z-30 flex-col justify-center items-center">
+        <h2 class="text-red text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
+        <div class="flex gap-2 sm:gap-4 mb-8" id="override-dash-container">
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
+        </div>
+        <input type="text" id="override-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" spellcheck="false" maxlength="5">
+        <p class="text-gray-500 text-sm mb-8 tracking-[0.2em]">INPUT 5-CHARACTER LEVEL 2 HASH</p>
+        <button id="cancel-override" class="text-gray-500 hover:text-white transition-colors tracking-widest text-sm">[ CANCEL ]</button>
+    </div>
+
+    <!-- Main Terminal Interface -->
+    <div class="terminal-header" style="display: none;" id="main-header">
+        <div>
+            <h1 class="text-2xl font-bold tracking-widest text-red-500">SCP FOUNDATION</h1>
+            <p class="text-sm opacity-75">SECURE. CONTAIN. PROTECT.</p>
+        </div>
+        <div class="scp-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo">
+        </div>
+        <div class="text-right flex flex-col items-end">
+            <!-- Header Hash Tracker -->
+            <div class="flex items-center mb-1">
+                <div class="text-green font-mono text-xl tracking-widest mr-4" id="header-tracker">[ _ _ _ _ _ ]</div>
+                <p class="text-sm text-red-500 font-bold tracking-widest">CLEARANCE: LEVEL 1</p>
+            </div>
+            <button id="override-btn" class="text-xs mb-1 text-red-700 hover:text-white transition-colors">[ SECURE OVERRIDE ]</button>
+            <p class="text-xs text-gray-500" id="clock">00:00:00</p>
+        </div>
+    </div>
+
+    <div class="terminal-content" id="terminal-output" style="display: none;">
+        <div class="my-6 border-y-2 border-red-700 py-4 text-center bg-red-900 bg-opacity-20 w-full">
+            <h2 class="text-3xl font-bold text-red-500 glitch" data-text="LEVEL 1 SECURE WORKSPACE">LEVEL 1 SECURE WORKSPACE</h2>
+            <p class="mt-2 text-gray-400">ENCRYPTION LIFTED. NEW DIRECTORIES ACCESSIBLE.</p>
+        </div>
+        <div class="output-line mt-4 text-green">HINT: Access point 'L1-HUB' is now available for field testing.</div>
+        
+        <div class="input-line">
+            <span class="prompt">C:\SCiPNET\LEVEL-1></span>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        window.onload = () => {
+            const authScreen = document.getElementById('auth-screen');
+            const clearance = parseInt(localStorage.getItem('scp_clearance') || '0');
+            
+            setTimeout(() => {
+                if (clearance < 1) {
+                    authScreen.innerHTML = `<div class="text-center"><h2 class="text-red-600 text-4xl font-bold glitch mb-4" data-text="SECURITY BREACH">SECURITY BREACH</h2><p class="text-red-400 text-xl font-mono">CLEARANCE LEVEL 1 REQUIRED.</p><p class="text-gray-500 mt-4 text-sm">Rerouting back to Level 0...</p></div>`;
+                    setTimeout(() => window.location.href = 'index.html', 3000);
+                } else {
+                    authScreen.style.display = 'none';
+                    document.getElementById('main-header').style.display = 'flex';
+                    document.getElementById('terminal-output').style.display = 'flex';
+                    document.getElementById('cmd-input').focus();
+                    updateGlobalTracker();
+                    initAudio(); 
+                }
+            }, 1500);
+        };
+
+        let currentClearanceLevel = 1;
+        let globalTracker = ['_', '_', '_', '_', '_'];
+
+        let audioContextStarted = false;
+        const typeSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.01 } }).toDestination(); typeSynth.volume.value = -20;
+        const alertSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 1 } }).toDestination(); alertSynth.volume.value = -15;
+        const noiseSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 } }).toDestination(); noiseSynth.volume.value = -15;
+
+        function playTypeSound() { if (!audioContextStarted) return; typeSynth.triggerAttackRelease(["C4", "C#4", "D4", "D#4"][Math.floor(Math.random() * 4)], "32n"); }
+        function playSuccessSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("C5", "8n"); setTimeout(() => alertSynth.triggerAttackRelease("E5", "4n"), 150); }
+        function playErrorSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("G2", "4n"); noiseSynth.triggerAttackRelease("8n", "+0.1"); }
+        async function initAudio() { if (!audioContextStarted) { await Tone.start(); audioContextStarted = true; } }
+
+        const scpDatabase = {
+            "HELP": { type: "text", content: [ "AVAILABLE COMMANDS:", "  help     - Display this message", "  clear    - Clear terminal output", "  status   - Display system status", "  [CODE]   - Input a file name directly (e.g., 'L1-HUB')" ] },
+            "L1HUB": { type: "app", appName: "ASSESSMENT" }
+        };
+
+        const terminalOutput = document.getElementById('terminal-output');
+        const cmdInput = document.getElementById('cmd-input');
+        const inputLine = document.querySelector('.input-line');
+
+        setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
+        function scrollToBottom() { terminalOutput.scrollTop = terminalOutput.scrollHeight; }
+
+        function updateGlobalTracker() {
+            document.getElementById('header-tracker').textContent = `[ ${globalTracker.join(' ')} ]`;
+        }
+
+        function printLine(text, isHtml = false, speed = 10) {
+            return new Promise(resolve => {
+                const line = document.createElement('div'); line.className = 'output-line'; terminalOutput.insertBefore(line, inputLine);
+                if (isHtml) { line.innerHTML = text; scrollToBottom(); resolve(); } 
+                else {
+                    let i = 0;
+                    function typeChar() {
+                        if (i < text.length) { line.textContent += text.charAt(i); i++; scrollToBottom(); setTimeout(typeChar, speed); } 
+                        else resolve();
+                    }
+                    typeChar();
+                }
+            });
+        }
+
+        async function processCommand(cmd) {
+            initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
+            await printLine(`C:\\SCiPNET\\LEVEL-1> ${fullCmd}`, false, 5);
+            const normalizedInput = fullCmd.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            if (normalizedInput === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
+
+            const entry = scpDatabase[normalizedInput];
+            if (entry) {
+                if (entry.type === 'app' && entry.appName === 'ASSESSMENT') openAssessment();
+                else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); }
+            } else { playErrorSound(); await printLine("<span class='text-red'>ERROR: Command or File not recognized.</span>", true); }
+        }
+
+        cmdInput.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                const val = this.value; this.value = ''; this.disabled = true; inputLine.style.display = 'none';
+                await processCommand(val);
+                inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
+            } else playTypeSound();
+        });
+
+        const assessmentScreen = document.getElementById('assessment-screen');
+        const assessmentInput = document.getElementById('assessment-input');
+        const assessmentLog = document.getElementById('assessment-log');
+        let assessmentStep = 0;
+        
+        const level1Queries = [
+            { q: "QUERY 1: The great eel of the Bay of Bengal. What is the specific chemical designation of the compound harvested from its exocrinations?", a: "Y909", frag: "X" },
+            { q: "QUERY 2: Protocol 10-Ezra (Femur Breaker). What is the specific required age bracket for the human subject?", a: "1025", frag: "7" },
+            { q: "QUERY 3: The Absolute Exclusion Harness. What is the full name of the technician who found himself trapped in the suit?", a: "PIETROWILSON", frag: "B" },
+            { q: "QUERY 4: The Coffee Machine. Agent Joseph was severely injured during a breach. What specific concept did Agent Jones request to dispense in order to save him?", a: "MEDICALKNOWLEDGE", frag: "9" },
+            { q: "QUERY 5: The Red Sea Object. According to the recovered texts from the alternate dimension, what religious term do the natives use to refer to the massive, faceless torsos?", a: "UNCLEAN", frag: "3" }
+        ];
+
+        function openAssessment() {
+            assessmentScreen.classList.remove('hidden'); assessmentScreen.classList.add('flex');
+            cmdInput.disabled = true; assessmentLog.innerHTML = '';
+            
+            assessmentStep = globalTracker.findIndex(f => f === '_');
+            if(assessmentStep === -1) assessmentStep = 5;
+
+            printToAssessment("> INITIALIZING LEVEL 1 DEEP-DIVE PROTOCOL...", "text-red-400");
+            setTimeout(() => { 
+                if(assessmentStep < 5) {
+                    printToAssessment("> WARNING: COGNITOHAZARD FILTERS DISABLED.", "text-red-500");
+                    setTimeout(() => printToAssessment(level1Queries[assessmentStep].q, "text-red-200 mt-4"), 1000);
+                } else {
+                    printToAssessment("ALL QUERIES SATISFIED. MAXIMUM CLEARANCE FOR TIER ACHIEVED.", "text-green font-bold mt-4");
+                }
+            }, 1000);
+            setTimeout(() => assessmentInput.focus(), 2500); playTypeSound();
+        }
+
+        function closeAssessment() {
+            assessmentScreen.classList.add('hidden'); assessmentScreen.classList.remove('flex');
+            cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        }
+
+        function printToAssessment(text, classes = "text-red-300") {
+            const el = document.createElement('div'); el.className = classes; el.innerHTML = text;
+            assessmentLog.appendChild(el); assessmentLog.scrollTop = assessmentLog.scrollHeight;
+        }
+
+        assessmentInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const val = this.value; this.value = ''; if (!val) return;
+                playTypeSound(); printToAssessment(`> ${val}`, "text-red-500 mb-4 font-bold");
+                
+                if (assessmentStep >= level1Queries.length) return;
+                
+                const normalizedVal = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                const currentData = level1Queries[assessmentStep];
+                
+                if (normalizedVal === currentData.a) {
+                    playSuccessSound();
+                    printToAssessment(`CORRECT: DECRYPTED L2 FRAGMENT: [ ${currentData.frag} ]`, "text-green font-bold mb-4");
+                    
+                    globalTracker[assessmentStep] = currentData.frag;
+                    updateGlobalTracker(); assessmentStep++;
+                    
+                    if (assessmentStep < level1Queries.length) setTimeout(() => printToAssessment(level1Queries[assessmentStep].q, "text-red-200 mt-4"), 1000);
+                    else {
+                        setTimeout(() => {
+                            printToAssessment("ALL QUERIES SATISFIED. MAXIMUM CLEARANCE FOR TIER ACHIEVED.", "text-green font-bold mt-4");
+                            printToAssessment(`LEVEL 2 OVERRIDE HASH: ${globalTracker.join('')}`, "text-green text-xl my-4 glitch");
+                            printToAssessment("INSTRUCTION: Input Hash in the SECURE OVERRIDE panel to upgrade clearance.", "text-white");
+                        }, 1000);
+                    }
+                } else { playErrorSound(); printToAssessment("ERROR: DATA DOES NOT MATCH ARCHIVES.", "text-red-600 font-bold mb-4"); }
+            }
+        });
+        document.getElementById('close-assessment').addEventListener('click', closeAssessment);
+
+        const overrideScreen = document.getElementById('override-screen');
+        const overrideInput = document.getElementById('override-input');
+        const dashChars = document.querySelectorAll('.dash-char');
+
+        document.getElementById('override-btn').addEventListener('click', () => {
+            overrideScreen.classList.remove('hidden'); overrideScreen.classList.add('flex');
+            overrideInput.value = ''; updateDashes(); cmdInput.disabled = true; setTimeout(() => overrideInput.focus(), 10); playTypeSound();
+        });
+        
+        document.getElementById('cancel-override').addEventListener('click', () => {
+            overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
+            cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        });
+        
+        function updateDashes() {
+            const val = overrideInput.value;
+            dashChars.forEach((el, i) => {
+                el.textContent = val[i] || '';
+                if (val[i]) { el.classList.add('border-white', 'text-white'); el.classList.remove('border-red-900', 'text-red-500'); el.style.textShadow = '0 0 10px rgba(255,0,0,0.8)'; } 
+                else { el.classList.remove('border-white', 'text-white'); el.classList.add('border-red-900', 'text-red-500'); el.style.textShadow = 'none'; }
+            });
+        }
+        document.getElementById('override-dash-container').addEventListener('click', () => overrideInput.focus());
+
+        overrideInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); updateDashes(); playTypeSound();
+            if (this.value.length === 5) setTimeout(submitOverride, 400);
+        });
+
+        async function submitOverride() {
+            const val = overrideInput.value; if (val.length < 5) return;
+            overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
+            cmdInput.disabled = true; inputLine.style.display = 'none';
+            await printLine(`> PROCESSING LEVEL 2 EXTERNAL OVERRIDE HASH...`, false, 10);
+            
+            if (val === 'X7B93') {
+                playSuccessSound(); await printLine("VERIFYING CREDENTIALS...", false, 30); await new Promise(r => setTimeout(r, 500));
+                
+                localStorage.setItem('scp_clearance', '2');
+                await printLine(`<div class="my-6 border-y-2 border-red-700 py-4 text-center bg-red-900 bg-opacity-20 w-full"><h2 class="text-3xl font-bold text-red-500 glitch" data-text="LEVEL 2 AUTHORIZATION ACCEPTED">LEVEL 2 AUTHORIZATION ACCEPTED</h2></div>`, true);
+                
+                setTimeout(() => window.location.href = 'level2.html', 2000); 
+            } else {
+                playErrorSound(); await printLine("<span class='text-red'>ERROR: INVALID OVERRIDE HASH.</span>", true);
+                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); scrollToBottom();
+            }
+        }
+
+        document.body.addEventListener('click', (e) => {
+            if (!overrideScreen.classList.contains('hidden')) overrideInput.focus();
+            else if (!assessmentScreen.classList.contains('hidden')) assessmentInput.focus();
+            else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.id !== 'override-btn') cmdInput.focus();
+        });
+    </script>
+</body>
+</html>
