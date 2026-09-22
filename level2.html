@@ -259,6 +259,22 @@
                     document.getElementById('terminal-output').style.display = 'flex';
                     document.getElementById('cmd-input').focus();
                     updateGlobalTracker(); initAudio(); 
+                    
+                    // Start Subliminal Flash Engine
+                    const triggerFlash = () => {
+                        const delay = Math.random() * 15000 + 10000; // Random delay between 10s and 25s
+                        setTimeout(() => {
+                            if(document.getElementById('override-screen').classList.contains('hidden') && document.getElementById('tracker-screen').classList.contains('hidden')) {
+                                const flash = document.getElementById('subliminal-flash');
+                                if (flash) {
+                                    flash.classList.remove('hidden');
+                                    setTimeout(() => flash.classList.add('hidden'), 60); // Barely perceptible 60ms flash
+                                }
+                            }
+                            triggerFlash();
+                        }, delay);
+                    };
+                    triggerFlash();
                 }
             }, 1500);
         };
@@ -280,8 +296,7 @@
                 "  help       - Display this message", 
                 "  clear      - Clear terminal output",
                 "  analyze    - Launch Threat Analysis Database (Wiki Required)",
-                "  anchor     - Launch Scranton Reality Anchor Calibration",
-                "  tracker    - Access Sector 4 Motion Proximity Scanner"
+                "  anchor     - Launch Scranton Reality Anchor Calibration"
             ] },
             "ANALYZE": { type: "app", appName: "ANALYSIS" },
             "ANCHOR": { type: "app", appName: "ANCHOR_PUZZLE" },
@@ -568,32 +583,61 @@
             radarBlip.style.top = '15%'; radarBlip.style.left = '20%';
             radarBlip.style.opacity = '0';
             
-            trackerInterval = setInterval(() => {
-                playSuccessSound(); 
-                radarBlip.style.opacity = '1';
-                setTimeout(() => radarBlip.style.opacity = '0', 1500);
-                
-                blipDistance = Math.max(0, (blipDistance - (Math.random() * 4 + 2))).toFixed(1);
-                distanceReadout.textContent = `DISTANCE: ${blipDistance}m`;
-                
-                let currentTop = parseFloat(radarBlip.style.top);
-                let currentLeft = parseFloat(radarBlip.style.left);
-                radarBlip.style.top = `${currentTop + (50 - currentTop) * 0.15}%`;
-                radarBlip.style.left = `${currentLeft + (50 - currentLeft) * 0.15}%`;
-
-                if (blipDistance < 5) {
-                    distanceReadout.classList.add('text-red-500', 'animate-pulse');
-                    distanceReadout.textContent = "DISTANCE: IMMINENT BREACH";
-                }
-            }, 3000);
-
+            let trackerActive = true;
+            
             const closeTracker = (e) => {
-                clearInterval(trackerInterval);
+                if (!trackerActive) return; // Prevent aborting if already won
+                clearInterval(trackerInterval); trackerActive = false;
                 trackerScreen.classList.add('hidden'); trackerScreen.classList.remove('flex');
                 inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
                 distanceReadout.classList.remove('text-red-500', 'animate-pulse');
+                distanceReadout.classList.add('text-green-500');
                 document.removeEventListener('keydown', closeTracker);
             };
+
+            trackerInterval = setInterval(() => {
+                playSuccessSound(); 
+                radarBlip.style.opacity = '1';
+                setTimeout(() => radarBlip.style.opacity = '0', 800);
+                
+                // Speed up the approach
+                blipDistance = Math.max(0, (blipDistance - (Math.random() * 6 + 4))).toFixed(1);
+                
+                let currentTop = parseFloat(radarBlip.style.top);
+                let currentLeft = parseFloat(radarBlip.style.left);
+                radarBlip.style.top = `${currentTop + (50 - currentTop) * 0.18}%`;
+                radarBlip.style.left = `${currentLeft + (50 - currentLeft) * 0.18}%`;
+
+                if (blipDistance <= 0) {
+                    // THEY HELD THEIR NERVE!
+                    clearInterval(trackerInterval); trackerActive = false;
+                    distanceReadout.classList.remove('text-green-500');
+                    distanceReadout.classList.add('text-red-500', 'animate-pulse');
+                    distanceReadout.textContent = "ENTITY INTERSECT. TELEMETRY EXTRACTED.";
+                    
+                    if (globalTracker[4] === '_') {
+                        globalTracker[4] = 'Q';
+                        updateGlobalTracker();
+                    }
+                    
+                    setTimeout(() => {
+                        trackerScreen.classList.add('hidden'); trackerScreen.classList.remove('flex');
+                        inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                        distanceReadout.classList.remove('text-red-500', 'animate-pulse');
+                        distanceReadout.classList.add('text-green-500');
+                        document.removeEventListener('keydown', closeTracker);
+                        printLine("<span class='text-amber'>[SYSTEM]: PROXIMITY TELEMETRY GATHERED. FINAL HASH FRAGMENT (Q) SECURED.</span>", true);
+                    }, 2500);
+                } else if (blipDistance < 12) {
+                    // DANGER ZONE
+                    distanceReadout.classList.remove('text-green-500');
+                    distanceReadout.classList.add('text-red-500', 'animate-pulse');
+                    distanceReadout.textContent = `DISTANCE: ${blipDistance}m - IMMINENT BREACH`;
+                } else {
+                    distanceReadout.textContent = `DISTANCE: ${blipDistance}m`;
+                }
+            }, 1200);
+
             setTimeout(() => document.addEventListener('keydown', closeTracker), 500);
         }
 
