@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP Foundation - Level 2 Workspace</title>
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --scp-black: #050505; 
+            --scp-amber: #ffb700;
+            --scp-amber-dim: #8a6300;
+            --scp-white: #e0e0e0;
+        }
+
+        body {
+            background-color: var(--scp-black); color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace; overflow: hidden;
+            display: flex; flex-direction: column; height: 100vh; margin: 0; user-select: none;
+        }
+
+        body::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 183, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; } 5% { opacity: 0.95; } 10% { opacity: 0.99; }
+            15% { opacity: 0.93; } 20% { opacity: 0.98; } 25% { opacity: 0.95; }
+            30% { opacity: 0.97; } 35% { opacity: 0.96; } 40% { opacity: 0.94; }
+            50% { opacity: 0.99; } 60% { opacity: 0.95; } 70% { opacity: 0.97; }
+            80% { opacity: 0.98; } 90% { opacity: 0.94; } 100% { opacity: 0.97; }
+        }
+        .crt { animation: flicker 0.3s infinite; }
+
+        .terminal-header { border-bottom: 2px solid var(--scp-amber); padding: 1rem; }
+        .terminal-content { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
+        .output-line { margin-bottom: 0.5rem; line-height: 1.4; }
+        .text-amber { color: var(--scp-amber); }
+        
+        .input-line { display: flex; align-items: center; margin-top: 1rem; }
+        .prompt { margin-right: 0.5rem; color: var(--scp-amber); }
+        input[type="text"] {
+            background: transparent; border: none; color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace; font-size: 1rem;
+            flex-grow: 1; outline: none; caret-color: var(--scp-white);
+        }
+        
+        .glitch { position: relative; display: inline-block; }
+        .glitch::before, .glitch::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--scp-black);
+        }
+        .glitch::before { left: 2px; text-shadow: -2px 0 var(--scp-amber); clip: rect(24px, 550px, 90px, 0); animation: glitch-anim 3s infinite linear alternate-reverse; }
+        .glitch::after { left: -2px; text-shadow: -2px 0 blue; clip: rect(85px, 550px, 140px, 0); animation: glitch-anim 2s infinite linear alternate-reverse; }
+        @keyframes glitch-anim {
+            0% { clip: rect(72px, 9999px, 73px, 0); } 20% { clip: rect(93px, 9999px, 32px, 0); }
+            40% { clip: rect(59px, 9999px, 7px, 0); } 60% { clip: rect(4px, 9999px, 53px, 0); }
+            80% { clip: rect(47px, 9999px, 94px, 0); } 100% { clip: rect(86px, 9999px, 63px, 0); }
+        }
+
+        /* Anchor Rings */
+        .ring { border: 4px solid var(--scp-amber-dim); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(0deg); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .ring:hover { border-color: var(--scp-amber); box-shadow: inset 0 0 15px rgba(255, 183, 0, 0.2), 0 0 15px rgba(255, 183, 0, 0.2); }
+        .ring::after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: var(--scp-amber); border-radius: 0; box-shadow: 0 0 10px var(--scp-amber); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+        
+        .ring-1 { width: 140px; height: 140px; }
+        .ring-2 { width: 220px; height: 220px; }
+        .ring-3 { width: 300px; height: 300px; }
+
+        /* Radar Scanner */
+        #radar-blip { position: absolute; width: 10px; height: 10px; background: red; border-radius: 50%; box-shadow: 0 0 10px red, 0 0 20px red; opacity: 0; transition: opacity 0.2s, top 3s linear, left 3s linear; z-index: 20;}
+        .radar-sweep { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.8)); transform-origin: left center; animation: radar-spin 3s infinite linear; z-index: 10;}
+        @keyframes radar-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #111; } ::-webkit-scrollbar-thumb { background: #444; }
+    </style>
+</head>
+<body class="crt relative">
+
+    <!-- Auth Verification Screen -->
+    <div id="auth-screen" class="absolute inset-0 bg-[#050505] z-50 flex justify-center items-center">
+        <h2 class="text-amber text-2xl font-mono animate-pulse">VERIFYING CLEARANCE TOKENS...</h2>
+    </div>
+
+    <!-- THREAT ANALYSIS APP -->
+    <div id="analysis-screen" class="hidden absolute inset-0 bg-[#110a00] z-30 flex-col items-center justify-center p-4 sm:p-8">
+        <div class="w-full max-w-4xl border-2 border-amber-600 bg-[#0a0500] shadow-[0_0_40px_rgba(255,183,0,0.15)] flex flex-col relative overflow-hidden">
+            <div class="w-full bg-amber-600 text-black px-4 py-1.5 flex justify-between items-center text-sm font-bold tracking-widest shadow-md">
+                <span>[ SCiPNET THREAT ANALYSIS DATABASE ]</span>
+                <span class="animate-pulse">QUERYING WIKI...</span>
+            </div>
+
+            <div class="p-8">
+                <h2 class="text-amber text-2xl font-bold mb-2 tracking-[0.2em] glitch" data-text="CLASSIFIED INCIDENT LOGS">CLASSIFIED INCIDENT LOGS</h2>
+                <p class="text-amber-dim text-sm tracking-widest border-b border-amber-600 pb-4 mb-6">CROSS-REFERENCE WITH GLOBAL DATABASE TO IDENTIFY THREAT PARAMETERS.</p>
+                
+                <div class="flex flex-col gap-6">
+                    <div class="flex justify-between items-center text-amber font-mono text-sm border-b border-amber-600 pb-2">
+                        <span>INCIDENT <span id="analysis-current">1</span> OF 3</span>
+                        <span id="analysis-status" class="tracking-widest animate-pulse">AWAITING IDENTIFICATION</span>
+                    </div>
+
+                    <!-- Scenario Display -->
+                    <div class="bg-[#1a1100] border border-amber-600/50 p-6 font-mono text-gray-300 text-lg leading-relaxed shadow-[inset_0_0_20px_rgba(0,0,0,1)] relative">
+                        <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,183,0,0.03)_1px,transparent_1px)] bg-[length:100%_4px] z-10"></div>
+                        <div id="analysis-text" class="relative z-20">
+                            <!-- Populates via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Inputs -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label class="text-amber-dim text-xs tracking-[0.2em] mb-1">IDENTIFY ITEM DESIGNATION (e.g. SCP-001)</label>
+                            <input type="text" id="analysis-input-1" class="border-b-2 border-amber-600 bg-[#111] text-white p-2 font-mono uppercase focus:border-white focus:bg-[#222]" autocomplete="off">
+                        </div>
+                        <div class="flex flex-col">
+                            <label id="analysis-label-2" class="text-amber-dim text-xs tracking-[0.2em] mb-1">ADDITIONAL VERIFICATION REQUIRED</label>
+                            <input type="text" id="analysis-input-2" class="border-b-2 border-amber-600 bg-[#111] text-white p-2 font-mono uppercase focus:border-white focus:bg-[#222]" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <button id="btn-submit-analysis" class="w-full bg-amber-600 hover:bg-amber-500 text-black font-bold py-3 tracking-[0.3em] transition-colors mt-2">
+                        [ VERIFY DATA PARAMETERS ]
+                    </button>
+                    <button id="close-analysis" class="w-full text-center text-amber-700 hover:text-amber transition-colors tracking-widest text-sm mt-2">[ ABORT TOOL ]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRANTON REALITY ANCHOR APP -->
+    <div id="anchor-screen" class="hidden absolute inset-0 bg-[#050505] z-30 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl h-[600px] border-2 border-amber-600 bg-[#0a0500] p-8 shadow-[0_0_40px_rgba(255,183,0,0.2)] relative flex flex-col items-center overflow-hidden">
+            <h2 class="text-amber text-2xl font-bold mb-2 tracking-[0.2em] glitch text-center" data-text="REALITY ANCHOR CALIBRATION">REALITY ANCHOR CALIBRATION</h2>
+            <p class="text-amber-dim font-mono text-center mb-8 border-b border-amber-600 pb-4 w-full text-sm">
+                WARNING: ANCHOR RINGS ARE MECHANICALLY INTERLOCKED.<br>ALIGN ALL NODES TO THE <span class="text-white font-bold">TOP VERTEX</span> TO STABILIZE HUME FIELD.
+            </p>
+
+            <div class="relative w-full h-full flex-1 flex items-center justify-center mt-4">
+                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 text-amber font-bold text-2xl">▼</div>
+                
+                <div id="ring-container" class="relative w-[300px] h-[300px]">
+                    <div id="ring-3" class="ring ring-3"></div>
+                    <div id="ring-2" class="ring ring-2"></div>
+                    <div id="ring-1" class="ring ring-1"></div>
+                </div>
+            </div>
+
+            <button id="close-anchor" class="absolute bottom-6 text-amber-700 hover:text-amber transition-colors tracking-widest text-sm z-10">[ ABORT CALIBRATION ]</button>
+        </div>
+    </div>
+
+    <!-- RADAR / TRACKER APP -->
+    <div id="tracker-screen" class="hidden absolute inset-0 bg-[#001a00] z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-3xl border border-green-900 bg-black p-4 relative z-20 flex flex-col h-[500px]">
+            <div class="flex justify-between items-center border-b border-green-900 pb-2 mb-4">
+                <span class="text-green-500 font-bold tracking-widest">MOTION PROXIMITY TRACKER</span>
+                <span id="distance-readout" class="text-green-500 font-mono">DISTANCE: CALCULATING...</span>
+            </div>
+            
+            <div class="flex-1 border border-green-900 rounded-full mx-auto aspect-square relative overflow-hidden bg-[radial-gradient(circle_at_center,rgba(0,255,0,0.1)_0%,transparent_70%)] flex items-center justify-center">
+                <!-- Concentric Radar Rings -->
+                <div class="absolute w-3/4 h-3/4 border border-green-900/50 rounded-full"></div>
+                <div class="absolute w-1/2 h-1/2 border border-green-900/50 rounded-full"></div>
+                <div class="absolute w-1/4 h-1/4 border border-green-900/50 rounded-full"></div>
+                
+                <!-- Crosshairs -->
+                <div class="absolute w-full h-[1px] bg-green-900/50"></div>
+                <div class="absolute h-full w-[1px] bg-green-900/50"></div>
+                
+                <div class="radar-sweep"></div>
+                <div id="radar-blip"></div>
+            </div>
+            
+            <p class="text-green-900 text-center text-xs tracking-[0.2em] mt-4 pt-2 border-t border-green-900">PRESS ANY KEY TO ABORT TRACKING</p>
+        </div>
+    </div>
+
+    <!-- Dark Red Override Screen (Level 2 to 3) -->
+    <div id="override-screen" class="hidden absolute inset-0 bg-[#050505] z-50 flex-col justify-center items-center">
+        <h2 class="text-amber text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
+        <div class="flex gap-2 sm:gap-4 mb-8" id="override-dash-container">
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-amber-800 flex items-center justify-center font-mono transition-all duration-200 text-amber"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-amber-800 flex items-center justify-center font-mono transition-all duration-200 text-amber"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-amber-800 flex items-center justify-center font-mono transition-all duration-200 text-amber"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-amber-800 flex items-center justify-center font-mono transition-all duration-200 text-amber"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-amber-800 flex items-center justify-center font-mono transition-all duration-200 text-amber"></span>
+        </div>
+        <input type="text" id="override-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" spellcheck="false" maxlength="5">
+        <p class="text-gray-500 text-sm mb-8 tracking-[0.2em]">INPUT 5-CHARACTER LEVEL 3 HASH</p>
+        <button id="cancel-override" class="text-gray-500 hover:text-white transition-colors tracking-widest text-sm">[ CANCEL ]</button>
+    </div>
+
+    <!-- Main Terminal Interface -->
+    <div class="terminal-header relative flex" style="display: none;" id="main-header">
+        <div class="flex-1 z-10">
+            <h1 class="text-2xl font-bold tracking-widest text-amber">SCP FOUNDATION</h1>
+            <p class="text-sm opacity-75">SECURE. CONTAIN. PROTECT.</p>
+        </div>
+        <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center z-20 hover:scale-110 active:scale-95 transition-transform">
+            <a href="https://scp-wiki.wikidot.com/" target="_blank" rel="noopener noreferrer" title="Access Global Database">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo" style="width: 75px; height: 75px; filter: invert(70%) sepia(90%) hue-rotate(5deg) saturate(300%);">
+            </a>
+        </div>
+        <div class="flex-1 text-right flex flex-col items-end z-10">
+            <div class="flex items-center mb-1">
+                <div class="text-green-400 font-mono text-xl tracking-widest mr-4" id="header-tracker">[ _ _ _ _ _ ]</div>
+                <p class="text-sm text-amber font-bold tracking-widest">CLEARANCE: LEVEL 2</p>
+            </div>
+            <button id="override-btn" class="text-xs mb-1 text-amber-dim hover:text-white transition-colors">[ SECURE OVERRIDE ]</button>
+            <p class="text-xs text-gray-500" id="clock">00:00:00</p>
+        </div>
+    </div>
+
+    <div class="terminal-content" id="terminal-output" style="display: none;">
+        <div class="my-6 border-y-2 border-amber-600 py-4 text-center bg-amber-600 bg-opacity-10 w-full">
+            <h2 class="text-3xl font-bold text-amber glitch" data-text="LEVEL 2: RESTRICTED SECTOR">LEVEL 2: RESTRICTED SECTOR</h2>
+            <p class="mt-2 text-amber-dim">WARNING: HIGH-THREAT ANOMALIES LOGGED IN THIS DIRECTORY.</p>
+        </div>
+        
+        <div class="input-line">
+            <span class="prompt">C:\SCiPNET\LEVEL-2></span>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        let currentClearanceLevel = 2;
+        let globalTracker = ['_', '_', '_', '_', '_'];
+
+        let audioContextStarted = false;
+        const typeSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.01 } }).toDestination(); typeSynth.volume.value = -20;
+        const alertSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 1 } }).toDestination(); alertSynth.volume.value = -15;
+        const noiseSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 } }).toDestination(); noiseSynth.volume.value = -15;
+
+        function playTypeSound() { if (!audioContextStarted) return; typeSynth.triggerAttackRelease(["C4", "C#4", "D4", "D#4"][Math.floor(Math.random() * 4)], "32n"); }
+        function playSuccessSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("C5", "8n"); setTimeout(() => alertSynth.triggerAttackRelease("E5", "4n"), 150); }
+        function playErrorSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("G2", "4n"); noiseSynth.triggerAttackRelease("8n", "+0.1"); }
+        async function initAudio() { if (!audioContextStarted) { await Tone.start(); audioContextStarted = true; } }
+
+        window.onload = () => {
+            const authScreen = document.getElementById('auth-screen');
+            // DEV BYPASS: Hardcoding clearance to 2 for testing
+            const clearance = 2; 
+            
+            setTimeout(() => {
+                if (clearance < 2) {
+                    authScreen.innerHTML = `<div class="text-center"><h2 class="text-red-600 text-4xl font-bold glitch mb-4" data-text="SECURITY BREACH">SECURITY BREACH</h2><p class="text-red-400 text-xl font-mono">CLEARANCE LEVEL 2 REQUIRED.</p></div>`;
+                    setTimeout(() => window.location.href = 'index.html', 3000);
+                } else {
+                    authScreen.style.display = 'none';
+                    document.getElementById('main-header').style.display = 'flex';
+                    document.getElementById('terminal-output').style.display = 'flex';
+                    document.getElementById('cmd-input').focus();
+                    updateGlobalTracker(); initAudio(); 
+                }
+            }, 1500);
+        };
+
+        setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
+
+        const terminalOutput = document.getElementById('terminal-output');
+        const cmdInput = document.getElementById('cmd-input');
+        const inputLine = document.querySelector('.input-line');
+        function scrollToBottom() { terminalOutput.scrollTop = terminalOutput.scrollHeight; }
+
+        function updateGlobalTracker() {
+            document.getElementById('header-tracker').textContent = `[ ${globalTracker.join(' ')} ]`;
+        }
+
+        const scpDatabase = {
+            "HELP": { type: "text", content: [ 
+                "AVAILABLE COMMANDS:", 
+                "  help       - Display this message", 
+                "  clear      - Clear terminal output",
+                "  analyze    - Launch Threat Analysis Database (Wiki Required)",
+                "  anchor     - Launch Scranton Reality Anchor Calibration",
+                "  tracker    - Access Sector 4 Motion Proximity Scanner"
+            ] },
+            "ANALYZE": { type: "app", appName: "ANALYSIS" },
+            "ANCHOR": { type: "app", appName: "ANCHOR_PUZZLE" },
+            "TRACKER": { type: "app", appName: "RADAR" }
+        };
+
+        function printLine(text, isHtml = false, speed = 10) {
+            return new Promise(resolve => {
+                const line = document.createElement('div'); line.className = 'output-line'; terminalOutput.insertBefore(line, inputLine);
+                if (isHtml) { line.innerHTML = text; scrollToBottom(); resolve(); } 
+                else {
+                    let i = 0;
+                    function typeChar() {
+                        if (i < text.length) { line.textContent += text.charAt(i); i++; scrollToBottom(); setTimeout(typeChar, speed); } 
+                        else resolve();
+                    }
+                    typeChar();
+                }
+            });
+        }
+
+        async function processCommand(cmd) {
+            initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
+            await printLine(`C:\\SCiPNET\\LEVEL-2> ${fullCmd}`, false, 5);
+            
+            const args = fullCmd.toUpperCase().split(/\s+/);
+            const baseCmd = args[0].replace(/[^A-Z0-9\-]/g, '');
+
+            if (baseCmd === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
+
+            const entry = scpDatabase[baseCmd.replace(/-/g, '')];
+            if (entry) {
+                if (entry.type === 'app' && entry.appName === 'ANALYSIS') openAnalysis();
+                else if (entry.type === 'app' && entry.appName === 'ANCHOR_PUZZLE') openAnchor();
+                else if (entry.type === 'app' && entry.appName === 'RADAR') openTracker();
+                else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); }
+            } else { playErrorSound(); await printLine("<span class='text-red-500'>ERROR: Command or File not recognized.</span>", true); }
+        }
+
+        cmdInput.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                const val = this.value; this.value = ''; this.disabled = true; inputLine.style.display = 'none';
+                await processCommand(val);
+                
+                if (document.getElementById('analysis-screen').classList.contains('hidden') && 
+                    document.getElementById('anchor-screen').classList.contains('hidden') && 
+                    document.getElementById('tracker-screen').classList.contains('hidden') &&
+                    document.getElementById('override-screen').classList.contains('hidden')) {
+                    inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
+                }
+            } else playTypeSound();
+        });
+
+        // ------------------
+        // THREAT ANALYSIS APP (WIKI PUZZLE)
+        // ------------------
+        const analysisScreen = document.getElementById('analysis-screen');
+        const analysisTextDisplay = document.getElementById('analysis-text');
+        const analysisInput1 = document.getElementById('analysis-input-1');
+        const analysisInput2 = document.getElementById('analysis-input-2');
+        const analysisLabel2 = document.getElementById('analysis-label-2');
+        
+        let analysisIndex = 0;
+        
+        const analysisPuzzles = [
+            {
+                text: "Anomaly is a predatory pack animal mimicking human voices to lure prey. It emits a highly specific amnestic aerosol to erase memories of encounters.",
+                label2: "IDENTIFY AEROSOL DESIGNATION",
+                ans1: "SCP939", ans2: "AMNC227", frag: "Z"
+            },
+            {
+                text: "Subterranean facility located in Yellowstone National Park designed to mass-clone humanity to prevent an XK-Class End-of-the-World scenario.",
+                label2: "IDENTIFY OBJECT CLASS",
+                ans1: "SCP2000", ans2: "THAUMIEL", frag: "4"
+            },
+            {
+                text: "A hostile, anomalous idea (Antimeme) that annihilates anyone who perceives it. Accessing its wiki document requires a specific numeric keypad code.",
+                label2: "INPUT KEYPAD ACCESS CODE",
+                ans1: "SCP3125", ans2: "55555", frag: "L"
+            }
+        ];
+
+        function openAnalysis() {
+            analysisScreen.classList.remove('hidden'); analysisScreen.classList.add('flex');
+            cmdInput.disabled = true; 
+            
+            analysisIndex = globalTracker.slice(0,3).findIndex(f => f === '_');
+            if(analysisIndex === -1) analysisIndex = 3; 
+            
+            loadAnalysis(); playTypeSound();
+        }
+
+        function loadAnalysis() {
+            analysisInput1.value = ''; analysisInput2.value = '';
+            
+            if (analysisIndex >= 3) {
+                document.getElementById('analysis-current').textContent = "3";
+                analysisTextDisplay.innerHTML = `<span class="text-green-500 text-xl font-bold tracking-widest text-center">ALL THREATS IDENTIFIED.<br>PROCEED TO REALITY ANCHOR CALIBRATION.</span>`;
+                document.getElementById('btn-submit-analysis').style.display = 'none';
+                analysisInput1.disabled = true; analysisInput2.disabled = true;
+                return;
+            }
+            document.getElementById('btn-submit-analysis').style.display = 'block';
+            document.getElementById('analysis-current').textContent = (analysisIndex + 1);
+            
+            analysisTextDisplay.textContent = analysisPuzzles[analysisIndex].text;
+            analysisLabel2.textContent = analysisPuzzles[analysisIndex].label2;
+            
+            setTimeout(() => analysisInput1.focus(), 100);
+        }
+
+        document.getElementById('btn-submit-analysis').addEventListener('click', () => {
+            const val1 = analysisInput1.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const val2 = analysisInput2.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            if (val1 === analysisPuzzles[analysisIndex].ans1 && val2 === analysisPuzzles[analysisIndex].ans2) {
+                playSuccessSound();
+                document.getElementById('analysis-status').textContent = "VERIFIED - HASH EXTRACTED";
+                document.getElementById('analysis-status').className = "text-green-500 tracking-widest font-bold";
+                
+                globalTracker[analysisIndex] = analysisPuzzles[analysisIndex].frag;
+                updateGlobalTracker();
+                analysisIndex++;
+                
+                setTimeout(() => {
+                    document.getElementById('analysis-status').textContent = "AWAITING IDENTIFICATION";
+                    document.getElementById('analysis-status').className = "text-amber tracking-widest animate-pulse";
+                    loadAnalysis();
+                }, 1500);
+            } else {
+                playErrorSound();
+                document.getElementById('analysis-status').textContent = "ERROR: INCORRECT PARAMETERS";
+                document.getElementById('analysis-status').className = "text-red-500 tracking-widest font-bold";
+                setTimeout(() => {
+                    document.getElementById('analysis-status').textContent = "AWAITING IDENTIFICATION";
+                    document.getElementById('analysis-status').className = "text-amber tracking-widest animate-pulse";
+                    analysisInput1.value = ''; analysisInput2.value = ''; analysisInput1.focus();
+                }, 1500);
+            }
+        });
+
+        [analysisInput1, analysisInput2].forEach(inp => {
+            inp.addEventListener('input', playTypeSound);
+            inp.addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('btn-submit-analysis').click(); });
+        });
+
+        document.getElementById('close-analysis').addEventListener('click', () => {
+            analysisScreen.classList.add('hidden'); analysisScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        });
+
+
+        // ------------------
+        // ANCHOR CALIBRATION (INTERLOCKED RINGS)
+        // ------------------
+        const anchorScreen = document.getElementById('anchor-screen');
+        // Initial fixed scrambled state
+        let ringRotations = [90, 180, 270];
+
+        function openAnchor() {
+            if (globalTracker[2] === '_') {
+                playErrorSound();
+                printLine("<span class='text-red-500'>ERROR: IDENTIFY THREATS 1-3 BEFORE ATTEMPTING CALIBRATION.</span>", true);
+                return;
+            }
+            anchorScreen.classList.remove('hidden'); anchorScreen.classList.add('flex');
+            cmdInput.disabled = true;
+            ringRotations = [90, 180, 270]; // Reset puzzle on open
+            updateRings();
+        }
+
+        function updateRings() {
+            document.getElementById('ring-1').style.transform = `translate(-50%, -50%) rotate(${ringRotations[0]}deg)`;
+            document.getElementById('ring-2').style.transform = `translate(-50%, -50%) rotate(${ringRotations[1]}deg)`;
+            document.getElementById('ring-3').style.transform = `translate(-50%, -50%) rotate(${ringRotations[2]}deg)`;
+        }
+
+        // Interlocking Logic
+        document.getElementById('ring-1').addEventListener('click', (e) => {
+            e.stopPropagation(); playTypeSound();
+            ringRotations[0] += 90; ringRotations[1] -= 90; // Ring 1 moves Ring 2 backward
+            updateRings(); checkAnchorWin();
+        });
+        document.getElementById('ring-2').addEventListener('click', (e) => {
+            e.stopPropagation(); playTypeSound();
+            ringRotations[1] += 90; ringRotations[2] += 90; // Ring 2 moves Ring 3 forward
+            updateRings(); checkAnchorWin();
+        });
+        document.getElementById('ring-3').addEventListener('click', (e) => {
+            e.stopPropagation(); playTypeSound();
+            ringRotations[2] += 90; ringRotations[0] -= 90; // Ring 3 moves Ring 1 backward
+            updateRings(); checkAnchorWin();
+        });
+
+        function checkAnchorWin() {
+            // Check if all rings are effectively at 0 (or multiples of 360)
+            let isAligned = ringRotations.every(rot => rot % 360 === 0);
+            if (isAligned && globalTracker[4] === '_') {
+                playSuccessSound();
+                
+                // Add the final two fragments (8 and Q)
+                globalTracker[3] = '8'; globalTracker[4] = 'Q';
+                updateGlobalTracker();
+                
+                setTimeout(() => {
+                    anchorScreen.classList.add('hidden'); anchorScreen.classList.remove('flex');
+                    inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                    printLine("<span class='text-green-500'>[SYSTEM]: REALITY ANCHORS STABILIZED. FULL L3 HASH RECOVERED.</span>", true);
+                }, 1500);
+            }
+        }
+
+        document.getElementById('close-anchor').addEventListener('click', () => {
+            anchorScreen.classList.add('hidden'); anchorScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        });
+
+        // ------------------
+        // OVERRIDE (Z4L8Q)
+        // ------------------
+        const overrideScreen = document.getElementById('override-screen');
+        const overrideInput = document.getElementById('override-input');
+        const dashChars = document.querySelectorAll('.dash-char');
+
+        document.getElementById('override-btn').addEventListener('click', () => {
+            initAudio(); 
+            overrideScreen.classList.remove('hidden'); overrideScreen.classList.add('flex');
+            overrideInput.value = ''; updateDashes(); cmdInput.disabled = true; setTimeout(() => overrideInput.focus(), 10); playTypeSound();
+        });
+        
+        document.getElementById('cancel-override').addEventListener('click', () => {
+            overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
+            cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        });
+        
+        function updateDashes() {
+            const val = overrideInput.value;
+            dashChars.forEach((el, i) => {
+                el.textContent = val[i] || '';
+                if (val[i]) { el.classList.add('border-white', 'text-white'); el.classList.remove('border-amber-800', 'text-amber'); el.style.textShadow = '0 0 10px rgba(255,183,0,0.8)'; } 
+                else { el.classList.remove('border-white', 'text-white'); el.classList.add('border-amber-800', 'text-amber'); el.style.textShadow = 'none'; }
+            });
+        }
+        document.getElementById('override-dash-container').addEventListener('click', () => overrideInput.focus());
+
+        overrideInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); updateDashes(); playTypeSound();
+            if (this.value.length === 5) setTimeout(submitOverride, 400);
+        });
+
+        async function submitOverride() {
+            const val = overrideInput.value; if (val.length < 5) return;
+            overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
+            cmdInput.disabled = true; inputLine.style.display = 'none';
+            await printLine(`> PROCESSING LEVEL 3 EXTERNAL OVERRIDE HASH...`, false, 10);
+            
+            if (val === 'Z4L8Q') {
+                playSuccessSound(); await printLine("VERIFYING CREDENTIALS...", false, 30); await new Promise(r => setTimeout(r, 500));
+                
+                localStorage.setItem('scp_clearance', '3');
+                await printLine(`<div class="my-6 border-y-2 border-amber-600 py-4 text-center bg-amber-600 bg-opacity-20 w-full"><h2 class="text-3xl font-bold text-amber glitch" data-text="LEVEL 3 AUTHORIZATION ACCEPTED">LEVEL 3 AUTHORIZATION ACCEPTED</h2></div>`, true);
+                
+                // Redirect to the non-existent Level 3 page
+                setTimeout(() => window.location.href = 'level3.html', 2000); 
+            } else {
+                playErrorSound(); await printLine("<span class='text-red-500'>ERROR: INVALID OVERRIDE HASH.</span>", true);
+                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); scrollToBottom();
+            }
+        }
+
+        // ------------------
+        // RADAR TRACKER
+        // ------------------
+        const trackerScreen = document.getElementById('tracker-screen');
+        const radarBlip = document.getElementById('radar-blip');
+        const distanceReadout = document.getElementById('distance-readout');
+        let trackerInterval;
+        let blipDistance = 45.2;
+
+        function openTracker() {
+            trackerScreen.classList.remove('hidden'); trackerScreen.classList.add('flex');
+            cmdInput.disabled = true; 
+            blipDistance = 45.2;
+            radarBlip.style.top = '15%'; radarBlip.style.left = '20%';
+            radarBlip.style.opacity = '0';
+            
+            trackerInterval = setInterval(() => {
+                playSuccessSound(); 
+                radarBlip.style.opacity = '1';
+                setTimeout(() => radarBlip.style.opacity = '0', 1500);
+                
+                blipDistance = Math.max(0, (blipDistance - (Math.random() * 4 + 2))).toFixed(1);
+                distanceReadout.textContent = `DISTANCE: ${blipDistance}m`;
+                
+                let currentTop = parseFloat(radarBlip.style.top);
+                let currentLeft = parseFloat(radarBlip.style.left);
+                radarBlip.style.top = `${currentTop + (50 - currentTop) * 0.15}%`;
+                radarBlip.style.left = `${currentLeft + (50 - currentLeft) * 0.15}%`;
+
+                if (blipDistance < 5) {
+                    distanceReadout.classList.add('text-red-500', 'animate-pulse');
+                    distanceReadout.textContent = "DISTANCE: IMMINENT BREACH";
+                }
+            }, 3000);
+
+            const closeTracker = (e) => {
+                clearInterval(trackerInterval);
+                trackerScreen.classList.add('hidden'); trackerScreen.classList.remove('flex');
+                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                distanceReadout.classList.remove('text-red-500', 'animate-pulse');
+                document.removeEventListener('keydown', closeTracker);
+            };
+            setTimeout(() => document.addEventListener('keydown', closeTracker), 500);
+        }
+
+        document.body.addEventListener('click', (e) => {
+            if (!overrideScreen.classList.contains('hidden')) overrideInput.focus();
+            else if (!analysisScreen.classList.contains('hidden')) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                    if (analysisInput1.value === '') analysisInput1.focus();
+                    else analysisInput2.focus();
+                }
+            }
+            else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.tagName !== 'BUTTON' && !e.target.classList.contains('ring')) cmdInput.focus();
+        });
+    </script>
+</body>
+</html>
