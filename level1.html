@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SCP Foundation - Level 1 Workspace</title>
+    <!-- SCP Favicon -->
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
@@ -36,10 +38,9 @@
         }
         .crt { animation: flicker 0.3s infinite; }
 
-        .terminal-header {
-            border-bottom: 2px solid var(--scp-red);
-            padding: 1rem;
-        }
+        .terminal-header { border-bottom: 2px solid var(--scp-red); padding: 1rem; }
+        .scp-logo { width: 75px; height: 75px; }
+        .scp-logo img { width: 100%; height: 100%; filter: invert(90%) sepia(100%) hue-rotate(310deg) saturate(300%); }
 
         .terminal-content { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
         .output-line { margin-bottom: 0.5rem; line-height: 1.4; }
@@ -66,6 +67,19 @@
             80% { clip: rect(47px, 9999px, 94px, 0); } 100% { clip: rect(86px, 9999px, 63px, 0); }
         }
 
+        .redact-input {
+            background-color: #220000; border-bottom: 2px solid #ff3333;
+            color: #ff9999; text-transform: uppercase; text-align: center;
+            font-family: 'Share Tech Mono', monospace; padding: 0 4px;
+            width: 8rem; margin: 0 4px; outline: none; transition: all 0.2s;
+        }
+        .redact-input:focus { background-color: #440000; border-color: #ffffff; color: #ffffff; }
+        .redact-input.success { border-color: #33ff33; color: #33ff33; background-color: #002200; pointer-events: none; }
+        
+        .node-btn { transition: all 0.2s ease-in-out; }
+        .node-unstable { background-color: #4a0000; border-color: #ff3333; box-shadow: inset 0 0 15px rgba(255,0,0,0.5); }
+        .node-stable { background-color: #002244; border-color: #3399ff; box-shadow: inset 0 0 15px rgba(0,150,255,0.5); }
+
         ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #111; } ::-webkit-scrollbar-thumb { background: #444; }
     </style>
 </head>
@@ -76,34 +90,90 @@
         <h2 class="text-white text-2xl font-mono animate-pulse">VERIFYING CLEARANCE TOKENS...</h2>
     </div>
 
-    <!-- Deep Lore Assessment Screen (Red for Level 1) -->
+    <!-- Document Redaction Recovery (RECOVER Tool) -->
     <div id="assessment-screen" class="hidden absolute inset-0 bg-[#110000] z-30 flex-col items-center justify-center p-4 sm:p-8">
-        <div class="w-full max-w-4xl border-2 border-red-900 p-8 bg-[#0a0000] shadow-[0_0_30px_rgba(255,0,0,0.2)] flex flex-col items-center relative">
-            <h2 class="text-red-500 text-2xl sm:text-4xl font-bold mb-4 tracking-[0.2em] text-center glitch" data-text="SECURE DECRYPTION ENVIRONMENT">SECURE DECRYPTION ENVIRONMENT</h2>
-            <p class="text-red-400 text-sm tracking-widest mb-8 border-b border-red-900 pb-4 w-full text-center">LEVEL 1 DEEP LORE PROTOCOL INITIATED</p>
-            
-            <div id="assessment-log" class="w-full h-64 overflow-y-auto mb-6 text-red-300 font-mono text-sm sm:text-base flex flex-col gap-4 p-4 border border-red-900 bg-black bg-opacity-50">
-                <!-- Assessment queries appear here -->
+        <div class="w-full max-w-4xl border-2 border-red-900 bg-[#050000] shadow-[0_0_40px_rgba(255,0,0,0.15)] flex flex-col relative overflow-hidden">
+            <div class="w-full bg-red-900 text-black px-4 py-1.5 flex justify-between items-center text-sm font-bold tracking-widest shadow-md">
+                <span>[ SCiPNET DATA RECOVERY TOOL :: v2.4 ]</span>
+                <span class="animate-pulse">DECRYPTING...</span>
             </div>
-            
-            <div class="w-full flex items-center border-b-2 border-red-600 pb-2">
-                <span class="text-red-500 mr-4 font-bold">></span>
-                <input type="text" id="assessment-input" class="w-full bg-transparent border-none text-red-100 outline-none text-xl font-mono" placeholder="INPUT ANSWER..." autocomplete="off">
+
+            <div class="p-8">
+                <h2 class="text-red-500 text-2xl sm:text-3xl font-bold mb-2 tracking-[0.2em] glitch" data-text="CORRUPTED ARCHIVE RECOVERY">CORRUPTED ARCHIVE RECOVERY</h2>
+                <p class="text-red-400 text-sm tracking-widest border-b border-red-900 pb-4 mb-6">FILL IN REDACTED SECTORS TO DECRYPT LEVEL 2 HASH FRAGMENTS.</p>
+                
+                <div class="flex flex-col gap-6">
+                    <div class="flex justify-between items-center text-red-500 font-mono text-sm border-b border-red-900 pb-2">
+                        <span>DOCUMENT <span id="doc-current">1</span> OF 4</span>
+                        <span id="doc-status" class="tracking-widest">AWAITING INPUT</span>
+                    </div>
+
+                    <div class="bg-[#110000] border border-red-900/50 p-6 font-mono text-gray-300 text-lg leading-relaxed shadow-[inset_0_0_20px_rgba(0,0,0,1)] relative">
+                        <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,0,0,0.03)_1px,transparent_1px)] bg-[length:100%_4px] z-10"></div>
+                        <div id="doc-text" class="relative z-20">
+                            <!-- Text populates here -->
+                        </div>
+                    </div>
+
+                    <button id="verify-doc-btn" class="w-full bg-red-900 hover:bg-red-700 text-black font-bold py-3 tracking-[0.3em] transition-colors mt-2">
+                        [ INITIATE VERIFICATION SCAN ]
+                    </button>
+                    <button id="close-assessment" class="w-full text-center text-red-800 hover:text-red-500 transition-colors tracking-widest text-sm mt-4">[ ABORT TOOL ]</button>
+                </div>
             </div>
-            
-            <button id="close-assessment" class="mt-8 text-red-800 hover:text-red-500 transition-colors tracking-widest text-sm">[ ABORT CONNECTION ]</button>
         </div>
     </div>
 
-    <!-- Dark Red Override Screen -->
+    <!-- Magnetic Containment Grid Minigame (CONTAIN Tool) -->
+    <div id="containment-screen" class="hidden absolute inset-0 bg-[#050505] z-30 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl border-2 border-gray-700 bg-[#0a0a0a] p-8 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative flex flex-col items-center">
+            <h2 class="text-white text-2xl font-bold mb-2 tracking-[0.2em] glitch text-center" data-text="MAGNETIC CONTAINMENT OVERRIDE">MAGNETIC CONTAINMENT OVERRIDE</h2>
+            <p class="text-gray-400 font-mono text-center mb-8 border-b border-gray-700 pb-4 w-full text-sm">
+                WARNING: FIELD INSTABILITY DETECTED.<br>ALIGN ALL POLARITY NODES TO <span class="text-blue-500 font-bold">STABLE (BLUE)</span> TO PREVENT BREACH.
+            </p>
+
+            <!-- Dynamic Grid (Columns adjusted by JS) -->
+            <div id="contain-grid" class="grid gap-3 w-64 h-64 sm:w-80 sm:h-80 mb-8">
+                <!-- Buttons injected via JS -->
+            </div>
+
+            <p id="contain-feedback" class="text-red-500 font-mono h-6 animate-pulse font-bold tracking-widest mb-4">SYSTEM CRITICAL</p>
+            <button id="close-contain" class="text-gray-500 hover:text-white transition-colors tracking-widest text-sm">[ ABORT MANUAL OVERRIDE ]</button>
+        </div>
+    </div>
+
+    <!-- MTF Radio Interceptor (RADIO Tool) -->
+    <div id="radio-screen" class="hidden absolute inset-0 bg-[#050000] z-40 flex-col items-center justify-center p-8">
+        <div class="absolute inset-0 bg-[linear-gradient(rgba(255,0,0,0.05)_1px,transparent_1px)] bg-[length:100%_4px] pointer-events-none z-10"></div>
+        <div class="w-full max-w-3xl border border-red-900 bg-black p-6 relative z-20 flex flex-col h-[500px]">
+            <div class="flex justify-between items-center border-b border-red-900 pb-2 mb-4">
+                <span class="text-red-500 font-bold tracking-widest">TACTICAL COMMS INTERCEPT</span>
+                <span class="text-red-500 font-mono animate-pulse">● REC</span>
+            </div>
+            
+            <!-- Audio Visualizer -->
+            <div id="audio-visualizer" class="h-24 w-full bg-[#110000] mb-4 flex items-end gap-1 px-2 border border-red-900 overflow-hidden">
+                <!-- Bars injected via JS -->
+            </div>
+            
+            <!-- Transcript Log -->
+            <div id="radio-log" class="flex-1 overflow-y-auto font-mono text-sm sm:text-base pr-2 flex flex-col gap-2">
+                <!-- Text injected via JS -->
+            </div>
+            
+            <p class="text-gray-500 text-center text-xs tracking-[0.2em] mt-4 pt-2 border-t border-red-900">PRESS ANY KEY TO SEVER CONNECTION</p>
+        </div>
+    </div>
+
+    <!-- Dark Red Override Screen (X7B93 -> Level 2) -->
     <div id="override-screen" class="hidden absolute inset-0 bg-[#050505] z-30 flex-col justify-center items-center">
-        <h2 class="text-red text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
+        <h2 class="text-red-500 text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
         <div class="flex gap-2 sm:gap-4 mb-8" id="override-dash-container">
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200 text-red-500 border-red-900"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
         </div>
         <input type="text" id="override-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" spellcheck="false" maxlength="5">
         <p class="text-gray-500 text-sm mb-8 tracking-[0.2em]">INPUT 5-CHARACTER LEVEL 2 HASH</p>
@@ -116,14 +186,11 @@
             <h1 class="text-2xl font-bold tracking-widest text-red-500">SCP FOUNDATION</h1>
             <p class="text-sm opacity-75">SECURE. CONTAIN. PROTECT.</p>
         </div>
-        
-        <!-- Centered Logo via Absolute Positioning -->
         <div class="scp-logo absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center z-20">
             <a href="https://scp-wiki.wikidot.com/" target="_blank" rel="noopener noreferrer" class="transition-transform hover:scale-110 active:scale-95" title="Access Global Database">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo" style="width: 75px; height: 75px; filter: invert(90%) sepia(100%) hue-rotate(310deg) saturate(300%);">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo">
             </a>
         </div>
-
         <div class="flex-1 text-right flex flex-col items-end z-10">
             <div class="flex items-center mb-1">
                 <div class="text-green font-mono text-xl tracking-widest mr-4" id="header-tracker">[ _ _ _ _ _ ]</div>
@@ -139,7 +206,7 @@
             <h2 class="text-3xl font-bold text-red-500 glitch" data-text="LEVEL 1 SECURE WORKSPACE">LEVEL 1 SECURE WORKSPACE</h2>
             <p class="mt-2 text-gray-400">ENCRYPTION LIFTED. NEW DIRECTORIES ACCESSIBLE.</p>
         </div>
-        <div class="output-line mt-4 text-green">HINT: Access point 'L1-HUB' is now available for decryption.</div>
+        <div class="output-line mt-4 text-green">HINT: Access point 'RECOVER' is now available for decryption.</div>
         
         <div class="input-line">
             <span class="prompt">C:\SCiPNET\LEVEL-1></span>
@@ -149,26 +216,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script>
-        window.onload = () => {
-            const authScreen = document.getElementById('auth-screen');
-            const clearance = parseInt(localStorage.getItem('scp_clearance') || '0');
-            
-            setTimeout(() => {
-                // If they bypassed level 0, kick them out
-                if (clearance < 1) {
-                    authScreen.innerHTML = `<div class="text-center"><h2 class="text-red-600 text-4xl font-bold glitch mb-4" data-text="SECURITY BREACH">SECURITY BREACH</h2><p class="text-red-400 text-xl font-mono">CLEARANCE LEVEL 1 REQUIRED.</p><p class="text-gray-500 mt-4 text-sm">Rerouting back to Level 0...</p></div>`;
-                    setTimeout(() => window.location.href = 'index.html', 3000);
-                } else {
-                    authScreen.style.display = 'none';
-                    document.getElementById('main-header').style.display = 'flex';
-                    document.getElementById('terminal-output').style.display = 'flex';
-                    document.getElementById('cmd-input').focus();
-                    updateGlobalTracker();
-                    initAudio(); 
-                }
-            }, 1500);
-        };
-
         let currentClearanceLevel = 1;
         let globalTracker = ['_', '_', '_', '_', '_'];
 
@@ -182,21 +229,52 @@
         function playErrorSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("G2", "4n"); noiseSynth.triggerAttackRelease("8n", "+0.1"); }
         async function initAudio() { if (!audioContextStarted) { await Tone.start(); audioContextStarted = true; } }
 
-        const scpDatabase = {
-            "HELP": { type: "text", content: [ "AVAILABLE COMMANDS:", "  help     - Display this message", "  clear    - Clear terminal output", "  status   - Display system status", "  [CODE]   - Input a file name directly (e.g., 'L1-HUB')" ] },
-            "L1HUB": { type: "app", appName: "ASSESSMENT" }
+        window.onload = () => {
+            const authScreen = document.getElementById('auth-screen');
+            // DEV BYPASS: Hardcoding clearance to 1 for testing
+            const clearance = 1; 
+            
+            setTimeout(() => {
+                if (clearance < 1) {
+                    authScreen.innerHTML = `<div class="text-center"><h2 class="text-red-600 text-4xl font-bold glitch mb-4" data-text="SECURITY BREACH">SECURITY BREACH</h2><p class="text-red-400 text-xl font-mono">CLEARANCE LEVEL 1 REQUIRED.</p><p class="text-gray-500 mt-4 text-sm">Rerouting back to Level 0...</p></div>`;
+                    setTimeout(() => window.location.href = 'index.html', 3000);
+                } else {
+                    authScreen.style.display = 'none';
+                    document.getElementById('main-header').style.display = 'flex';
+                    document.getElementById('terminal-output').style.display = 'flex';
+                    document.getElementById('cmd-input').focus();
+                    updateGlobalTracker(); initAudio(); 
+                }
+            }, 1500);
         };
+
+        setInterval(() => { 
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            document.getElementById('clock').textContent = timeStr;
+        }, 1000);
 
         const terminalOutput = document.getElementById('terminal-output');
         const cmdInput = document.getElementById('cmd-input');
         const inputLine = document.querySelector('.input-line');
-
-        setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
         function scrollToBottom() { terminalOutput.scrollTop = terminalOutput.scrollHeight; }
 
         function updateGlobalTracker() {
             document.getElementById('header-tracker').textContent = `[ ${globalTracker.join(' ')} ]`;
         }
+
+        const scpDatabase = {
+            "HELP": { type: "text", content: [ 
+                "AVAILABLE COMMANDS:", 
+                "  help       - Display this message", 
+                "  clear      - Clear terminal output", 
+                "  search     - Locate database file (e.g. 'SEARCH 173')", 
+                "  radio      - Intercept MTF tactical communications",
+                "  contain    - Open manual magnetic containment override",
+                "  recover    - Launch corrupted archive recovery" 
+            ] },
+            "RECOVER": { type: "app", appName: "ASSESSMENT" },
+            "CONTAIN": { type: "app", appName: "CONTAIN_GAME" }
+        };
 
         function printLine(text, isHtml = false, speed = 10) {
             return new Promise(resolve => {
@@ -217,15 +295,14 @@
             initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
             await printLine(`C:\\SCiPNET\\LEVEL-1> ${fullCmd}`, false, 5);
             
-            // Allow parsing multiple words (e.g., SEARCH 173)
             const args = fullCmd.toUpperCase().split(/\s+/);
             const baseCmd = args[0].replace(/[^A-Z0-9\-]/g, '');
 
             if (baseCmd === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
 
-            if (baseCmd === 'CCTV') {
-                await printLine("> ESTABLISHING SECURE VIDEO LINK TO SITE-19...", false, 20);
-                setTimeout(openCCTV, 1000); return;
+            if (baseCmd === 'RADIO') {
+                await printLine("> SCANNING TACTICAL FREQUENCIES...", false, 20);
+                setTimeout(openRadio, 1000); return;
             }
 
             if (baseCmd === 'SEARCH') {
@@ -240,6 +317,7 @@
             const entry = scpDatabase[baseCmd.replace(/-/g, '')];
             if (entry) {
                 if (entry.type === 'app' && entry.appName === 'ASSESSMENT') openAssessment();
+                else if (entry.type === 'app' && entry.appName === 'CONTAIN_GAME') openContainGame();
                 else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); }
             } else { playErrorSound(); await printLine("<span class='text-red'>ERROR: Command or File not recognized.</span>", true); }
         }
@@ -249,90 +327,300 @@
                 const val = this.value; this.value = ''; this.disabled = true; inputLine.style.display = 'none';
                 await processCommand(val);
                 
-                if (assessmentScreen.classList.contains('hidden') && overrideScreen.classList.contains('hidden')) {
+                if (document.getElementById('assessment-screen').classList.contains('hidden') && 
+                    document.getElementById('containment-screen').classList.contains('hidden') && 
+                    document.getElementById('override-screen').classList.contains('hidden') &&
+                    document.getElementById('radio-screen').classList.contains('hidden')) {
                     inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
                 }
             } else playTypeSound();
         });
 
-        // DEEP LORE ASSESSMENT UI
+        // ------------------
+        // RECOVER APP (L1HUB)
+        // ------------------
         const assessmentScreen = document.getElementById('assessment-screen');
-        const assessmentInput = document.getElementById('assessment-input');
-        const assessmentLog = document.getElementById('assessment-log');
-        let assessmentStep = 0;
-        
-        // The Deep Lore Questions!
-        const level1Queries = [
-            { q: "QUERY 1: The great eel of the Bay of Bengal. What is the specific chemical designation harvested from its excretions?", a: "Y909", frag: "X" },
-            { q: "QUERY 2: Protocol 10-Ezra. What is the required age bracket for the subject?", a: "1025", frag: "7" },
-            { q: "QUERY 3: The Absolute Exclusion Harness. What is the full name of the technician discovered inside?", a: "PIETROWILSON", frag: "B" },
-            { q: "QUERY 4: The Coffee Machine. What specific concept did the agent request to save his injured friend?", a: "MEDICALKNOWLEDGE", frag: "9" },
-            { q: "QUERY 5: The Red Sea Object. What specific religious term do the natives use to describe the massive torsos?", a: "UNCLEAN", frag: "3" }
+        const docTextContainer = document.getElementById('doc-text');
+        const statusDisplay = document.getElementById('doc-status');
+        let currentDocIndex = 0;
+
+        const docPuzzles = [
+            {
+                frag: "X",
+                html: `Subject's jaw can open to four times the norm of an average human. Other facial features remain similar to an average human, with the exception of the eyes, which are also devoid of <input type="text" class="redact-input" maxlength="12" data-ans="PIGMENTATION">. It is not yet known whether subject is <input type="text" class="redact-input" maxlength="5" data-ans="BLIND"> or not. Subject shows no signs of higher brain functions.`
+            },
+            {
+                frag: "7",
+                html: `At this time, no means available to recovery teams are capable of destroying the entity, only able to cause massive <input type="text" class="redact-input" maxlength="8" data-ans="PHYSICAL"> damage. Subject should be contained within a 5m x 5m chamber lined with acid-resistant steel. The chamber is to be filled with <input type="text" class="redact-input" maxlength="12" data-ans="HYDROCHLORIC"> acid until fully submerged.`
+            },
+            {
+                frag: "B",
+                html: `Entity is a humanoid resembling an elderly <input type="text" class="redact-input" maxlength="3" data-ans="MAN"> in an advanced state of decomposition. Subject leaves a highly <input type="text" class="redact-input" maxlength="9" data-ans="CORROSIVE"> mucus on all solid surfaces it touches. When attacking, it attempts to pull victims into its personal <input type="text" class="redact-input" maxlength="6" data-ans="POCKET"> dimension.`
+            },
+            {
+                frag: "9",
+                html: `Entity is a massive, highly dangerous <input type="text" class="redact-input" maxlength="7" data-ans="AQUATIC"> serpent residing in the Bay of Bengal. Despite its threat level, it is classified as <input type="text" class="redact-input" maxlength="8" data-ans="THAUMIEL"> because the Foundation actively harvests a compound it excretes, designated <input type="text" class="redact-input" maxlength="4" data-ans="Y909">, to produce Class-A amnestics.`
+            }
         ];
 
         function openAssessment() {
             assessmentScreen.classList.remove('hidden'); assessmentScreen.classList.add('flex');
-            cmdInput.disabled = true; assessmentLog.innerHTML = '';
-            
-            assessmentStep = globalTracker.findIndex(f => f === '_');
-            if(assessmentStep === -1) assessmentStep = 5;
-
-            printToAssessment("> INITIALIZING LEVEL 1 DEEP LORE PROTOCOL...", "text-red-400");
-            setTimeout(() => { 
-                if(assessmentStep < 5) {
-                    printToAssessment("> WARNING: COGNITOHAZARD FILTERS ARE OFFLINE.", "text-red-500 font-bold");
-                    setTimeout(() => printToAssessment(level1Queries[assessmentStep].q, "text-red-200 mt-4"), 1000);
-                } else {
-                    printToAssessment("ALL QUERIES SATISFIED. MAXIMUM CLEARANCE FOR TIER ACHIEVED.", "text-green font-bold mt-4");
-                }
-            }, 1000);
-            setTimeout(() => assessmentInput.focus(), 2500); playTypeSound();
+            cmdInput.disabled = true; 
+            currentDocIndex = globalTracker.slice(0,4).findIndex(f => f === '_');
+            if(currentDocIndex === -1) currentDocIndex = 4;
+            loadDocument();
+            playTypeSound();
         }
 
-        function closeAssessment() {
+        function loadDocument() {
+            if (currentDocIndex >= 4) {
+                document.getElementById('doc-current').textContent = "4";
+                docTextContainer.innerHTML = `<div class="text-center text-yellow-500 font-bold my-8">PARTIAL HASH RECOVERED.<br><br>MISSING FINAL NODE.<br><br>CURRENT HASH: <span class="text-white bg-black px-2">${globalTracker.join('')}</span><br><br>AWAITING CONTAINMENT RE-ALIGNMENT. RUN 'CONTAIN' PROTOCOL.</div>`;
+                statusDisplay.textContent = "STANDBY";
+                statusDisplay.className = "text-yellow-500 tracking-widest font-bold animate-pulse";
+                document.getElementById('verify-doc-btn').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('verify-doc-btn').style.display = 'block';
+            document.getElementById('doc-current').textContent = (currentDocIndex + 1);
+            statusDisplay.textContent = "AWAITING INPUT";
+            statusDisplay.className = "text-red-500 tracking-widest";
+            
+            docTextContainer.innerHTML = docPuzzles[currentDocIndex].html;
+            
+            const inputs = docTextContainer.querySelectorAll('.redact-input');
+            inputs.forEach((inp, idx) => {
+                inp.addEventListener('input', () => playTypeSound());
+                inp.addEventListener('keydown', (e) => {
+                    if(e.key === 'Enter') document.getElementById('verify-doc-btn').click();
+                });
+            });
+            if(inputs.length > 0) setTimeout(() => inputs[0].focus(), 100);
+        }
+
+        document.getElementById('verify-doc-btn').addEventListener('click', () => {
+            const inputs = docTextContainer.querySelectorAll('.redact-input');
+            let allCorrect = true;
+
+            inputs.forEach(inp => {
+                const guess = inp.value.toUpperCase().trim();
+                const ans = inp.getAttribute('data-ans');
+                if (guess === ans) {
+                    inp.classList.add('success');
+                } else {
+                    allCorrect = false;
+                    inp.value = '';
+                    inp.focus();
+                }
+            });
+
+            if (allCorrect) {
+                playSuccessSound();
+                statusDisplay.textContent = "MATCH ACCEPTED - DECRYPTING";
+                statusDisplay.className = "text-green-500 tracking-widest font-bold animate-pulse";
+                
+                globalTracker[currentDocIndex] = docPuzzles[currentDocIndex].frag;
+                updateGlobalTracker();
+                currentDocIndex++;
+                
+                setTimeout(() => loadDocument(), 1500);
+            } else {
+                playErrorSound();
+                statusDisplay.textContent = "ERROR: INCORRECT DATA";
+                statusDisplay.className = "text-red-600 tracking-widest font-bold";
+                setTimeout(() => { if(statusDisplay.textContent.includes("ERROR")) statusDisplay.textContent = "AWAITING INPUT"; }, 2000);
+            }
+        });
+
+        document.getElementById('close-assessment').addEventListener('click', () => {
             assessmentScreen.classList.add('hidden'); assessmentScreen.classList.remove('flex');
             inputLine.style.display = 'flex'; cmdInput.disabled = false; 
             setTimeout(() => { if (!cmdInput.disabled) cmdInput.focus(); }, 10); 
             playTypeSound();
-        }
-
-        function printToAssessment(text, classes = "text-red-300") {
-            const el = document.createElement('div'); el.className = classes; el.innerHTML = text;
-            assessmentLog.appendChild(el); assessmentLog.scrollTop = assessmentLog.scrollHeight;
-        }
-
-        assessmentInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const val = this.value; this.value = ''; if (!val) return;
-                playTypeSound(); printToAssessment(`> ${val}`, "text-red-500 mb-4 font-bold");
-                
-                if (assessmentStep >= level1Queries.length) return;
-                
-                const normalizedVal = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                const currentData = level1Queries[assessmentStep];
-                
-                if (normalizedVal === currentData.a) {
-                    playSuccessSound();
-                    printToAssessment(`CORRECT: DECRYPTED L2 FRAGMENT: [ ${currentData.frag} ]`, "text-green font-bold mb-4");
-                    
-                    globalTracker[assessmentStep] = currentData.frag;
-                    updateGlobalTracker(); assessmentStep++;
-                    
-                    if (assessmentStep < level1Queries.length) setTimeout(() => printToAssessment(level1Queries[assessmentStep].q, "text-red-200 mt-4"), 1000);
-                    else {
-                        setTimeout(() => {
-                            printToAssessment("ALL QUERIES SATISFIED. MAXIMUM CLEARANCE FOR TIER ACHIEVED.", "text-green font-bold mt-4");
-                            printToAssessment(`LEVEL 2 OVERRIDE HASH: ${globalTracker.join('')}`, "text-green text-xl my-4 glitch");
-                            printToAssessment("INSTRUCTION: Input Hash in the SECURE OVERRIDE panel to upgrade clearance.", "text-white");
-                        }, 1000);
-                    }
-                } else { playErrorSound(); printToAssessment("ERROR: DATA DOES NOT MATCH ARCHIVES.", "text-red-600 font-bold mb-4"); }
-            }
         });
-        document.getElementById('close-assessment').addEventListener('click', closeAssessment);
 
+        // ------------------
+        // CONTAIN GAME
+        // ------------------
+        const containScreen = document.getElementById('containment-screen');
+        const containGrid = document.getElementById('contain-grid');
+        const containFeedback = document.getElementById('contain-feedback');
+        
+        let gridState = [];
+        let containLevel = 0;
+        const gridSizes = [2, 3, 5]; 
 
-        // SECURE OVERRIDE LOGIC
+        function openContainGame() {
+            containScreen.classList.remove('hidden'); containScreen.classList.add('flex');
+            cmdInput.disabled = true;
+            containLevel = 0;
+            startContainLevel();
+        }
+
+        function startContainLevel() {
+            let size = gridSizes[containLevel];
+            containFeedback.textContent = `SYSTEM CRITICAL - SECTOR ${containLevel + 1}`;
+            containFeedback.className = "text-red-500 font-mono h-6 animate-pulse font-bold tracking-widest mb-4";
+            
+            containGrid.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+            
+            gridState = Array(size * size).fill(true);
+            let scrambles = size === 2 ? 3 : (size === 3 ? 7 : 15);
+            for(let i=0; i<scrambles; i++) {
+                let r = Math.floor(Math.random() * size);
+                let c = Math.floor(Math.random() * size);
+                flipNode(r, c, size);
+            }
+            if(gridState.every(v => v)) flipNode(0, 0, size);
+            
+            renderContainGrid(size);
+        }
+
+        function flipNode(r, c, size) {
+            const toggle = (row, col) => {
+                if(row >= 0 && row < size && col >= 0 && col < size) {
+                    let idx = row * size + col;
+                    gridState[idx] = !gridState[idx];
+                }
+            };
+            toggle(r, c);
+            toggle(r-1, c); toggle(r+1, c);
+            toggle(r, c-1); toggle(r, c+1);
+        }
+
+        function renderContainGrid(size) {
+            containGrid.innerHTML = '';
+            for(let i=0; i<size*size; i++) {
+                let r = Math.floor(i / size);
+                let c = i % size;
+                let btn = document.createElement('button');
+                btn.className = `w-full h-full border-2 node-btn ${gridState[i] ? 'node-stable' : 'node-unstable'}`;
+                btn.onclick = () => {
+                    playTypeSound();
+                    flipNode(r, c, size);
+                    renderContainGrid(size);
+                    checkContainWin(size);
+                };
+                containGrid.appendChild(btn);
+            }
+        }
+
+        function checkContainWin(size) {
+            if(gridState.every(v => v)) {
+                playSuccessSound();
+                containLevel++;
+                
+                if (containLevel < gridSizes.length) {
+                    containFeedback.textContent = `SECTOR ${containLevel} STABILIZED. ESCALATING...`;
+                    containFeedback.className = "text-yellow-500 font-mono h-6 font-bold tracking-widest mb-4";
+                    Array.from(containGrid.children).forEach(btn => btn.disabled = true);
+                    
+                    setTimeout(() => startContainLevel(), 1500);
+                } else {
+                    containFeedback.textContent = "ALL SECTORS STABILIZED";
+                    containFeedback.className = "text-blue-500 font-mono h-6 font-bold tracking-widest mb-4";
+                    
+                    globalTracker[4] = '3';
+                    updateGlobalTracker();
+                    
+                    Array.from(containGrid.children).forEach(btn => btn.disabled = true);
+                    
+                    setTimeout(() => {
+                        containScreen.classList.add('hidden'); containScreen.classList.remove('flex');
+                        inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                        printLine("<span class='text-blue-400'>[SYSTEM]: Magnetic Containment Field fully restored. Final hash fragment decrypted.</span>", true);
+                    }, 2000);
+                }
+            }
+        }
+
+        document.getElementById('close-contain').addEventListener('click', () => {
+            containScreen.classList.add('hidden'); containScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; 
+            setTimeout(() => { if (!cmdInput.disabled) cmdInput.focus(); }, 10); 
+            playTypeSound();
+        });
+
+        // ------------------
+        // RADIO APP
+        // ------------------
+        const radioScreen = document.getElementById('radio-screen');
+        const radioLog = document.getElementById('radio-log');
+        const audioVisualizer = document.getElementById('audio-visualizer');
+        let radioTimeout; let visualizerInterval;
+
+        const mtfTranscript = [
+            "ESTABLISHING SECURE CONNECTION...",
+            "[STATIC]",
+            "MTF Epsilon-11 'Nine-Tailed Fox', entering Heavy Containment.",
+            "Command, multiple Keter-class breaches detected in Sector 4.",
+            "[STATIC]",
+            "We are taking heavy casualties. Visual on SCP-106.",
+            "Protocol 10-Ezra is completely compromised.",
+            "Requesting immediate backup and-",
+            "[SCREAMING - AUDIO CORRUPTED]",
+            "WARNING: LETHAL COGNITOHAZARD DETECTED IN SIGNAL.",
+            "SEVERING CONNECTION TO PREVENT INFECTION..."
+        ];
+
+        function openRadio() {
+            radioScreen.classList.remove('hidden'); radioScreen.classList.add('flex');
+            cmdInput.disabled = true; radioLog.innerHTML = ''; audioVisualizer.innerHTML = '';
+            
+            for(let i=0; i<30; i++) {
+                let bar = document.createElement('div');
+                bar.className = 'flex-1 bg-red-600 opacity-80 transition-all duration-75';
+                bar.style.height = '5%';
+                audioVisualizer.appendChild(bar);
+            }
+
+            visualizerInterval = setInterval(() => {
+                Array.from(audioVisualizer.children).forEach(bar => {
+                    bar.style.height = `${10 + Math.random() * 80}%`;
+                });
+            }, 100);
+
+            let step = 0;
+            const playTranscript = () => {
+                if(step >= mtfTranscript.length || radioScreen.classList.contains('hidden')) return;
+                
+                const line = mtfTranscript[step];
+                const div = document.createElement('div');
+                
+                if (line.includes("STATIC") || line.includes("CORRUPTED")) {
+                    div.innerHTML = `<span class="text-red-500 font-bold glitch" data-text="${line}">${line}</span>`;
+                    playErrorSound(); 
+                } else if (line.includes("WARNING")) {
+                    div.innerHTML = `<span class="text-yellow-500 font-bold">${line}</span>`;
+                    playSuccessSound();
+                } else {
+                    div.innerHTML = `<span class="text-gray-300">> ${line}</span>`;
+                    playTypeSound();
+                }
+                
+                radioLog.appendChild(div);
+                radioLog.scrollTop = radioLog.scrollHeight;
+                
+                step++;
+                let delay = line.includes("STATIC") ? 800 : 2000;
+                radioTimeout = setTimeout(playTranscript, delay);
+            };
+            
+            playTranscript();
+
+            const closeRadio = (e) => {
+                clearTimeout(radioTimeout); clearInterval(visualizerInterval);
+                radioScreen.classList.add('hidden'); radioScreen.classList.remove('flex');
+                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                document.removeEventListener('keydown', closeRadio);
+            };
+            setTimeout(() => document.addEventListener('keydown', closeRadio), 500);
+        }
+
+        // ------------------
+        // OVERRIDE (X7B93)
+        // ------------------
         const overrideScreen = document.getElementById('override-screen');
         const overrideInput = document.getElementById('override-input');
         const dashChars = document.querySelectorAll('.dash-char');
@@ -382,10 +670,15 @@
             }
         }
 
-        // Global focus handler to fix keyboard stealing
         document.body.addEventListener('click', (e) => {
             if (!overrideScreen.classList.contains('hidden')) overrideInput.focus();
-            else if (!assessmentScreen.classList.contains('hidden')) assessmentInput.focus();
+            else if (!document.getElementById('assessment-screen').classList.contains('hidden')) {
+                if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                    const inputs = document.querySelectorAll('.redact-input:not(.success)');
+                    if(inputs.length > 0) inputs[0].focus();
+                }
+            }
+            else if (!containScreen.classList.contains('hidden')) { /* Let them click buttons */ }
             else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.tagName !== 'BUTTON') cmdInput.focus();
         });
     </script>
