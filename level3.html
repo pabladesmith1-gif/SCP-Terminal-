@@ -1,1 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP Foundation - Level 3 Workspace</title>
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --scp-black: #050505; 
+            --scp-violet: #a832a8;
+            --scp-violet-dim: #4a134a;
+            --scp-violet-bright: #e066e0;
+            --scp-white: #e0e0e0;
+            --scp-error: #ff003c;
+        }
 
+        body {
+            background-color: var(--scp-black); color: var(--scp-violet-bright);
+            font-family: 'Share Tech Mono', monospace; overflow: hidden;
+            display: flex; flex-direction: column; height: 100vh; margin: 0; user-select: none;
+        }
+
+        body::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(168, 50, 168, 0.04), rgba(255, 0, 0, 0.02));
+            z-index: 2; background-size: 100% 3px, 4px 100%; pointer-events: none;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.95; } 5% { opacity: 0.85; } 10% { opacity: 0.95; }
+            15% { opacity: 1; } 20% { opacity: 0.9; } 25% { opacity: 0.95; }
+            30% { opacity: 1; } 35% { opacity: 0.8; } 40% { opacity: 0.95; }
+            50% { opacity: 1; } 60% { opacity: 0.9; } 70% { opacity: 0.95; }
+            80% { opacity: 1; } 90% { opacity: 0.85; } 100% { opacity: 0.95; }
+        }
+        .crt { animation: flicker 0.15s infinite; }
+
+        .terminal-header { border-bottom: 3px solid var(--scp-violet); padding: 1rem; background-color: rgba(168, 50, 168, 0.05); }
+        .terminal-content { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
+        .output-line { margin-bottom: 0.5rem; line-height: 1.4; }
+        
+        .input-line { display: flex; align-items: center; margin-top: 1rem; }
+        .prompt { margin-right: 0.5rem; color: var(--scp-violet); font-weight: bold; }
+        input[type="text"] {
+            background: transparent; border: none; color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace; font-size: 1rem;
+            flex-grow: 1; outline: none; caret-color: var(--scp-violet-bright);
+        }
+        
+        .glitch-heavy { position: relative; display: inline-block; }
+        .glitch-heavy::before, .glitch-heavy::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--scp-black);
+        }
+        .glitch-heavy::before { left: 3px; text-shadow: -3px 0 var(--scp-error); clip: rect(24px, 550px, 90px, 0); animation: glitch-anim-2 2s infinite linear alternate-reverse; }
+        .glitch-heavy::after { left: -3px; text-shadow: -3px 0 var(--scp-violet-bright); clip: rect(85px, 550px, 140px, 0); animation: glitch-anim-2 1.5s infinite linear alternate-reverse; }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(12px, 9999px, 83px, 0); transform: translate(0); }
+            20% { clip: rect(93px, 9999px, 22px, 0); transform: translate(-2px, 2px); }
+            40% { clip: rect(49px, 9999px, 7px, 0); transform: translate(2px, -2px); }
+            60% { clip: rect(14px, 9999px, 93px, 0); transform: translate(-2px, -2px); }
+            80% { clip: rect(77px, 9999px, 14px, 0); transform: translate(2px, 2px); }
+            100% { clip: rect(26px, 9999px, 53px, 0); transform: translate(0); }
+        }
+
+        /* NEW: EXTRACT Grid Shake Animations */
+        @keyframes grid-shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-2px, 0px) rotate(1deg); }
+            40% { transform: translate(2px, 1px) rotate(-1deg); }
+            60% { transform: translate(-1px, 2px) rotate(0deg); }
+            80% { transform: translate(1px, -1px) rotate(1deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .grid-shake { animation: grid-shake 0.3s infinite; }
+        .grid-shake-fast { animation: grid-shake 0.1s infinite; }
+
+        #breach-timer-container, #extract-timer-container { width: 100%; height: 20px; border: 2px solid var(--scp-error); margin: 20px 0; overflow: hidden; background: #220000; }
+        #breach-timer-bar, #extract-timer-bar { width: 100%; height: 100%; background-color: var(--scp-error); transition: width 0.1s linear; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 16px; border-radius: 0; background: var(--scp-violet-bright); cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px var(--scp-violet); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: var(--scp-violet-dim); border: 1px solid #000; }
+        
+        ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #0a000a; } ::-webkit-scrollbar-thumb { background: #3d003d; }
+    </style>
+</head>
+<body class="crt relative">
+
+    <!-- Auth Verification Screen -->
+    <div id="auth-screen" class="absolute inset-0 bg-[#050505] z-50 flex justify-center items-center">
+        <h2 class="text-violet-500 text-3xl font-mono animate-pulse glitch-heavy" data-text="VERIFYING KETER-CLASS TOKENS...">VERIFYING KETER-CLASS TOKENS...</h2>
+    </div>
+
+    <!-- BREACH APP -->
+    <div id="breach-screen" class="hidden absolute inset-0 bg-[#0a0000] z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-3xl border-4 border-red-800 bg-[#050000] p-8 shadow-[0_0_50px_rgba(255,0,0,0.3)] relative flex flex-col">
+            <div class="flex justify-between items-center border-b-2 border-red-800 pb-2 mb-6">
+                <h2 class="text-red-500 text-3xl font-bold tracking-[0.2em] glitch-heavy" data-text="LIVE CONTAINMENT BREACH">LIVE CONTAINMENT BREACH</h2>
+                <span id="breach-counter" class="text-red-500 font-mono text-xl animate-pulse">CRISIS 1 OF 3</span>
+            </div>
+            
+            <div class="bg-[#1a0000] border border-red-900 p-6 mb-6 min-h-[150px] flex items-center shadow-[inset_0_0_20px_rgba(0,0,0,1)]">
+                <p id="breach-scenario" class="text-gray-300 font-mono text-lg leading-relaxed"></p>
+            </div>
+
+            <div id="breach-timer-container">
+                <div id="breach-timer-bar"></div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-red-500 text-xs tracking-widest uppercase">Input Threat Designation (SCP-XXX) to deploy countermeasures:</label>
+                <div class="flex">
+                    <span class="text-red-500 font-mono text-2xl mr-2 mt-1">SCP-</span>
+                    <input type="text" id="breach-input" class="bg-black border-b-2 border-red-600 text-white font-mono text-3xl w-32 text-center outline-none uppercase tracking-widest focus:border-red-400" autocomplete="off" maxlength="4">
+                </div>
+            </div>
+            
+            <button id="close-breach" class="absolute top-4 right-4 text-red-900 hover:text-red-500 transition-colors tracking-widest text-xs">[ ABORT SIMULATION ]</button>
+        </div>
+    </div>
+
+    <!-- MNEMONIC APP -->
+    <div id="mnemonic-screen" class="hidden absolute inset-0 bg-[#020005] z-40 flex-col items-center justify-center p-4 overflow-hidden">
+        <div class="w-full max-w-2xl border-2 border-violet-900 bg-[#05000a] p-8 shadow-[0_0_40px_rgba(168,50,168,0.3)] relative flex flex-col items-center">
+            <h2 class="text-violet-500 text-2xl font-bold mb-8 tracking-[0.3em] glitch-heavy" data-text="COGNITIVE PARADOX">COGNITIVE PARADOX</h2>
+            
+            <div class="h-48 w-full flex items-center justify-center mb-8 relative">
+                <p id="antimeme-text" class="text-gray-400 font-mono text-center text-lg leading-relaxed select-none transition-all duration-[50ms] ease-out drop-shadow-[0_0_8px_rgba(168,50,168,0.5)]">
+                    [DATA LOST]<br>We don't know what it is.<br>We only know what it isn't.<br>It is not a sphere. It is not safe.<br>What isn't it?
+                </p>
+            </div>
+
+            <div class="flex flex-col items-center w-full z-20">
+                <label class="text-violet-500 text-xs tracking-widest mb-2">INPUT ENTITY DESIGNATION (XXX)</label>
+                <div class="flex items-center">
+                    <span class="text-violet-700 font-mono text-2xl mr-2">SCP-</span>
+                    <input type="text" id="mnemonic-input" class="bg-transparent border-b-2 border-violet-700 text-violet-300 font-mono text-2xl w-32 text-center outline-none uppercase tracking-widest focus:border-violet-400 mb-4" autocomplete="off" maxlength="3">
+                </div>
+            </div>
+            <button id="close-mnemonic" class="text-violet-900 hover:text-violet-500 transition-colors tracking-widest text-xs mt-4 z-20">[ ABORT DEDUCTION ]</button>
+        </div>
+    </div>
+
+    <!-- SIGNAL APP -->
+    <div id="signal-screen" class="hidden absolute inset-0 bg-[#05000a] z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl border-2 border-violet-800 bg-[#0a0011] p-8 shadow-[0_0_40px_rgba(168,50,168,0.2)] flex flex-col">
+            <h2 class="text-violet-400 text-2xl font-bold mb-6 tracking-[0.2em] text-center border-b border-violet-900 pb-4">KETER-BAND SIGNAL INTERCEPT</h2>
+            
+            <div class="bg-black border border-violet-900 p-4 mb-8 flex flex-col items-center justify-center h-32 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,var(--scp-violet)_2px,var(--scp-violet)_4px)] pointer-events-none"></div>
+                <div class="text-gray-400 text-xs tracking-widest mb-2 z-10">SIGNAL CLARITY</div>
+                <div id="signal-clarity" class="text-5xl font-mono text-violet-500 font-bold z-10 drop-shadow-[0_0_10px_rgba(168,50,168,0.8)]">0%</div>
+            </div>
+
+            <div class="flex flex-col gap-8 mb-8">
+                <div class="flex flex-col">
+                    <div class="flex justify-between text-violet-300 text-xs font-mono mb-2 tracking-widest">
+                        <span>WAVE FREQUENCY</span><span id="val-freq">50</span>
+                    </div>
+                    <input type="range" id="slider-freq" min="0" max="100" value="50">
+                </div>
+                <div class="flex flex-col">
+                    <div class="flex justify-between text-violet-300 text-xs font-mono mb-2 tracking-widest">
+                        <span>AMPLITUDE MODULATION</span><span id="val-amp">50</span>
+                    </div>
+                    <input type="range" id="slider-amp" min="0" max="100" value="50">
+                </div>
+                <div class="flex flex-col">
+                    <div class="flex justify-between text-violet-300 text-xs font-mono mb-2 tracking-widest">
+                        <span>HUME FIELD STABILIZER</span><span id="val-hume">50</span>
+                    </div>
+                    <input type="range" id="slider-hume" min="0" max="100" value="50">
+                </div>
+            </div>
+            <button id="close-signal" class="text-violet-800 hover:text-violet-400 transition-colors tracking-widest text-sm">[ SEVER CONNECTION ]</button>
+        </div>
+    </div>
+
+    <!-- NEW EXTRACT APP (Replaces Ethics) -->
+    <div id="extract-screen" class="hidden absolute inset-0 bg-[#050005] z-50 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl border-2 border-violet-700 bg-black p-6 sm:p-8 shadow-[0_0_40px_rgba(168,50,168,0.4)] relative flex flex-col items-center overflow-hidden">
+            <h2 class="text-violet-400 text-2xl sm:text-3xl font-bold mb-2 tracking-[0.2em] text-center w-full glitch-heavy" data-text="DATA CORRUPTION DETECTED">DATA CORRUPTION DETECTED</h2>
+            <p class="text-gray-400 text-sm tracking-widest mb-4 border-b border-violet-900 pb-4 w-full text-center">ISOLATE THE SINGLE STABLE SIGNATURE BEFORE NEURAL OVERLOAD.</p>
+            
+            <div id="extract-timer-container">
+                <div id="extract-timer-bar" class="!bg-violet-500"></div>
+            </div>
+
+            <!-- The Matrix Grid -->
+            <div class="relative w-full h-[400px] bg-[#030005] border border-violet-900/50 p-2 sm:p-4 overflow-hidden flex items-center justify-center">
+                <!-- Scanlines -->
+                <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(168,50,168,0.05)_1px,transparent_1px)] bg-[length:100%_4px] z-10"></div>
+                
+                <div id="extract-grid" class="relative z-20">
+                    <!-- Populates via JS -->
+                </div>
+            </div>
+
+            <button id="close-extract" class="text-violet-800 hover:text-violet-400 transition-colors tracking-widest text-xs mt-6 font-bold">[ ABORT EXTRACTION ]</button>
+        </div>
+    </div>
+
+    <!-- O5 Override Screen -->
+    <div id="override-screen" class="hidden absolute inset-0 bg-[#050505] z-30 flex-col justify-center items-center">
+        <h2 class="text-violet-500 text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch-heavy text-center" data-text="O5 COMMAND UPGRADE">O5 COMMAND UPGRADE</h2>
+        <div class="flex gap-2 sm:gap-4 mb-8" id="override-dash-container">
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-violet-900 flex items-center justify-center font-mono transition-all duration-200 text-violet-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-violet-900 flex items-center justify-center font-mono transition-all duration-200 text-violet-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-violet-900 flex items-center justify-center font-mono transition-all duration-200 text-violet-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-violet-900 flex items-center justify-center font-mono transition-all duration-200 text-violet-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-violet-900 flex items-center justify-center font-mono transition-all duration-200 text-violet-500"></span>
+        </div>
+        <input type="text" id="override-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" spellcheck="false" maxlength="5">
+        <p class="text-gray-500 text-sm mb-8 tracking-[0.2em]">INPUT 5-CHARACTER O5 HASH</p>
+        <button id="cancel-override" class="text-gray-500 hover:text-white transition-colors tracking-widest text-sm">[ CANCEL ]</button>
+    </div>
+
+    <!-- Main Terminal Interface -->
+    <div class="terminal-header relative flex" style="display: none;" id="main-header">
+        <div class="flex-1 z-10">
+            <h1 class="text-2xl font-bold tracking-widest text-violet-500">SCP FOUNDATION</h1>
+            <p class="text-sm text-gray-400">SECURE. CONTAIN. PROTECT.</p>
+        </div>
+        <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center z-20 hover:scale-110 active:scale-95 transition-transform cursor-pointer">
+            <a href="https://scp-wiki.wikidot.com/" target="_blank" rel="noopener noreferrer" title="Access Global Database">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo" style="width: 75px; height: 75px; filter: invert(40%) sepia(80%) saturate(1000%) hue-rotate(270deg) brightness(90%) contrast(150%);">
+            </a>
+        </div>
+        <div class="flex-1 text-right flex flex-col items-end z-10">
+            <div class="flex items-center mb-1">
+                <div class="text-white font-mono text-xl tracking-widest mr-4" id="header-tracker">[ _ _ _ _ _ ]</div>
+                <p class="text-sm text-red-500 font-bold tracking-widest animate-pulse">CLEARANCE: LEVEL 3</p>
+            </div>
+            <button id="override-btn" class="text-xs mb-1 text-violet-700 hover:text-white transition-colors">[ O5 OVERRIDE ]</button>
+            <p class="text-xs text-gray-500" id="clock">00:00:00</p>
+        </div>
+    </div>
+
+    <div class="terminal-content" id="terminal-output" style="display: none;">
+        <div class="my-6 border-y-2 border-violet-700 py-4 text-center bg-violet-900 bg-opacity-20 w-full shadow-[inset_0_0_20px_rgba(168,50,168,0.2)]">
+            <h2 class="text-3xl font-bold text-violet-400 glitch-heavy" data-text="LEVEL 3: KETER CONTAINMENT">LEVEL 3: KETER CONTAINMENT</h2>
+            <p class="mt-2 text-gray-400">WARNING: REALITY INSTABILITY DETECTED IN THIS SECTOR.</p>
+        </div>
+        
+        <div class="input-line">
+            <span class="prompt" id="cmd-prompt">C:\SCiPNET\LEVEL-3></span>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        // DEV BYPASS: Set to 3 for testing
+        let currentClearanceLevel = 3; 
+        let globalTracker = ['_', '_', '_', '_', '_'];
+
+        let audioContextStarted = false;
+        const typeSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.02, sustain: 0, release: 0.01 } }).toDestination(); typeSynth.volume.value = -25;
+        const errorSynth = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4, attackCurve: "exponential" } }).toDestination(); errorSynth.volume.value = -10;
+        const successSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.05, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination(); successSynth.volume.value = -15;
+        const signalNoise = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 1, decay: 0.1, sustain: 1, release: 1 } }).toDestination(); signalNoise.volume.value = -Infinity;
+
+        function playTypeSound() { if (!audioContextStarted) return; typeSynth.triggerAttackRelease(["E3", "G3", "B3"][Math.floor(Math.random() * 3)], "64n"); }
+        function playSuccessSound() { if (!audioContextStarted) return; successSynth.triggerAttackRelease(["C5", "E5", "G5"], "4n"); }
+        function playErrorSound() { if (!audioContextStarted) return; errorSynth.triggerAttackRelease("C1", "2n"); }
+        async function initAudio() { if (!audioContextStarted) { await Tone.start(); audioContextStarted = true; } }
+
+        window.onload = () => {
+            const authScreen = document.getElementById('auth-screen');
+            setTimeout(() => {
+                if (currentClearanceLevel < 3) {
+                    authScreen.innerHTML = `<div class="text-center"><h2 class="text-red-600 text-4xl font-bold glitch-heavy mb-4" data-text="SECURITY BREACH">SECURITY BREACH</h2><p class="text-red-400 text-xl font-mono">CLEARANCE LEVEL 3 REQUIRED.</p></div>`;
+                    setTimeout(() => window.location.href = 'index.html', 3000);
+                } else {
+                    authScreen.style.display = 'none';
+                    document.getElementById('main-header').style.display = 'flex';
+                    document.getElementById('terminal-output').style.display = 'flex';
+                    document.getElementById('cmd-input').focus();
+                    updateGlobalTracker(); initAudio(); 
+                }
+            }, 1500);
+        };
+
+        setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
+
+        const terminalOutput = document.getElementById('terminal-output');
+        const cmdInput = document.getElementById('cmd-input');
+        const inputLine = document.querySelector('.input-line');
+        function scrollToBottom() { terminalOutput.scrollTop = terminalOutput.scrollHeight; }
+        function updateGlobalTracker() { document.getElementById('header-tracker').textContent = `[ ${globalTracker.join(' ')} ]`; }
+
+        const scpDatabase = {
+            "HELP": { type: "text", content: [ 
+                "AVAILABLE COMMANDS:", 
+                "  help       - Display this message", 
+                "  clear      - Clear terminal output",
+                "  breach     - Initialize Live Containment Management",
+                "  mnemonic   - Resolve Cognitive Paradox",
+                "  signal     - Open Keter-Band Signal Interceptor",
+                "  extract    - Isolate corrupted data signatures",
+                "  purge      - Initiate localized memetic purge"
+            ] },
+            "BREACH": { type: "app", appName: "BREACH_GAME" },
+            "MNEMONIC": { type: "app", appName: "MNEMONIC_GAME" },
+            "SIGNAL": { type: "app", appName: "SIGNAL_GAME" },
+            "EXTRACT": { type: "app", appName: "EXTRACT_GAME" },
+            "PURGE": { type: "app", appName: "PURGE_EFFECT" }
+        };
+
+        function printLine(text, speed = 10, isHtml = true) {
+            return new Promise(resolve => {
+                const line = document.createElement('div'); line.className = 'output-line'; terminalOutput.insertBefore(line, inputLine);
+                if (isHtml) { line.innerHTML = text; scrollToBottom(); resolve(); } 
+                else {
+                    let i = 0;
+                    function typeChar() {
+                        if (i < text.length) { line.textContent += text.charAt(i); i++; scrollToBottom(); setTimeout(typeChar, speed); } 
+                        else resolve();
+                    }
+                    typeChar();
+                }
+            });
+        }
+
+        async function processCommand(cmd) {
+            initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
+            await printLine(`<span class='text-violet-500'>C:\\SCiPNET\\LEVEL-3></span> ${fullCmd}`, 0, true);
+            
+            const args = fullCmd.toUpperCase().split(/\s+/);
+            const base = args[0].replace(/[^A-Z0-9\-]/g, '');
+
+            if (base === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
+            
+            const entry = scpDatabase[base.replace(/-/g, '')];
+            if (entry) {
+                if (entry.type === 'app' && entry.appName === 'BREACH_GAME') openBreach();
+                else if (entry.type === 'app' && entry.appName === 'MNEMONIC_GAME') openMnemonic();
+                else if (entry.type === 'app' && entry.appName === 'SIGNAL_GAME') openSignal();
+                else if (entry.type === 'app' && entry.appName === 'EXTRACT_GAME') openExtract();
+                else if (entry.type === 'app' && entry.appName === 'PURGE_EFFECT') {
+                    const flash = document.createElement('div');
+                    flash.className = 'fixed inset-0 z-[9999] bg-white mix-blend-difference pointer-events-none';
+                    document.body.appendChild(flash);
+                    let op = 1;
+                    successSynth.triggerAttackRelease("C6", "16n");
+                    const fade = setInterval(() => {
+                        op -= 0.1; flash.style.opacity = op;
+                        if(op <= 0) { clearInterval(fade); flash.remove(); }
+                    }, 30);
+                    await printLine("<span class='text-green-500 font-bold'>[SYSTEM]: LOCALIZED MEMETIC PURGE COMPLETE. NEURAL PATHWAYS CLEARED.</span>", 0, true);
+                }
+                else for (const line of entry.content) { await printLine(line, 0, true); await new Promise(r => setTimeout(r, 100)); }
+            } else { playErrorSound(); await printLine("<span class='text-red-500'>ERROR: Command or File not recognized.</span>", 0, true); }
+        }
+
+        cmdInput.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                const val = this.value; this.value = ''; this.disabled = true; inputLine.style.display = 'none';
+                await processCommand(val);
+                
+                if (document.getElementById('breach-screen').classList.contains('hidden') && 
+                    document.getElementById('mnemonic-screen').classList.contains('hidden') &&
+                    document.getElementById('signal-screen').classList.contains('hidden') &&
+                    document.getElementById('extract-screen').classList.contains('hidden') &&
+                    document.getElementById('override-screen').classList.contains('hidden')) {
+                    inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
+                }
+            } else playTypeSound();
+        });
+
+        const breachScreen = document.getElementById('breach-screen');
+        const breachScenario = document.getElementById('breach-scenario');
+        const breachInput = document.getElementById('breach-input');
+        const breachTimerBar = document.getElementById('breach-timer-bar');
+        
+        let breachIndex = 0; let breachTimer; let timeLeft = 15000; const TIME_LIMIT = 15000;
+
+        const breachCrises = [
+            { text: "WARNING: Contagious crystal infection detected in Sector 4. Organic matter rapidly crystallizing upon contact. Immediate quarantine required.", target: "409" },
+            { text: "WARNING: Highly corrosive humanoid phasing through solid concrete containment walls. Leaving black mucosal trail. Target is hunting.", target: "106" },
+            { text: "WARNING: Massive reptilian creature rapidly mutating to survive hydrochloric acid immersion. Kinetic weapons ineffective.", target: "682" }
+        ];
+
+        function openBreach() {
+            breachScreen.classList.remove('hidden'); breachScreen.classList.add('flex');
+            cmdInput.disabled = true;
+            breachIndex = globalTracker.slice(0,2).findIndex(f => f === '_');
+            if(breachIndex === -1) breachIndex = 3; 
+            loadBreachScenario();
+        }
+
+        function loadBreachScenario() {
+            clearInterval(breachTimer); breachInput.value = '';
+            
+            if (breachIndex >= 3) {
+                document.getElementById('breach-counter').textContent = "CRISES AVERTED";
+                document.getElementById('breach-counter').className = "text-green-500 font-mono text-xl";
+                breachScenario.innerHTML = `<span class="text-green-500 font-bold tracking-widest block text-center mt-8">CONTAINMENT RESTORED.<br><br>HASH FRAGMENTS DECRYPTED:<br><br><span class="bg-black text-white px-4 py-2 border border-green-500">[ V ] [ 0 ]</span><br><br>PROCEED TO 'MNEMONIC' PARADOX RESOLUTION.</span>`;
+                breachInput.disabled = true; breachTimerBar.style.width = '100%'; breachTimerBar.style.backgroundColor = '#22c55e';
+                return;
+            }
+
+            document.getElementById('breach-counter').textContent = `CRISIS ${breachIndex + 1} OF 3`;
+            breachScenario.textContent = breachCrises[breachIndex].text;
+            breachInput.disabled = false; setTimeout(() => breachInput.focus(), 100);
+            
+            timeLeft = TIME_LIMIT; breachTimerBar.style.backgroundColor = '#ff003c';
+            breachTimer = setInterval(() => {
+                timeLeft -= 50; breachTimerBar.style.width = `${(timeLeft / TIME_LIMIT) * 100}%`;
+                if (timeLeft <= 0) { clearInterval(breachTimer); failBreach(); }
+            }, 50);
+        }
+
+        breachInput.addEventListener('input', function() { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); playTypeSound(); });
+        breachInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (this.value === breachCrises[breachIndex].target) {
+                    playSuccessSound(); clearInterval(breachTimer); breachIndex++;
+                    
+                    if (breachIndex >= 3) {
+                        globalTracker[0] = 'V'; globalTracker[1] = '0';
+                        updateGlobalTracker();
+                    }
+                    breachScenario.innerHTML = "<span class='text-green-500 font-bold'>> COUNTERMEASURE DEPLOYED. THREAT NEUTRALIZED.</span>";
+                    setTimeout(loadBreachScenario, 1500);
+                } else {
+                    this.value = ''; playErrorSound();
+                    timeLeft -= 2000; if (timeLeft < 0) timeLeft = 0;
+                    breachScreen.style.backgroundColor = "#330000"; setTimeout(() => breachScreen.style.backgroundColor = "#0a0000", 150);
+                }
+            }
+        });
+
+        async function failBreach() {
+            breachInput.disabled = true; playErrorSound();
+            breachScenario.innerHTML = "<span class='text-red-500 font-bold glitch-heavy text-2xl' data-text='FACILITY OVERRUN'>FACILITY OVERRUN</span><br><br>ALPHA WARHEAD DETONATION INITIATED.";
+            breachTimerBar.style.width = '0%';
+            await new Promise(r => setTimeout(r, 2500));
+            
+            breachScreen.classList.add('hidden'); breachScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+            await printLine(`<span class='text-red-500 font-bold'>[SYSTEM]: SIMULATION FAILED. HASH EXTRACT ABORTED.</span>`, 0, true);
+        }
+
+        document.getElementById('close-breach').addEventListener('click', () => {
+            clearInterval(breachTimer); breachScreen.classList.add('hidden'); breachScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; setTimeout(() => cmdInput.focus(), 10); playTypeSound();
+        });
+
+        const mnemonicScreen = document.getElementById('mnemonic-screen');
+        const antimemeText = document.getElementById('antimeme-text');
+        const mnemonicInput = document.getElementById('mnemonic-input');
+
+        function openMnemonic() {
+            if (globalTracker[1] === '_') {
+                playErrorSound(); printLine("<span class='text-red-500'>ERROR: MUST SECURE FIRST 2 FRAGMENTS VIA 'BREACH' BEFORE MNEMONIC DECRYPTION.</span>", 0, true); return;
+            }
+            mnemonicScreen.classList.remove('hidden'); mnemonicScreen.classList.add('flex');
+            cmdInput.disabled = true; mnemonicInput.value = '';
+            
+            if (globalTracker[2] !== '_') {
+                antimemeText.innerHTML = "<span class='text-green-500 font-bold'>PARADOX RESOLVED.</span><br>YOU REMEMBERED.<br><br>PROCEED TO 'SIGNAL' PROTOCOL.";
+                mnemonicInput.disabled = true;
+            } else {
+                antimemeText.innerHTML = "[DATA LOST]<br>We don't know what it is.<br>We only know what it isn't.<br>It is not a sphere. It is not safe.<br>What isn't it?";
+                mnemonicInput.disabled = false;
+                setTimeout(() => mnemonicInput.focus(), 100);
+            }
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (mnemonicScreen.classList.contains('hidden') || globalTracker[2] !== '_') return;
+            const rect = antimemeText.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const dist = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+            
+            let opacity = Math.min(1, Math.max(0, (dist - 80) / 200));
+            let blur = Math.max(0, 10 - (dist / 30));
+            
+            antimemeText.style.opacity = opacity;
+            antimemeText.style.filter = `blur(${blur}px)`;
+            
+            let angle = Math.atan2(centerY - e.clientY, centerX - e.clientX);
+            let pushDist = Math.max(0, 100 - dist);
+            antimemeText.style.transform = `translate(${Math.cos(angle) * pushDist}px, ${Math.sin(angle) * pushDist}px)`;
+        });
+
+        mnemonicInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (this.value === '055') {
+                    playSuccessSound();
+                    antimemeText.style.opacity = 1; antimemeText.style.filter = 'blur(0px)'; antimemeText.style.transform = 'translate(0px, 0px)';
+                    antimemeText.innerHTML = "<span class='text-green-500 font-bold'>PARADOX RESOLVED.</span><br>YOU REMEMBERED.";
+                    this.disabled = true;
+                    
+                    globalTracker[2] = '1'; updateGlobalTracker();
+                    
+                    setTimeout(() => {
+                        mnemonicScreen.classList.add('hidden'); mnemonicScreen.classList.remove('flex');
+                        inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                        printLine("<span class='text-green-500 font-bold'>[SYSTEM]: COGNITIVE HAZARD BYPASSED. FRAGMENT (1) SECURED. PROCEED TO 'SIGNAL' PROTOCOL.</span>", 0, true);
+                    }, 2500);
+                } else {
+                    playErrorSound(); this.value = '';
+                    antimemeText.style.opacity = 1; antimemeText.style.filter = 'blur(0px)'; antimemeText.style.transform = 'translate(0px, 0px)';
+                    antimemeText.innerHTML = "<span class='text-red-500 font-bold'>YOU FORGOT.</span>";
+                    setTimeout(() => {
+                        antimemeText.innerHTML = "[DATA LOST]<br>We don't know what it is.<br>We only know what it isn't.<br>It is not a sphere. It is not safe.<br>What isn't it?";
+                    }, 1500);
+                }
+            } else { playTypeSound(); }
+        });
+        
+        document.getElementById('close-mnemonic').addEventListener('click', () => {
+            mnemonicScreen.classList.add('hidden'); mnemonicScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        });
+
+        const signalScreen = document.getElementById('signal-screen');
+        const sFreq = document.getElementById('slider-freq'); const sAmp = document.getElementById('slider-amp'); const sHume = document.getElementById('slider-hume');
+        const vFreq = document.getElementById('val-freq'); const vAmp = document.getElementById('val-amp'); const vHume = document.getElementById('val-hume');
+        const clarityDisplay = document.getElementById('signal-clarity');
+        
+        const tFreq = 73; const tAmp = 21; const tHume = 88;
+        let signalSolved = false; let signalInterval;
+
+        function openSignal() {
+            if (globalTracker[2] === '_') {
+                playErrorSound(); printLine("<span class='text-red-500'>ERROR: MUST RESOLVE 'MNEMONIC' PARADOX BEFORE SIGNAL INTERCEPT.</span>", 0, true); return;
+            }
+            signalScreen.classList.remove('hidden'); signalScreen.classList.add('flex'); cmdInput.disabled = true;
+            
+            sFreq.value = Math.floor(Math.random() * 100); sAmp.value = Math.floor(Math.random() * 100); sHume.value = Math.floor(Math.random() * 100);
+            signalSolved = (globalTracker[3] !== '_');
+            
+            if (!signalSolved) {
+                signalNoise.volume.value = -10; signalNoise.triggerAttack();
+                signalInterval = setInterval(updateSignalLogic, 100);
+            } else {
+                clarityDisplay.textContent = "100%"; clarityDisplay.className = "text-5xl font-mono text-green-500 font-bold z-10";
+            }
+            updateSliderUI();
+        }
+
+        function updateSliderUI() { vFreq.textContent = sFreq.value.padStart(3, '0'); vAmp.textContent = sAmp.value.padStart(3, '0'); vHume.textContent = sHume.value.padStart(3, '0'); }
+
+        function updateSignalLogic() {
+            if (signalSolved) return;
+            const diffF = Math.abs(sFreq.value - tFreq); const diffA = Math.abs(sAmp.value - tAmp); const diffH = Math.abs(sHume.value - tHume);
+            const totalDiff = diffF + diffA + diffH;
+            
+            let clarity = Math.max(0, Math.floor(100 - ((totalDiff / 120) * 100))); 
+            clarityDisplay.textContent = `${clarity}%`;
+            
+            let vol = -10 - (clarity * 0.3); signalNoise.volume.rampTo(vol, 0.1);
+            
+            if (clarity === 100) {
+                clearInterval(signalInterval); signalSolved = true; signalNoise.triggerRelease(); playSuccessSound();
+                clarityDisplay.className = "text-5xl font-mono text-green-500 font-bold z-10 drop-shadow-[0_0_15px_rgba(0,255,0,0.8)]";
+                
+                globalTracker[3] = 'I'; updateGlobalTracker();
+                
+                setTimeout(() => {
+                    signalScreen.classList.add('hidden'); signalScreen.classList.remove('flex');
+                    inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                    printLine("<span class='text-green-500 font-bold'>[SYSTEM]: KETER SIGNAL STABILIZED. HASH FRAGMENT (I) SECURED. PROCEED TO 'EXTRACT' PROTOCOL.</span>", 0, true);
+                }, 2000);
+            }
+        }
+
+        [sFreq, sAmp, sHume].forEach(slider => { slider.addEventListener('input', () => { updateSliderUI(); if(!signalSolved && Math.random() > 0.5) playTypeSound(); }); });
+
+        document.getElementById('close-signal').addEventListener('click', () => {
+            clearInterval(signalInterval); signalNoise.triggerRelease();
+            signalScreen.classList.add('hidden'); signalScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; setTimeout(() => cmdInput.focus(), 10); playTypeSound();
+        });
+
+        const extractScreen = document.getElementById('extract-screen');
+        const extractGrid = document.getElementById('extract-grid');
+        const extractTimerBar = document.getElementById('extract-timer-bar');
+        
+        let extractStage = 1;
+        let extractTimer;
+        let extractTimeLeft = 40000; 
+        const EXTRACT_TOTAL_TIME = 40000;
+        let extractTarget = -1;
+        let extractScramble;
+
+        function openExtract() {
+            if (globalTracker[3] === '_') {
+                playErrorSound(); printLine("<span class='text-red-500'>ERROR: MUST STABILIZE 'SIGNAL' BEFORE DATA EXTRACTION.</span>", 0, true); return;
+            }
+            extractScreen.classList.remove('hidden'); extractScreen.classList.add('flex');
+            cmdInput.disabled = true;
+            
+            if (globalTracker[4] !== '_') {
+                extractGrid.innerHTML = `<div class="text-green-500 font-bold text-2xl text-center w-full py-12 col-span-full">DATA PURIFIED.<br><br>ALL CORRUPTION ISOLATED.</div>`;
+                extractTimerBar.style.width = '100%'; extractTimerBar.style.backgroundColor = '#22c55e';
+            } else {
+                extractStage = 1; extractTimeLeft = EXTRACT_TOTAL_TIME;
+                extractTimerBar.style.width = '100%'; extractTimerBar.style.backgroundColor = 'var(--scp-violet-bright)';
+                loadExtractStage();
+                
+                extractTimer = setInterval(() => {
+                    extractTimeLeft -= 50;
+                    let pct = (extractTimeLeft / EXTRACT_TOTAL_TIME) * 100;
+                    extractTimerBar.style.width = Math.max(0, pct) + '%';
+                    
+                    if (extractTimeLeft < 10000) extractTimerBar.style.backgroundColor = 'var(--scp-error)';
+                    if (extractTimeLeft <= 0) failExtract();
+                }, 50);
+            }
+        }
+
+        function loadExtractStage() {
+            extractGrid.innerHTML = '';
+            
+            // Dynamic Grid Sizing for Mobile vs Desktop
+            const isMobile = window.innerWidth < 640;
+            const cols = isMobile ? 8 : 12;
+            const rows = isMobile ? 10 : 12;
+            const nodeCount = cols * rows;
+            
+            extractGrid.className = "grid w-full h-full gap-0.5 sm:gap-1 font-mono text-[10px] sm:text-xs text-violet-400 select-none cursor-crosshair relative z-20";
+            extractGrid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+            extractGrid.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+            
+            // Add visual hurdles based on stage
+            if (extractStage === 2) extractGrid.classList.add('grid-shake');
+            if (extractStage === 3) {
+                extractGrid.classList.add('grid-shake-fast');
+                extractScreen.classList.add('animate-[pulse_1s_infinite]');
+            } else {
+                extractScreen.classList.remove('animate-[pulse_1s_infinite]');
+            }
+
+            extractTarget = Math.floor(Math.random() * nodeCount);
+            const targetHex = Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase();
+
+            for (let i = 0; i < nodeCount; i++) {
+                let node = document.createElement('div');
+                node.id = `ext-node-${i}`;
+                node.className = "flex items-center justify-center bg-violet-900/20 hover:bg-violet-900/60 transition-colors";
+                node.textContent = (i === extractTarget) ? targetHex : "00";
+                node.onmousedown = () => handleExtractClick(i);
+                extractGrid.appendChild(node);
+            }
+
+            clearInterval(extractScramble);
+            extractScramble = setInterval(() => {
+                for (let i = 0; i < nodeCount; i++) {
+                    if (i !== extractTarget) {
+                        document.getElementById(`ext-node-${i}`).textContent = Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase();
+                    }
+                }
+            }, 150); // Aggressive scramble speed
+        }
+
+        function handleExtractClick(index) {
+            if (index === extractTarget) {
+                playSuccessSound();
+                extractStage++;
+                if (extractStage > 3) winExtract();
+                else loadExtractStage();
+            } else {
+                playErrorSound();
+                extractTimeLeft -= 5000; // 5 second penalty for misclicking
+                extractGrid.classList.add('bg-red-900/50');
+                setTimeout(() => extractGrid.classList.remove('bg-red-900/50'), 150);
+            }
+        }
+
+        function failExtract() {
+            clearInterval(extractTimer); clearInterval(extractScramble); playErrorSound();
+            extractGrid.innerHTML = `<div class="text-red-500 font-bold text-2xl text-center w-full py-12 col-span-full glitch-heavy" data-text="NEURAL OVERLOAD">NEURAL OVERLOAD</div>`;
+            extractGrid.className = "flex items-center justify-center w-full h-full relative z-20";
+            
+            setTimeout(() => {
+                extractScreen.classList.add('hidden'); extractScreen.classList.remove('flex');
+                extractScreen.classList.remove('animate-[pulse_1s_infinite]');
+                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                printLine("<span class='text-red-500 font-bold'>[SYSTEM]: EXTRACTION FAILED. CORRUPTION SPREAD PREVENTED.</span>", 0, true);
+            }, 2000);
+        }
+
+        function winExtract() {
+            clearInterval(extractTimer); clearInterval(extractScramble); playSuccessSound();
+            extractScreen.classList.remove('animate-[pulse_1s_infinite]');
+            extractGrid.innerHTML = `<div class="text-green-500 font-bold text-2xl text-center w-full py-12 col-span-full">DATA PURIFIED.<br><br>ALL CORRUPTION ISOLATED.</div>`;
+            extractGrid.className = "flex items-center justify-center w-full h-full relative z-20";
+            
+            globalTracker[4] = 'D'; updateGlobalTracker();
+            
+            setTimeout(() => {
+                extractScreen.classList.add('hidden'); extractScreen.classList.remove('flex');
+                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
+                printLine("<span class='text-green-500 font-bold'>[SYSTEM]: FINAL HASH FRAGMENT (D) RELEASED. O5 OVERRIDE AVAILABLE.</span>", 0, true);
+            }, 2500);
+        }
+
+        document.getElementById('close-extract').addEventListener('click', () => {
+            clearInterval(extractTimer); clearInterval(extractScramble);
+            extractScreen.classList.add('hidden'); extractScreen.classList.remove('flex');
+            extractScreen.classList.remove('animate-[pulse_1s_infinite]');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        });
+
+        const overrideScreen = document.getElementById('override-screen');
+        const overrideInput = document.getElementById('override-input');
+        const dashChars = document.querySelectorAll('.dash-char');
+
+        document.getElementById('override-btn').addEventListener('click', () => {
+            initAudio(); overrideScreen.classList.remove('hidden'); overrideScreen.classList.add('flex');
+            overrideInput.value = ''; updateDashes(); cmdInput.disabled = true; setTimeout(() => overrideInput.focus(), 10); playTypeSound();
+        });
+        
+        document.getElementById('cancel-override').addEventListener('click', () => {
+            overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
+            cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+        });
+        
+        function updateDashes() {
+            const val = overrideInput.value;
+            dashChars.forEach((el, i) => {
+                el.textContent = val[i] || '';
+                if (val[i]) { el.classList.add('border-white', 'text-white'); el.classList.remove('border-violet-900', 'text-violet-500'); el.style.textShadow = '0 0 15px rgba(168,50,168,0.8)'; } 
+                else { el.classList.remove('border-white', 'text-white'); el.classList.add('border-violet-900', 'text-violet-500'); el.style.textShadow = 'none'; }
+            });
+        }
+        document.getElementById('override-dash-container').addEventListener('click', () => overrideInput.focus());
+
+        overrideInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); updateDashes(); playTypeSound();
+            if (this.value.length === 5) setTimeout(submitOverride, 400);
+        });
+
+        async function submitOverride() {
+            const val = overrideInput.value; if (val.length < 5) return;
+            overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
+            cmdInput.disabled = true; inputLine.style.display = 'none';
+            await printLine(`> PROCESSING O5 EXTERNAL OVERRIDE HASH...`, 10, false);
+            
+            if (val === 'V01ID') {
+                playSuccessSound(); await printLine("VERIFYING CREDENTIALS...", 30, false); await new Promise(r => setTimeout(r, 500));
+                
+                localStorage.setItem('scp_clearance', '4');
+                await printLine(`<div class="my-6 border-y-2 border-violet-700 py-4 text-center bg-violet-900 bg-opacity-20 w-full"><h2 class="text-3xl font-bold text-violet-400 glitch-heavy" data-text="O5 COMMAND AUTHORIZATION ACCEPTED">O5 COMMAND AUTHORIZATION ACCEPTED</h2></div>`, 0, true);
+                
+                setTimeout(() => window.location.href = 'level4.html', 2000); 
+            } else {
+                playErrorSound(); await printLine("<span class='text-red-500'>ERROR: INVALID OVERRIDE HASH.</span>", 0, true);
+                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); scrollToBottom();
+            }
+        }
+
+        document.body.addEventListener('click', (e) => {
+            if (!overrideScreen.classList.contains('hidden')) overrideInput.focus();
+            else if (!breachScreen.classList.contains('hidden')) breachInput.focus();
+            else if (!mnemonicScreen.classList.contains('hidden')) mnemonicInput.focus();
+            else if (!signalScreen.classList.contains('hidden')) { /* Allow slider interaction */ }
+            else if (!extractScreen.classList.contains('hidden')) { /* Allow grid interaction */ }
+            else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.tagName !== 'BUTTON') cmdInput.focus();
+        });
+    </script>
+</body>
+</html>
