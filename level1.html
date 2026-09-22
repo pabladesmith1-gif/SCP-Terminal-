@@ -216,11 +216,28 @@
         async function processCommand(cmd) {
             initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
             await printLine(`C:\\SCiPNET\\LEVEL-1> ${fullCmd}`, false, 5);
-            const normalizedInput = fullCmd.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
+            
+            // Allow parsing multiple words (e.g., SEARCH 173)
+            const args = fullCmd.toUpperCase().split(/\s+/);
+            const baseCmd = args[0].replace(/[^A-Z0-9\-]/g, '');
 
-            if (normalizedInput === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
+            if (baseCmd === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
 
-            const entry = scpDatabase[normalizedInput.replace(/-/g, '')];
+            if (baseCmd === 'CCTV') {
+                await printLine("> ESTABLISHING SECURE VIDEO LINK TO SITE-19...", false, 20);
+                setTimeout(openCCTV, 1000); return;
+            }
+
+            if (baseCmd === 'SEARCH') {
+                const target = args[1] ? args[1].replace(/[^A-Z0-9\-]/g, '') : '';
+                if (target === '173') await printLine("<span class='text-yellow-400'>ITEM:</span> SCP-173<br><span class='text-yellow-400'>CLASS:</span> Euclid<br><span class='text-yellow-400'>NOTES:</span> Must maintain line of sight at all times. In event of containment breach, personnel are to alert Class D before blinking.", true);
+                else if (target === '096') await printLine("<span class='text-yellow-400'>ITEM:</span> SCP-096<br><span class='text-yellow-400'>CLASS:</span> Euclid<br><span class='text-yellow-400'>NOTES:</span> Do NOT view face under any circumstances. Four (4) pixels resulted in Incident 096-1-A.", true);
+                else if (target === '682') await printLine("<span class='text-yellow-400'>ITEM:</span> SCP-682<br><span class='text-yellow-400'>CLASS:</span> Keter<br><span class='text-yellow-400'>NOTES:</span> Hard-to-destroy reptile. Currently submerged in hydrochloric acid. Do not engage without authorization.", true);
+                else await printLine("USAGE: SEARCH [ 173 | 096 | 682 ]", true);
+                return;
+            }
+
+            const entry = scpDatabase[baseCmd.replace(/-/g, '')];
             if (entry) {
                 if (entry.type === 'app' && entry.appName === 'ASSESSMENT') openAssessment();
                 else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); }
