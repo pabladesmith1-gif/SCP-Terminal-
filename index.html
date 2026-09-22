@@ -9,66 +9,47 @@
     
     <style>
         :root {
-            --scp-black: #0a0a0a;
-            --scp-red: #c00000;
+            --scp-black: #050505; 
+            --scp-red: #ff3333;
             --scp-white: #e0e0e0;
-            --scp-green: #00ff00;
-            --scp-blue: #4da6ff;
+            --scp-green: #33ff33;
         }
 
         body {
-            background-color: var(--scp-black);
-            color: var(--scp-white);
-            font-family: 'Share Tech Mono', monospace;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-            user-select: none;
+            background-color: var(--scp-black); color: var(--scp-white);
+            font-family: 'Share Tech Mono', monospace; overflow: hidden;
+            display: flex; flex-direction: column; height: 100vh; margin: 0; user-select: none;
         }
 
-        /* Scanline effect */
         body::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 2;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
+            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
         }
 
         @keyframes flicker {
-            0% { opacity: 0.9; } 5% { opacity: 0.8; } 10% { opacity: 0.95; }
-            15% { opacity: 0.7; } 20% { opacity: 0.9; } 25% { opacity: 0.8; }
-            30% { opacity: 0.95; } 35% { opacity: 0.9; } 40% { opacity: 0.8; }
-            50% { opacity: 0.9; } 60% { opacity: 0.95; } 70% { opacity: 0.8; }
-            80% { opacity: 0.9; } 90% { opacity: 0.95; } 100% { opacity: 0.9; }
+            0% { opacity: 0.97; } 5% { opacity: 0.95; } 10% { opacity: 0.99; }
+            15% { opacity: 0.93; } 20% { opacity: 0.98; } 25% { opacity: 0.95; }
+            30% { opacity: 0.97; } 35% { opacity: 0.96; } 40% { opacity: 0.94; }
+            50% { opacity: 0.99; } 60% { opacity: 0.95; } 70% { opacity: 0.97; }
+            80% { opacity: 0.98; } 90% { opacity: 0.94; } 100% { opacity: 0.97; }
         }
-        .crt { animation: flicker 0.15s infinite; }
+        .crt { animation: flicker 0.3s infinite; }
 
         .terminal-header {
-            border-bottom: 2px solid var(--scp-white);
+            border-bottom: 2px solid var(--scp-red);
             padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         .scp-logo { width: 75px; height: 75px; }
-        .scp-logo img { width: 100%; height: 100%; filter: invert(90%); }
+        .scp-logo img { width: 100%; height: 100%; filter: invert(90%) sepia(100%) hue-rotate(310deg) saturate(300%); }
 
-        .terminal-content {
-            flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column;
-        }
+        .terminal-content { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
         .output-line { margin-bottom: 0.5rem; line-height: 1.4; }
         .text-red { color: var(--scp-red); }
         .text-green { color: var(--scp-green); }
-        .text-blue { color: var(--scp-blue); }
 
         .input-line { display: flex; align-items: center; margin-top: 1rem; }
-        .prompt { margin-right: 0.5rem; color: var(--scp-white); }
+        .prompt { margin-right: 0.5rem; color: var(--scp-red); }
         input[type="text"] {
             background: transparent; border: none; color: var(--scp-white);
             font-family: 'Share Tech Mono', monospace; font-size: 1rem;
@@ -77,66 +58,98 @@
         
         .glitch { position: relative; display: inline-block; }
         .glitch::before, .glitch::after {
-            content: attr(data-text); position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; background: var(--scp-black);
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--scp-black);
         }
-        .glitch::before {
-            left: 2px; text-shadow: -2px 0 red; clip: rect(24px, 550px, 90px, 0);
-            animation: glitch-anim 3s infinite linear alternate-reverse;
-        }
-        .glitch::after {
-            left: -2px; text-shadow: -2px 0 blue; clip: rect(85px, 550px, 140px, 0);
-            animation: glitch-anim 2s infinite linear alternate-reverse;
-        }
+        .glitch::before { left: 2px; text-shadow: -2px 0 red; clip: rect(24px, 550px, 90px, 0); animation: glitch-anim 3s infinite linear alternate-reverse; }
+        .glitch::after { left: -2px; text-shadow: -2px 0 blue; clip: rect(85px, 550px, 140px, 0); animation: glitch-anim 2s infinite linear alternate-reverse; }
+        
         @keyframes glitch-anim {
             0% { clip: rect(72px, 9999px, 73px, 0); } 20% { clip: rect(93px, 9999px, 32px, 0); }
             40% { clip: rect(59px, 9999px, 7px, 0); } 60% { clip: rect(4px, 9999px, 53px, 0); }
             80% { clip: rect(47px, 9999px, 94px, 0); } 100% { clip: rect(86px, 9999px, 63px, 0); }
         }
 
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #444; }
-
-        /* Hacking Minigame Styles */
-        #memory-dump { word-break: break-all; color: #666; line-height: 1.2; }
-        .hack-symbol { cursor: pointer; transition: color 0.1s; }
-        .hack-symbol:hover { color: var(--scp-white); background-color: #333; }
-        .hack-word { color: var(--scp-white); cursor: pointer; transition: all 0.1s; display: inline; }
-        .hack-word:hover { color: var(--scp-black); background-color: var(--scp-green); }
+        ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #111; } ::-webkit-scrollbar-thumb { background: #444; }
     </style>
 </head>
 <body class="crt relative">
 
     <!-- Boot Sequence Screen -->
-    <div id="boot-sequence" class="absolute inset-0 bg-[#0a0a0a] z-50 flex flex-col p-8">
-        <div id="boot-text"></div>
+    <div id="boot-screen" class="absolute inset-0 bg-[#050505] z-50 flex flex-col justify-center p-8 font-mono text-sm sm:text-base">
+        <!-- Boot text fills here -->
     </div>
 
-    <!-- Firewall Minigame Screen -->
-    <div id="hacking-screen" class="hidden absolute inset-0 bg-[#0a0a0a] z-40 flex-col p-8">
-        <h2 class="text-red text-2xl font-bold tracking-widest mb-2 glitch" data-text="WARNING: FOUNDATION ICE ACTIVE">WARNING: FOUNDATION ICE ACTIVE</h2>
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 border-b border-gray-700 pb-4">
-            <div>
-                <p class="text-sm">UNAUTHORIZED CONNECTION DETECTED.</p>
-                <p class="text-green text-sm mt-1">INSTRUCTION: ISOLATE DECRYPTION CIPHER FROM MEMORY DUMP.</p>
+    <!-- Hacking / Firewall Screen -->
+    <div id="hacking-screen" class="hidden absolute inset-0 bg-[#050505] z-40 flex-col items-center justify-center p-4 sm:p-8">
+        <div class="w-full max-w-5xl border-2 border-red-700 bg-[#0a0000] shadow-[0_0_40px_rgba(255,0,0,0.15)] font-mono text-red-500 flex flex-col relative overflow-hidden">
+            
+            <!-- Window Top Bar -->
+            <div class="w-full bg-red-900 text-black px-4 py-1.5 flex justify-between items-center text-xs sm:text-sm font-bold tracking-widest shadow-md">
+                <span>[ SCiPNET SECURITY PROTOCOL :: ICE-v3.1 ]</span>
+                <span class="flex gap-2">
+                    <div class="w-3 h-3 bg-black opacity-50 rounded-full"></div>
+                    <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                </span>
             </div>
-            <div class="text-right">
-                <p class="text-xs text-gray-400 mb-1">ATTEMPTS REMAINING</p>
-                <p id="hack-attempts-display" class="text-xl text-red tracking-widest"></p>
+            
+            <div class="p-6 sm:p-8 flex flex-col relative z-10">
+                <!-- Background Watermark -->
+                <div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Watermark" class="w-2/3 h-2/3">
+                </div>
+                
+                <div class="z-10 relative">
+                    <!-- Header Area -->
+                    <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-red-900 pb-4 mb-6 gap-4">
+                        <div>
+                            <h2 class="text-3xl sm:text-4xl font-bold mb-1 glitch text-red-500 drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]" data-text="ICE FIREWALL ACTIVE">ICE FIREWALL ACTIVE</h2>
+                            <p class="text-red-400 text-xs sm:text-sm tracking-widest animate-pulse">> UNAUTHORIZED ACCESS DETECTED. SELECT MASTER OVERRIDE HASH.</p>
+                        </div>
+                        <div id="hack-attempts-container" class="sm:text-right border border-red-900 bg-[#1a0000] px-4 py-2 shadow-[inset_0_0_10px_rgba(0,0,0,0.8)]">
+                            <p class="text-gray-500 text-xs mb-1 tracking-[0.2em]">ATTEMPTS REMAINING</p>
+                            <span id="hack-blocks" class="tracking-widest text-xl text-red-500 font-bold drop-shadow-[0_0_8px_rgba(255,0,0,1)]">█ █ █ █</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-6 h-[400px]">
+                        <!-- Hex Grid Container -->
+                        <div class="flex-1 font-mono text-sm sm:text-base cursor-default bg-[#050000] border border-red-900/50 p-4 overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)]">
+                            <!-- Subtle scanlines overlay -->
+                            <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,0,0,0.03)_1px,transparent_1px)] bg-[length:100%_4px] z-10"></div>
+                            
+                            <div id="hack-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 leading-tight select-none h-full relative z-20 text-gray-500">
+                                <!-- Words and hex will populate here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Terminal Log -->
+                        <div class="w-full md:w-1/3 h-full bg-[#050000] border border-red-900 p-4 text-xs sm:text-sm flex flex-col relative shadow-[inset_0_0_30px_rgba(0,0,0,1)]">
+                            <div class="text-gray-500 text-xs border-b border-red-900/50 pb-2 mb-3 tracking-widest font-bold">> TRACE LOG</div>
+                            <div id="hack-log" class="flex-1 overflow-y-auto font-mono text-red-300 flex flex-col gap-1 pr-2">
+                                <!-- Output logs -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-6 flex-grow overflow-hidden h-full mt-4">
-            <div id="memory-dump" class="w-full sm:w-2/3 flex flex-wrap content-start text-lg md:text-xl font-mono tracking-widest overflow-y-auto pr-4 pb-12"></div>
-            <div id="hack-log" class="w-full sm:w-1/3 flex flex-col text-sm font-mono overflow-y-auto border-l border-gray-800 pl-4 space-y-1 pb-12"></div>
         </div>
     </div>
 
-    <!-- Blue Assessment Screen (Orientation) -->
+    <!-- Lockout / Reset Screen -->
+    <div id="lockout-screen" class="hidden absolute inset-0 bg-[#050505] z-50 flex-col items-center justify-center p-4">
+        <h2 class="text-3xl sm:text-5xl font-bold text-red-600 glitch mb-4" data-text="SECURITY LOCKOUT">SECURITY LOCKOUT</h2>
+        <p class="text-red-400 font-mono text-sm sm:text-lg mb-8 tracking-widest text-center">UNAUTHORIZED ACCESS DETECTED.<br>PURGING TEMPORARY MEMORY.</p>
+        <div class="w-64 sm:w-96 h-2 bg-gray-900 rounded overflow-hidden">
+            <div id="reset-progress" class="h-full bg-red-600 w-0 transition-all duration-[4000ms] ease-linear"></div>
+        </div>
+        <p class="text-gray-500 font-mono text-xs sm:text-sm mt-4 tracking-[0.2em] animate-pulse">REBUILDING ENCRYPTION MATRIX...</p>
+    </div>
+
+    <!-- Assessment / Orientation Screen (Blue for Level 0) -->
     <div id="assessment-screen" class="hidden absolute inset-0 bg-[#001122] z-30 flex-col items-center justify-center p-4 sm:p-8">
-        <div class="w-full max-w-4xl border-2 border-blue-900 p-8 bg-[#000a14] shadow-[0_0_30px_rgba(0,100,255,0.2)] flex flex-col items-center relative">
-            <h2 class="text-blue-500 text-2xl sm:text-4xl font-bold mb-4 tracking-[0.2em] text-center">SECURE ASSESSMENT ENVIRONMENT</h2>
-            <p class="text-blue-300 text-sm tracking-widest mb-8 border-b border-blue-900 pb-4 w-full text-center">ONBOARDING PROTOCOL INITIATED</p>
+        <div class="w-full max-w-4xl border-2 border-blue-900 p-8 bg-[#000511] shadow-[0_0_30px_rgba(0,100,255,0.2)] flex flex-col items-center relative">
+            <h2 class="text-blue-500 text-2xl sm:text-4xl font-bold mb-4 tracking-[0.2em] text-center glitch" data-text="SECURE ASSESSMENT ENVIRONMENT">SECURE ASSESSMENT ENVIRONMENT</h2>
+            <p class="text-blue-300 text-sm tracking-widest mb-8 border-b border-blue-900 pb-4 w-full text-center">LEVEL 0 ONBOARDING PROTOCOL INITIATED</p>
             
             <div id="assessment-log" class="w-full h-64 overflow-y-auto mb-6 text-blue-200 font-mono text-sm sm:text-base flex flex-col gap-4 p-4 border border-blue-900 bg-black bg-opacity-50">
                 <!-- Assessment queries appear here -->
@@ -151,115 +164,250 @@
         </div>
     </div>
 
-    <!-- Red Override Screen (Upgrade Panel) -->
-    <div id="override-screen" class="hidden absolute inset-0 bg-[#0a0a0a] z-30 flex-col justify-center items-center">
-        <h2 class="text-red text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
+    <!-- NEW: Memetic Inoculation Screen (Visual Sequence Minigame) -->
+    <div id="inoculation-screen" class="hidden absolute inset-0 bg-[#050505] z-50 flex-col items-center justify-center p-4">
+        <h2 class="text-3xl sm:text-5xl font-bold text-yellow-500 glitch mb-4" data-text="MEMETIC INOCULATION">MEMETIC INOCULATION</h2>
+        <p id="inoc-status" class="text-white font-mono text-sm sm:text-lg mb-8 tracking-widest text-center animate-pulse">PREPARING VISUAL SEQUENCE...</p>
+        
+        <div id="inoc-display-box" class="w-64 h-32 border-2 border-yellow-600 bg-[#111] flex items-center justify-center shadow-[0_0_20px_rgba(200,150,0,0.3)] mb-8">
+            <span id="inoc-char" class="text-6xl font-bold text-yellow-500 font-mono"></span>
+        </div>
+        
+        <div id="inoc-input-container" class="hidden flex-col items-center">
+            <p class="text-gray-400 text-xs mb-2 tracking-[0.2em]">INPUT SEQUENCE</p>
+            <input type="text" id="inoc-input" class="bg-transparent border-b-2 border-yellow-600 text-yellow-500 text-3xl font-mono text-center w-48 outline-none uppercase tracking-widest" maxlength="5" autocomplete="off" spellcheck="false">
+        </div>
+    </div>
+
+    <!-- Dark Red Override Screen -->
+    <div id="override-screen" class="hidden absolute inset-0 bg-[#050505] z-30 flex-col justify-center items-center">
+        <h2 class="text-red-500 text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
         <div class="flex gap-2 sm:gap-4 mb-8" id="override-dash-container">
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
-            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-gray-700 flex items-center justify-center font-mono transition-all duration-200"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
+            <span class="dash-char text-3xl sm:text-5xl w-12 sm:w-16 h-16 sm:h-20 border-b-4 border-red-900 flex items-center justify-center font-mono transition-all duration-200 text-red-500"></span>
         </div>
         <input type="text" id="override-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" spellcheck="false" maxlength="5">
-        <p class="text-gray-500 text-sm mb-8 tracking-[0.2em]">INPUT 5-CHARACTER HASH</p>
+        <p class="text-gray-500 text-sm mb-8 tracking-[0.2em]">INPUT 5-CHARACTER LEVEL 1 HASH</p>
         <button id="cancel-override" class="text-gray-500 hover:text-white transition-colors tracking-widest text-sm">[ CANCEL ]</button>
     </div>
 
     <!-- Main Terminal Interface -->
-    <div class="terminal-header" style="display: none;" id="main-header">
-        <div>
-            <h1 class="text-2xl font-bold tracking-widest">SCP FOUNDATION</h1>
+    <div class="terminal-header relative flex" style="display: none;" id="main-header">
+        <div class="flex-1 z-10">
+            <h1 class="text-2xl font-bold tracking-widest text-red-500">SCP FOUNDATION</h1>
             <p class="text-sm opacity-75">SECURE. CONTAIN. PROTECT.</p>
         </div>
-        <div class="scp-logo">
+        <!-- Centered Logo via Absolute Positioning -->
+        <div class="scp-logo absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center pointer-events-none z-0">
             <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo">
         </div>
-        <div class="text-right flex flex-col items-end">
+        <div class="flex-1 text-right flex flex-col items-end z-10">
             <!-- Header Hash Tracker -->
             <div class="flex items-center mb-1">
                 <div class="text-green font-mono text-xl tracking-widest mr-4" id="header-tracker">[ _ _ _ _ _ ]</div>
-                <p class="text-sm text-red font-bold tracking-widest" id="clearance-display">CLEARANCE: LEVEL 0</p>
+                <p class="text-sm text-red-500 font-bold tracking-widest">CLEARANCE: LEVEL 0</p>
             </div>
-            <button id="override-btn" class="text-xs mb-1 text-red-500 hover:text-white transition-colors">[ SECURE OVERRIDE ]</button>
+            <button id="override-btn" class="text-xs mb-1 text-red-700 hover:text-white transition-colors">[ SECURE OVERRIDE ]</button>
             <p class="text-xs text-gray-500" id="clock">00:00:00</p>
         </div>
     </div>
 
     <div class="terminal-content" id="terminal-output" style="display: none;">
-        <div class="output-line">WARNING: THE FOUNDATION DATABASE IS <span class="text-red font-bold">CLASSIFIED</span>.</div>
-        <div class="output-line">ACCESS BY UNAUTHORIZED PERSONNEL IS STRICTLY PROHIBITED.</div>
-        <div class="output-line mt-4 text-gray-400">Type 'help' for available commands.</div>
-        <div class="output-line mt-4 text-green">HINT: New Level 0 personnel should enter 'ORIENTATION' to begin.</div>
+        <div class="output-line">WARNING: UNAUTHORIZED ACCESS DETECTED.</div>
+        <div class="output-line">PLEASE ENTER CLEARANCE CREDENTIALS OR INITIATE ONBOARDING.</div>
         
         <div class="input-line">
-            <span class="prompt" id="cli-prompt">C:\SCiPNET\USER></span>
-            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus>
+            <span class="prompt">C:\SCiPNET\LEVEL-0></span>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false">
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script>
-        localStorage.setItem('scp_clearance', '0');
-        let currentClearanceLevel = 0;
-        let globalTracker = ['_', '_', '_', '_', '_'];
+        const bootScreen = document.getElementById('boot-screen');
+        const mainHeader = document.getElementById('main-header');
+        const terminalOutput = document.getElementById('terminal-output');
+        const cmdInput = document.getElementById('cmd-input');
+        const inputLine = document.querySelector('.input-line');
+        
+        const bootSequence = [
+            "SCiPNET OS v4.2.1", "Initializing core protocols...", "Loading encrypted databases...",
+            "WARNING: FIREWALL BREACH DETECTED.", "Rerouting to ICE Defense Protocol..."
+        ];
 
         let audioContextStarted = false;
-        const typeSynth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.01 }
-        }).toDestination(); typeSynth.volume.value = -20;
-        const alertSynth = new Tone.Synth({
-            oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 1 }
-        }).toDestination(); alertSynth.volume.value = -15;
-        const noiseSynth = new Tone.NoiseSynth({
-            noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 }
-        }).toDestination(); noiseSynth.volume.value = -15;
+        let isHackingActive = false;
+        
+        const typeSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.01 } }).toDestination(); typeSynth.volume.value = -20;
+        const alertSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 1 } }).toDestination(); alertSynth.volume.value = -15;
+        const noiseSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 } }).toDestination(); noiseSynth.volume.value = -15;
 
         function playTypeSound() { if (!audioContextStarted) return; typeSynth.triggerAttackRelease(["C4", "C#4", "D4", "D#4"][Math.floor(Math.random() * 4)], "32n"); }
         function playSuccessSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("C5", "8n"); setTimeout(() => alertSynth.triggerAttackRelease("E5", "4n"), 150); }
         function playErrorSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("G2", "4n"); noiseSynth.triggerAttackRelease("8n", "+0.1"); }
         async function initAudio() { if (!audioContextStarted) { await Tone.start(); audioContextStarted = true; } }
 
-        const scpDatabase = {
-            "HELP": {
-                level: 0,
-                type: "text",
-                content: [
-                    "AVAILABLE COMMANDS:",
-                    "  help     - Display this message",
-                    "  clear    - Clear terminal output",
-                    "  status   - Display system status",
-                    "  [CODE]   - Input a file name directly (e.g., 'ORIENTATION')"
-                ]
-            },
-            "STATUS": {
-                level: 0,
-                type: "text",
-                content: [
-                    "SYSTEM STATUS: <span class='text-green'>ONLINE</span>",
-                    "CONNECTION: SECURE (PROTOCOL 110-MONTAUK)",
-                    "WARNING: <span class='glitch' data-text='MULTIPLE BREACHES DETECTED'>MULTIPLE BREACHES DETECTED</span> IN SECTOR 4."
-                ]
-            },
-            "ORIENTATION": {
-                level: 0,
-                type: "app",
-                appName: "ASSESSMENT"
-            }
-        };
-
-        const terminalOutput = document.getElementById('terminal-output');
-        const cmdInput = document.getElementById('cmd-input');
-        const inputLine = document.querySelector('.input-line');
-        const clockEl = document.getElementById('clock');
-        const mainHeader = document.getElementById('main-header');
-
-        setInterval(() => { clockEl.textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
+        window.onload = () => { cmdInput.disabled = true; runBootSequence(); };
+        setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
         function scrollToBottom() { terminalOutput.scrollTop = terminalOutput.scrollHeight; }
+
+        let currentClearanceLevel = 0;
+        let globalTracker = ['_', '_', '_', '_', '_'];
 
         function updateGlobalTracker() {
             document.getElementById('header-tracker').textContent = `[ ${globalTracker.join(' ')} ]`;
         }
+
+        async function runBootSequence() {
+            for (let line of bootSequence) {
+                const el = document.createElement('div'); el.textContent = line; el.className = "mb-2 text-gray-400";
+                if(line.includes("WARNING")) el.className = "mb-2 text-red-500 font-bold";
+                bootScreen.appendChild(el); await new Promise(r => setTimeout(r, 400 + Math.random() * 400));
+            }
+            await new Promise(r => setTimeout(r, 1000));
+            bootScreen.style.display = 'none'; 
+            startHackingMinigame();
+        }
+
+        const hackWordsBank = ["SECURE", "BREACH", "SYSTEM", "DANGER", "ENTITY", "ACCESS", "SECTOR", "KERNEL", "HACKER", "BYPASS", "SAFETY", "OBJECT", "THREAT", "NATURE", "TARGET", "ASSETS"];
+        let hackPassword = "";
+        let hackAttempts = 4;
+
+        function startHackingMinigame() {
+            document.getElementById('hacking-screen').classList.remove('hidden');
+            document.getElementById('hacking-screen').classList.add('flex');
+            isHackingActive = true;
+            initHackingGrid();
+        }
+
+        function initHackingGrid() {
+            const grid = document.getElementById('hack-grid');
+            const log = document.getElementById('hack-log');
+            grid.innerHTML = '';
+            log.innerHTML = '<div class="text-gray-400 mb-2">> INITIATING OVERRIDE...</div>';
+            hackAttempts = 4;
+            updateAttemptsDisplay();
+
+            let shuffled = hackWordsBank.sort(() => 0.5 - Math.random());
+            let selectedWords = shuffled.slice(0, 10);
+            hackPassword = selectedWords[Math.floor(Math.random() * selectedWords.length)];
+
+            const garbage = "!@#$%^&*()_+-=[]{}|;':,.<>/?";
+            let htmlContent = '';
+            let wordIndex = 0;
+
+            for (let i = 0; i < 30; i++) {
+                let hex = "0x" + Math.floor(Math.random() * 65535).toString(16).toUpperCase().padStart(4, '0');
+                htmlContent += `<div class="flex gap-2">`;
+                htmlContent += `<span class="text-gray-600">${hex}</span>`;
+                
+                let lineStr = "";
+                if (i % 3 === 0 && wordIndex < selectedWords.length) {
+                    let word = selectedWords[wordIndex];
+                    let gLen1 = Math.floor(Math.random() * 3);
+                    let gLen2 = 12 - gLen1 - 6; 
+                    
+                    for(let j=0; j<gLen1; j++) lineStr += garbage[Math.floor(Math.random() * garbage.length)];
+                    lineStr += `<span class="hack-word text-red-300 hover:text-white hover:bg-red-800 cursor-pointer transition-colors px-1" onclick="guessHackWord('${word}')">${word}</span>`;
+                    for(let j=0; j<gLen2; j++) lineStr += garbage[Math.floor(Math.random() * garbage.length)];
+                    wordIndex++;
+                } else {
+                    for(let j=0; j<12; j++) lineStr += garbage[Math.floor(Math.random() * garbage.length)];
+                }
+                htmlContent += `<span class="tracking-widest">${lineStr}</span></div>`;
+            }
+            grid.innerHTML = htmlContent;
+        }
+
+        function updateAttemptsDisplay() {
+            let blocks = "";
+            for(let i=0; i<hackAttempts; i++) blocks += "█ ";
+            document.getElementById('hack-blocks').textContent = blocks.trim();
+        }
+
+        window.guessHackWord = function(word) {
+            if(!isHackingActive || hackAttempts <= 0) return;
+            playTypeSound();
+            const log = document.getElementById('hack-log');
+            
+            let likeness = 0;
+            for (let i = 0; i < 6; i++) {
+                if (word[i] === hackPassword[i]) likeness++;
+            }
+
+            let newLog = `<div class="mt-2 text-white">> ${word}</div>`;
+            
+            if (likeness === 6) {
+                newLog += `<div class="text-green-500">> EXACT MATCH!</div><div class="text-green-500">> OVERRIDE ACCEPTED.</div>`;
+                log.innerHTML += newLog; log.scrollTop = log.scrollHeight;
+                isHackingActive = false; playSuccessSound();
+                
+                setTimeout(() => {
+                    document.getElementById('hacking-screen').innerHTML = "<div style='margin: auto; text-align: center;'><h2 class='text-green-500 text-4xl font-bold'>ACCESS GRANTED</h2><p class='mt-4 text-green-300'>ICE FIREWALL DEACTIVATED.</p></div>";
+                    setTimeout(() => { 
+                        document.getElementById('hacking-screen').classList.add('hidden'); 
+                        document.getElementById('hacking-screen').classList.remove('flex'); 
+                        finishBootSequence(); 
+                    }, 2000);
+                }, 1500);
+            } else {
+                hackAttempts--; updateAttemptsDisplay();
+                newLog += `<div class="text-red-400">> Entry denied.</div><div class="text-gray-400">> Likeness: ${likeness}</div>`;
+                log.innerHTML += newLog; log.scrollTop = log.scrollHeight;
+                playErrorSound();
+
+                if (hackAttempts === 0) {
+                    log.innerHTML += `<div class="mt-2 text-red-600 font-bold animate-pulse">> TERMINAL LOCKOUT INITIATED</div>`;
+                    log.scrollTop = log.scrollHeight;
+                    isHackingActive = false;
+                    
+                    setTimeout(() => {
+                        document.getElementById('hacking-screen').classList.add('hidden');
+                        document.getElementById('hacking-screen').classList.remove('flex');
+                        
+                        const lockoutScreen = document.getElementById('lockout-screen');
+                        lockoutScreen.classList.remove('hidden'); lockoutScreen.classList.add('flex');
+                        
+                        const progressBar = document.getElementById('reset-progress');
+                        progressBar.style.width = '0%';
+                        setTimeout(() => progressBar.style.width = '100%', 50);
+                        
+                        setTimeout(() => {
+                            lockoutScreen.classList.add('hidden'); lockoutScreen.classList.remove('flex');
+                            document.getElementById('hacking-screen').classList.remove('hidden');
+                            document.getElementById('hacking-screen').classList.add('flex');
+                            initHackingGrid(); 
+                            isHackingActive = true;
+                        }, 4000);
+                    }, 1000);
+                }
+            }
+        }
+
+        let keysPressed = '';
+        document.addEventListener('keydown', (e) => {
+            if (isHackingActive) {
+                keysPressed += e.key.toLowerCase();
+                if (keysPressed.includes('skip')) {
+                    keysPressed = ''; window.guessHackWord(hackPassword);
+                }
+                if (keysPressed.length > 4) keysPressed = keysPressed.slice(-4);
+            }
+        });
+
+        async function finishBootSequence() {
+            mainHeader.style.display = 'flex'; terminalOutput.style.display = 'flex'; updateGlobalTracker(); 
+            cmdInput.disabled = false; cmdInput.focus();
+        }
+
+        const scpDatabase = {
+            "HELP": { type: "text", content: [ "AVAILABLE COMMANDS:", "  help     - Display this message", "  clear    - Clear terminal output", "  status   - Display system status", "  [CODE]   - Input a file name directly (e.g., 'ORIENTATION')" ] },
+            "STATUS": { type: "text", content: [ "SYSTEM STATUS: ONLINE", "SECURITY CLEARANCE: LEVEL 0", "WARNING: Multiple corrupted sectors detected." ] },
+            "ORIENTATION": { type: "app", appName: "ASSESSMENT" }
+        };
 
         function printLine(text, isHtml = false, speed = 10) {
             return new Promise(resolve => {
@@ -269,7 +417,7 @@
                     let i = 0;
                     function typeChar() {
                         if (i < text.length) { line.textContent += text.charAt(i); i++; scrollToBottom(); setTimeout(typeChar, speed); } 
-                        else { resolve(); }
+                        else resolve();
                     }
                     typeChar();
                 }
@@ -278,33 +426,27 @@
 
         async function processCommand(cmd) {
             initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
-            await printLine(`C:\\SCiPNET\\USER> ${fullCmd}`, false, 5);
+            await printLine(`C:\\SCiPNET\\LEVEL-0> ${fullCmd}`, false, 5);
             const normalizedInput = fullCmd.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
             if (normalizedInput === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
 
             const entry = scpDatabase[normalizedInput];
             if (entry) {
-                const requiredLevel = entry.level !== undefined ? entry.level : 0;
-                if (currentClearanceLevel < requiredLevel) {
-                    playErrorSound();
-                    await printLine(`<span class='text-red'>SECURITY ALERT: CLEARANCE LEVEL ${requiredLevel} REQUIRED. ACCESS DENIED.</span>`, true);
-                    return;
-                }
-                if (entry.type === 'app' && entry.appName === 'ASSESSMENT') { openAssessment(); } 
-                else { for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); } }
-            } else {
-                playErrorSound();
-                await printLine("<span class='text-red'>ERROR: Command or File not recognized.</span>", true);
-            }
+                if (entry.type === 'app' && entry.appName === 'ASSESSMENT') openAssessment();
+                else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); }
+            } else { playErrorSound(); await printLine("<span class='text-red'>ERROR: Command or File not recognized.</span>", true); }
         }
 
         cmdInput.addEventListener('keydown', async function(e) {
             if (e.key === 'Enter') {
                 const val = this.value; this.value = ''; this.disabled = true; inputLine.style.display = 'none';
                 await processCommand(val);
-                inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
-            } else { playTypeSound(); }
+                
+                if (assessmentScreen.classList.contains('hidden') && overrideScreen.classList.contains('hidden')) {
+                    inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
+                }
+            } else playTypeSound();
         });
 
         const assessmentScreen = document.getElementById('assessment-screen');
@@ -313,28 +455,27 @@
         let assessmentStep = 0;
         
         const level0Queries = [
-            { q: "QUERY 1: The face of disaster. Exactly how many pixels of the subject's face were required to trigger the infamous mountain incident?", a: "4PIXELS", frag: "F" },
-            { q: "QUERY 2: The cure is most effective. What specific affliction does the subject sense in humanity?", a: "PESTILENCE", frag: "0" },
-            { q: "QUERY 3: Containment relies on destruction. What specific acid is used to constantly dissolve the hard-to-destroy subject?", a: "HYDROCHLORIC", frag: "A" },
-            { q: "QUERY 4: The clockwork machine. Which specific dial setting is strictly forbidden for testing on biological matter?", a: "VERYFINE", frag: "9" },
-            { q: "QUERY 5: The infinite retail space. What real-world furniture franchise traps customers in an endless, geometry-defying store?", a: "IKEA", frag: "5" }
+            { q: "QUERY 1: The Sculpture. What material is it constructed from alongside rebar and Krylon brand spray paint?", a: "CONCRETE", frag: "F" },
+            { q: "QUERY 2: The 'Shy Guy'. How many pixels of its face were required to trigger Incident 096-1-A?", a: "FOUR", alt: "4", frag: "0" },
+            { q: "QUERY 3: The Hard-to-Destroy Reptile. What specific acid is it kept submerged in to slow its regeneration?", a: "HYDROCHLORIC", frag: "A" },
+            { q: "QUERY 4: The Clockworks. What setting must be used to refine an object to its highest possible anomalous state?", a: "VERYFINE", frag: "9" },
+            { q: "QUERY 5: The Plague Doctor. What is the specific term it uses to describe the mysterious affliction it is trying to cure?", a: "PESTILENCE", frag: "5" }
         ];
 
         function openAssessment() {
             assessmentScreen.classList.remove('hidden'); assessmentScreen.classList.add('flex');
             cmdInput.disabled = true; assessmentLog.innerHTML = '';
             
-            // Advance to the current unsolved query based on global tracker
             assessmentStep = globalTracker.findIndex(f => f === '_');
-            if(assessmentStep === -1) assessmentStep = 5; // All done
+            if(assessmentStep === -1) assessmentStep = 5;
 
-            printToAssessment("> INITIALIZING ONBOARDING PROTOCOL...");
-            setTimeout(() => {
-                if (assessmentStep < 5) {
-                    printToAssessment("> AWAITING CREDENTIAL VERIFICATION.");
-                    setTimeout(() => printToAssessment(level0Queries[assessmentStep].q, "text-blue-100 mt-4"), 1000);
+            printToAssessment("> INITIALIZING LEVEL 0 ONBOARDING PROTOCOL...", "text-blue-400");
+            setTimeout(() => { 
+                if(assessmentStep < 5) {
+                    printToAssessment("> WARNING: COGNITOHAZARD FILTERS DISABLED.", "text-blue-500");
+                    setTimeout(() => printToAssessment(level0Queries[assessmentStep].q, "text-blue-200 mt-4"), 1000);
                 } else {
-                    printToAssessment("ALL QUERIES SATISFIED. HASH SECURED.", "text-green font-bold mt-4");
+                    printToAssessment("ALL QUERIES SATISFIED. MAXIMUM CLEARANCE FOR TIER ACHIEVED.", "text-green font-bold mt-4");
                 }
             }, 1000);
             setTimeout(() => assessmentInput.focus(), 2500); playTypeSound();
@@ -342,7 +483,9 @@
 
         function closeAssessment() {
             assessmentScreen.classList.add('hidden'); assessmentScreen.classList.remove('flex');
-            cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; 
+            setTimeout(() => { if (!cmdInput.disabled) cmdInput.focus(); }, 10); 
+            playTypeSound();
         }
 
         function printToAssessment(text, classes = "text-blue-300") {
@@ -353,34 +496,29 @@
         assessmentInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const val = this.value; this.value = ''; if (!val) return;
-                playTypeSound(); printToAssessment(`> ${val}`, "text-blue-500 mb-4");
+                playTypeSound(); printToAssessment(`> ${val}`, "text-blue-500 mb-4 font-bold");
                 
                 if (assessmentStep >= level0Queries.length) return;
                 
                 const normalizedVal = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 const currentData = level0Queries[assessmentStep];
                 
-                if (normalizedVal === currentData.a) {
+                if (normalizedVal === currentData.a || normalizedVal === currentData.alt) {
                     playSuccessSound();
-                    printToAssessment(`CORRECT: DECRYPTED FRAGMENT: [ ${currentData.frag} ]`, "text-green font-bold mb-4");
+                    printToAssessment(`CORRECT: DECRYPTED L1 FRAGMENT: [ ${currentData.frag} ]`, "text-green font-bold mb-4");
                     
                     globalTracker[assessmentStep] = currentData.frag;
-                    updateGlobalTracker();
-                    assessmentStep++;
+                    updateGlobalTracker(); assessmentStep++;
                     
-                    if (assessmentStep < level0Queries.length) {
-                        setTimeout(() => printToAssessment(level0Queries[assessmentStep].q, "text-blue-100 mt-4"), 1000);
-                    } else {
+                    if (assessmentStep < level0Queries.length) setTimeout(() => printToAssessment(level0Queries[assessmentStep].q, "text-blue-200 mt-4"), 1000);
+                    else {
                         setTimeout(() => {
-                            printToAssessment("ALL QUERIES SATISFIED.", "text-green font-bold mt-4");
-                            printToAssessment(`MASTER DECRYPTION HASH: ${globalTracker.join('')}`, "text-green text-xl my-4");
+                            printToAssessment("ALL QUERIES SATISFIED. MAXIMUM CLEARANCE FOR TIER ACHIEVED.", "text-green font-bold mt-4");
+                            printToAssessment(`LEVEL 1 OVERRIDE HASH: ${globalTracker.join('')}`, "text-green text-xl my-4 glitch");
                             printToAssessment("INSTRUCTION: Input Hash in the SECURE OVERRIDE panel to upgrade clearance.", "text-white");
                         }, 1000);
                     }
-                } else {
-                    playErrorSound();
-                    printToAssessment("ERROR: INCORRECT DESIGNATION.", "text-red mb-4");
-                }
+                } else { playErrorSound(); printToAssessment("ERROR: DATA DOES NOT MATCH ARCHIVES.", "text-red-600 font-bold mb-4"); }
             }
         });
         document.getElementById('close-assessment').addEventListener('click', closeAssessment);
@@ -390,24 +528,25 @@
         const dashChars = document.querySelectorAll('.dash-char');
 
         document.getElementById('override-btn').addEventListener('click', () => {
+            initAudio(); // Wakes up audio engine early
             overrideScreen.classList.remove('hidden'); overrideScreen.classList.add('flex');
-            overrideInput.value = ''; updateDashes(); cmdInput.disabled = true;
-            setTimeout(() => overrideInput.focus(), 10); playTypeSound();
+            overrideInput.value = ''; updateDashes(); cmdInput.disabled = true; setTimeout(() => overrideInput.focus(), 10); playTypeSound();
         });
-
+        
         document.getElementById('cancel-override').addEventListener('click', () => {
             overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
-            cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            cmdInput.disabled = false; setTimeout(() => cmdInput.focus(), 10); playTypeSound();
         });
-
+        
         function updateDashes() {
             const val = overrideInput.value;
             dashChars.forEach((el, i) => {
                 el.textContent = val[i] || '';
-                if (val[i]) { el.classList.add('border-white', 'text-white'); el.classList.remove('border-gray-700'); el.style.textShadow = '0 0 10px rgba(255,255,255,0.5)'; } 
-                else { el.classList.remove('border-white', 'text-white'); el.classList.add('border-gray-700'); el.style.textShadow = 'none'; }
+                if (val[i]) { el.classList.add('border-white', 'text-white'); el.classList.remove('border-red-900', 'text-red-500'); el.style.textShadow = '0 0 10px rgba(255,0,0,0.8)'; } 
+                else { el.classList.remove('border-white', 'text-white'); el.classList.add('border-red-900', 'text-red-500'); el.style.textShadow = 'none'; }
             });
         }
+        
         document.getElementById('override-dash-container').addEventListener('click', () => overrideInput.focus());
 
         overrideInput.addEventListener('input', function() {
@@ -415,122 +554,119 @@
             if (this.value.length === 5) setTimeout(submitOverride, 400);
         });
 
+        let inocSequence = "";
+
+        async function startInoculation() {
+            const screen = document.getElementById('inoculation-screen');
+            const status = document.getElementById('inoc-status');
+            const charDisplay = document.getElementById('inoc-char');
+            const inputContainer = document.getElementById('inoc-input-container');
+            const input = document.getElementById('inoc-input');
+
+            // Reset UI for the game
+            screen.classList.remove('hidden'); screen.classList.add('flex');
+            inputContainer.classList.add('hidden'); input.value = ''; charDisplay.textContent = '';
+            
+            status.textContent = 'OBSERVE THE SEQUENCE...';
+            status.className = 'text-yellow-500 font-mono text-sm sm:text-lg mb-8 tracking-widest text-center animate-pulse';
+
+            // Generate 5 random characters (A-Z)
+            inocSequence = "";
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for(let i=0; i<5; i++) inocSequence += chars.charAt(Math.floor(Math.random() * chars.length));
+
+            await new Promise(r => setTimeout(r, 2000));
+
+            // Flash characters rapidly one by one
+            for(let i=0; i<5; i++) {
+                charDisplay.textContent = inocSequence[i];
+                playTypeSound();
+                await new Promise(r => setTimeout(r, 400));
+                charDisplay.textContent = '';
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            // Prompt user to type the code
+            status.textContent = 'INPUT SEQUENCE NOW';
+            status.classList.remove('animate-pulse');
+            inputContainer.classList.remove('hidden');
+            input.classList.remove('hidden');
+            input.disabled = false;
+            setTimeout(() => input.focus(), 10);
+        }
+
+        // Handle user input for the memetic test
+        document.getElementById('inoc-input').addEventListener('input', async function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+            playTypeSound();
+            
+            if (this.value.length === 5) {
+                this.disabled = true;
+                const status = document.getElementById('inoc-status');
+                
+                if (this.value === inocSequence) {
+                    // Success!
+                    status.textContent = 'INOCULATION SUCCESSFUL';
+                    status.className = 'text-green-500 font-mono text-sm sm:text-lg mb-8 tracking-widest text-center';
+                    playSuccessSound();
+                    
+                    await new Promise(r => setTimeout(r, 2000));
+                    document.getElementById('inoculation-screen').classList.add('hidden');
+                    document.getElementById('inoculation-screen').classList.remove('flex');
+                    
+                    completeOverride();
+                } else {
+                    // Failure! Boot back to terminal
+                    status.textContent = 'INOCULATION FAILED';
+                    status.className = 'text-red-500 font-mono text-sm sm:text-lg mb-8 tracking-widest text-center';
+                    playErrorSound();
+                    
+                    await new Promise(r => setTimeout(r, 2000));
+                    document.getElementById('inoculation-screen').classList.add('hidden');
+                    document.getElementById('inoculation-screen').classList.remove('flex');
+                    this.disabled = false;
+                    
+                    await printLine("<span class='text-red-500'>ERROR: MEMETIC INFECTION DETECTED. AUTHORIZATION ABORTED.</span>", true);
+                    inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); scrollToBottom();
+                }
+            }
+        });
+
+        async function completeOverride() {
+            localStorage.setItem('scp_clearance', '1');
+            await printLine(`<div class="my-6 border-y-2 border-red-700 py-4 text-center bg-red-900 bg-opacity-20 w-full"><h2 class="text-3xl font-bold text-red-500 glitch" data-text="LEVEL 1 AUTHORIZATION ACCEPTED">LEVEL 1 AUTHORIZATION ACCEPTED</h2></div>`, true);
+            setTimeout(() => window.location.href = 'level1.html', 2000); 
+        }
+
         async function submitOverride() {
             const val = overrideInput.value; if (val.length < 5) return;
-            
             overrideScreen.classList.add('hidden'); overrideScreen.classList.remove('flex');
             cmdInput.disabled = true; inputLine.style.display = 'none';
-            
-            await printLine(`> PROCESSING EXTERNAL OVERRIDE HASH...`, false, 10);
+            await printLine(`> PROCESSING LEVEL 1 EXTERNAL OVERRIDE HASH...`, false, 10);
             
             if (val === 'F0A95') {
                 playSuccessSound(); await printLine("VERIFYING CREDENTIALS...", false, 30); await new Promise(r => setTimeout(r, 500));
                 
-                localStorage.setItem('scp_clearance', '1');
+                await printLine("<span class='text-yellow-500'>WARNING: LEVEL 1 COGNITOHAZARDS DETECTED.</span>", true);
+                await printLine("INITIATING MEMETIC INOCULATION TEST...", false, 20);
+                await new Promise(r => setTimeout(r, 1000));
                 
-                const levelBanner = `
-                <div class="my-6 border-y-2 border-red-700 py-4 text-center bg-red-900 bg-opacity-20 w-full">
-                    <h2 class="text-3xl font-bold text-red-500 glitch" data-text="AUTHORIZATION ACCEPTED">AUTHORIZATION ACCEPTED</h2>
-                    <p class="mt-2 text-gray-400">ROUTING TO LEVEL 1 WORKSPACE...</p>
-                </div>`;
-                await printLine(levelBanner, true);
-                setTimeout(() => { window.location.href = 'level1.html'; }, 2000);
+                startInoculation(); // Triggers the visual memory game
             } else {
-                playErrorSound();
-                await printLine("<span class='text-red'>ERROR: INVALID OVERRIDE HASH.</span>", true);
+                playErrorSound(); await printLine("<span class='text-red'>ERROR: INVALID OVERRIDE HASH.</span>", true);
                 inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); scrollToBottom();
             }
         }
 
+        // Global focus handler
         document.body.addEventListener('click', (e) => {
-            if (!overrideScreen.classList.contains('hidden')) { overrideInput.focus(); }
-            else if (!assessmentScreen.classList.contains('hidden')) { assessmentInput.focus(); }
-            else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.id !== 'override-btn') { cmdInput.focus(); }
+            if (!document.getElementById('inoculation-screen').classList.contains('hidden')) {
+                document.getElementById('inoc-input').focus();
+            }
+            else if (!overrideScreen.classList.contains('hidden')) overrideInput.focus();
+            else if (!assessmentScreen.classList.contains('hidden')) assessmentInput.focus();
+            else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.id !== 'override-btn') cmdInput.focus();
         });
-
-        const HACK_WORD_POOL = ["PROTOCOL", "INCIDENT", "BREACHED", "MEMETICS", "AMNESIAC", "OVERRIDE", "SECURITY", "RESEARCH", "DIRECTOR", "TERMINAL"];
-        const SYMBOLS = "!@#$%^&*()-=_+[]{}|;:,.<>/?`~";
-        const TOTAL_DUMP_LENGTH = 384; 
-        let hackAttemptsRemaining = 4;
-        let targetPassword = "";
-        let isHackingActive = false;
-
-        function initHacking() {
-            initAudio(); document.getElementById('boot-sequence').classList.add('hidden'); document.getElementById('hacking-screen').classList.remove('hidden'); document.getElementById('hacking-screen').classList.add('flex');
-            hackAttemptsRemaining = 4; updateAttemptsDisplay(); isHackingActive = true;
-            
-            const memoryDump = document.getElementById('memory-dump'); const hackLog = document.getElementById('hack-log');
-            memoryDump.innerHTML = ''; hackLog.innerHTML = '<div>> INIT HEURISTIC SCAN...</div>';
-
-            let selectedWords = []; let poolCopy = [...HACK_WORD_POOL];
-            for (let i = 0; i < 10; i++) selectedWords.push(poolCopy.splice(Math.floor(Math.random() * poolCopy.length), 1)[0]);
-            targetPassword = selectedWords[Math.floor(Math.random() * selectedWords.length)];
-
-            let dumpMap = new Array(TOTAL_DUMP_LENGTH).fill(null);
-            selectedWords.forEach(word => {
-                let placed = false;
-                while (!placed) {
-                    let startIndex = Math.floor(Math.random() * (TOTAL_DUMP_LENGTH - word.length)); let canPlace = true;
-                    for (let i = -1; i <= word.length; i++) { if (dumpMap[startIndex + i] !== null) canPlace = false; }
-                    if (canPlace) {
-                        for (let i = 0; i < word.length; i++) dumpMap[startIndex + i] = { type: 'word', char: word[i], fullWord: word };
-                        placed = true;
-                    }
-                }
-            });
-
-            let currentWordSpans = null; let currentWordString = "";
-            for (let i = 0; i < TOTAL_DUMP_LENGTH; i++) {
-                if (dumpMap[i] === null) {
-                    const span = document.createElement('span'); span.textContent = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-                    span.className = 'hack-symbol'; span.onclick = () => playTypeSound(); memoryDump.appendChild(span);
-                } else {
-                    const data = dumpMap[i];
-                    if (currentWordString !== data.fullWord) {
-                        currentWordString = data.fullWord; currentWordSpans = document.createElement('span'); currentWordSpans.className = 'hack-word';
-                        currentWordSpans.onclick = () => handleHackGuess(data.fullWord); memoryDump.appendChild(currentWordSpans);
-                    }
-                    const charSpan = document.createElement('span'); charSpan.textContent = data.char; currentWordSpans.appendChild(charSpan);
-                }
-            }
-        }
-
-        function updateAttemptsDisplay() { document.getElementById('hack-attempts-display').innerHTML = Array(4).fill(0).map((_, i) => i < hackAttemptsRemaining ? "■ " : "<span class='text-gray-800'>■</span> ").join('').trim(); }
-        function logHackEvent(text, colorClass = "text-green") { const log = document.getElementById('hack-log'); const entry = document.createElement('div'); entry.className = colorClass; entry.textContent = text; log.appendChild(entry); log.scrollTop = log.scrollHeight; }
-
-        function handleHackGuess(guess) {
-            if (!isHackingActive) return; logHackEvent(`> ${guess}`);
-            if (guess === targetPassword) {
-                isHackingActive = false; playSuccessSound(); logHackEvent("> EXACT MATCH DETECTED.", "text-green font-bold");
-                setTimeout(() => {
-                    document.getElementById('hacking-screen').innerHTML = "<div style='margin: auto; text-align: center;'><h2 class='text-green text-4xl font-bold'>OVERRIDE ACCEPTED.</h2><p class='mt-4'>ICE FIREWALL DEACTIVATED.</p></div>";
-                    setTimeout(() => { document.getElementById('hacking-screen').classList.add('hidden'); document.getElementById('hacking-screen').classList.remove('flex'); finishBootSequence(); }, 2000);
-                }, 1000);
-            } else {
-                playErrorSound(); hackAttemptsRemaining--; updateAttemptsDisplay();
-                let likeness = 0; for (let i = 0; i < guess.length; i++) if (guess[i] === targetPassword[i]) likeness++;
-                logHackEvent("> ENTRY DENIED.", "text-red"); logHackEvent(`> Likeness: ${likeness}/${targetPassword.length}`, "text-yellow-500");
-                if (hackAttemptsRemaining <= 0) {
-                    isHackingActive = false; logHackEvent("> SECURITY LOCKOUT ENGAGED.", "text-red font-bold");
-                    setTimeout(() => {
-                        document.getElementById('hacking-screen').innerHTML = "<div style='margin: auto; text-align: center;'><h2 class='text-red text-5xl font-bold glitch' data-text='MEMETIC KILL AGENT DEPLOYED'>MEMETIC KILL AGENT DEPLOYED</h2><p class='mt-4 text-xl'>CONNECTION TERMINATED.</p></div>";
-                        setTimeout(() => location.reload(), 4000);
-                    }, 1500);
-                }
-            }
-        }
-
-        async function runBootSequence() {
-            const bootLines = ["SCiPNET OS v4.9.1 (Build 8820)", "Loading kernel drivers.................. DONE", "Initializing secure connection.......... DONE", "Mounting secure volume [\\\\SITE-19]...... DONE", "<span class='text-red font-bold'>WARNING: UNAUTHORIZED ACCESS ATTEMPT DETECTED.</span>", "ROUTING TO INTRUSION COUNTERMEASURES (ICE)..."];
-            for (const line of bootLines) { const el = document.createElement('div'); el.innerHTML = line; el.style.marginBottom = '4px'; document.getElementById('boot-text').appendChild(el); await new Promise(r => setTimeout(r, Math.random() * 200 + 50)); }
-            await new Promise(r => setTimeout(r, 1000)); initHacking();
-        }
-
-        async function finishBootSequence() {
-            mainHeader.style.display = 'flex'; terminalOutput.style.display = 'flex'; updateGlobalTracker(); cmdInput.focus();
-        }
-
-        window.onload = runBootSequence;
     </script>
 </body>
 </html>
