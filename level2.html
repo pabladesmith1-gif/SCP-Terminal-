@@ -43,7 +43,7 @@
         .text-amber { color: var(--scp-amber); }
         
         .input-line { display: flex; align-items: center; margin-top: 1rem; }
-        .prompt { margin-right: 0.5rem; color: var(--scp-amber); }
+        .prompt { margin-right: 0.5rem; color: var(--scp-amber); font-weight: bold; }
         input[type="text"] {
             background: transparent; border: none; color: var(--scp-white);
             font-family: 'Share Tech Mono', monospace; font-size: 1rem;
@@ -62,7 +62,6 @@
             80% { clip: rect(47px, 9999px, 94px, 0); } 100% { clip: rect(86px, 9999px, 63px, 0); }
         }
 
-        /* Anchor Rings */
         .ring { border: 4px solid var(--scp-amber-dim); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(0deg); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .ring:hover { border-color: var(--scp-amber); box-shadow: inset 0 0 15px rgba(255, 183, 0, 0.2), 0 0 15px rgba(255, 183, 0, 0.2); }
         .ring::after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: var(--scp-amber); border-radius: 0; box-shadow: 0 0 10px var(--scp-amber); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
@@ -71,10 +70,16 @@
         .ring-2 { width: 220px; height: 220px; }
         .ring-3 { width: 300px; height: 300px; }
 
-        /* Radar Scanner */
-        #radar-blip { position: absolute; width: 10px; height: 10px; background: red; border-radius: 50%; box-shadow: 0 0 10px red, 0 0 20px red; opacity: 0; transition: opacity 0.2s, top 3s linear, left 3s linear; z-index: 20;}
-        .radar-sweep { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.8)); transform-origin: left center; animation: radar-spin 3s infinite linear; z-index: 10;}
+        #radar-blip { position: absolute; width: 12px; height: 12px; background: red; border-radius: 50%; box-shadow: 0 0 10px red, 0 0 20px red; opacity: 0; transition: opacity 0.2s, top 1.5s linear, left 1.5s linear; z-index: 20;}
+        .radar-sweep { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.8)); transform-origin: left center; animation: radar-spin 1.5s infinite linear; z-index: 10;}
         @keyframes radar-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .router-node { transition: all 0.2s; border: 2px solid var(--scp-amber-dim); }
+        .router-node.active { background-color: rgba(255,183,0,0.2); border-color: var(--scp-amber); box-shadow: 0 0 15px rgba(255,183,0,0.4); color: var(--scp-amber); }
+        
+        .decrypt-input { background: transparent; border-bottom: 2px solid var(--scp-amber-dim); color: var(--scp-white); font-family: 'Share Tech Mono', monospace; text-transform: uppercase; text-align: center; width: 100%; outline: none; transition: border-color 0.3s; }
+        .decrypt-input:focus { border-color: var(--scp-amber); }
+        .decrypt-input.success { border-color: #33ff33; color: #33ff33; pointer-events: none; }
 
         ::-webkit-scrollbar { width: 10px; } ::-webkit-scrollbar-track { background: #111; } ::-webkit-scrollbar-thumb { background: #444; }
     </style>
@@ -86,7 +91,6 @@
         <h2 class="text-amber text-2xl font-mono animate-pulse">VERIFYING CLEARANCE TOKENS...</h2>
     </div>
 
-    <!-- THREAT ANALYSIS APP -->
     <div id="analysis-screen" class="hidden absolute inset-0 bg-[#110a00] z-30 flex-col items-center justify-center p-4 sm:p-8">
         <div class="w-full max-w-4xl border-2 border-amber-600 bg-[#0a0500] shadow-[0_0_40px_rgba(255,183,0,0.15)] flex flex-col relative overflow-hidden">
             <div class="w-full bg-amber-600 text-black px-4 py-1.5 flex justify-between items-center text-sm font-bold tracking-widest shadow-md">
@@ -100,11 +104,10 @@
                 
                 <div class="flex flex-col gap-6">
                     <div class="flex justify-between items-center text-amber font-mono text-sm border-b border-amber-600 pb-2">
-                        <span>INCIDENT <span id="analysis-current">1</span> OF 3</span>
+                        <span>INCIDENT <span id="analysis-current">1</span> OF 4</span>
                         <span id="analysis-status" class="tracking-widest animate-pulse">AWAITING IDENTIFICATION</span>
                     </div>
 
-                    <!-- Scenario Display -->
                     <div class="bg-[#1a1100] border border-amber-600/50 p-6 font-mono text-gray-300 text-lg leading-relaxed shadow-[inset_0_0_20px_rgba(0,0,0,1)] relative">
                         <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(255,183,0,0.03)_1px,transparent_1px)] bg-[length:100%_4px] z-10"></div>
                         <div id="analysis-text" class="relative z-20">
@@ -112,7 +115,6 @@
                         </div>
                     </div>
 
-                    <!-- Inputs -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="flex flex-col">
                             <label class="text-amber-dim text-xs tracking-[0.2em] mb-1">IDENTIFY ITEM DESIGNATION (e.g. SCP-001)</label>
@@ -133,7 +135,6 @@
         </div>
     </div>
 
-    <!-- SCRANTON REALITY ANCHOR APP -->
     <div id="anchor-screen" class="hidden absolute inset-0 bg-[#050505] z-30 flex-col items-center justify-center p-4">
         <div class="w-full max-w-2xl h-[600px] border-2 border-amber-600 bg-[#0a0500] p-8 shadow-[0_0_40px_rgba(255,183,0,0.2)] relative flex flex-col items-center overflow-hidden">
             <h2 class="text-amber text-2xl font-bold mb-2 tracking-[0.2em] glitch text-center" data-text="REALITY ANCHOR CALIBRATION">REALITY ANCHOR CALIBRATION</h2>
@@ -155,15 +156,16 @@
         </div>
     </div>
 
-    <!-- RADAR / TRACKER APP -->
     <div id="tracker-screen" class="hidden absolute inset-0 bg-[#001a00] z-40 flex-col items-center justify-center p-4">
-        <div class="w-full max-w-3xl border border-green-900 bg-black p-4 relative z-20 flex flex-col h-[500px]">
+        <div class="w-full max-w-3xl border border-green-900 bg-black p-4 relative z-20 flex flex-col h-[550px]">
             <div class="flex justify-between items-center border-b border-green-900 pb-2 mb-4">
                 <span class="text-green-500 font-bold tracking-widest">MOTION PROXIMITY TRACKER</span>
                 <span id="distance-readout" class="text-green-500 font-mono">DISTANCE: CALCULATING...</span>
             </div>
             
-            <div class="flex-1 border border-green-900 rounded-full mx-auto aspect-square relative overflow-hidden bg-[radial-gradient(circle_at_center,rgba(0,255,0,0.1)_0%,transparent_70%)] flex items-center justify-center">
+            <p class="text-green-600 text-xs sm:text-sm text-center mb-6 font-mono tracking-widest">WARNING: ENTITY APPROACHING.<br>CLICK 'SEND PING' ONLY WHEN DISTANCE IS BETWEEN <span class="font-bold text-white">15.0m AND 20.0m</span> TO LOCK TELEMETRY.</p>
+
+            <div class="flex-1 border border-green-900 rounded-full mx-auto aspect-square relative overflow-hidden bg-[radial-gradient(circle_at_center,rgba(0,255,0,0.1)_0%,transparent_70%)] flex items-center justify-center mb-6">
                 <!-- Concentric Radar Rings -->
                 <div class="absolute w-3/4 h-3/4 border border-green-900/50 rounded-full"></div>
                 <div class="absolute w-1/2 h-1/2 border border-green-900/50 rounded-full"></div>
@@ -173,15 +175,90 @@
                 <div class="absolute w-full h-[1px] bg-green-900/50"></div>
                 <div class="absolute h-full w-[1px] bg-green-900/50"></div>
                 
+                <!-- 15m to 20m Sweet Spot Zone (Visual Guide) -->
+                <div class="absolute w-[40%] h-[40%] rounded-full border-2 border-green-500 border-dashed opacity-30"></div>
+                
                 <div class="radar-sweep"></div>
                 <div id="radar-blip"></div>
             </div>
             
-            <p class="text-green-900 text-center text-xs tracking-[0.2em] mt-4 pt-2 border-t border-green-900">PRESS ANY KEY TO ABORT TRACKING</p>
+            <button id="btn-ping" class="w-full bg-green-900 hover:bg-green-700 text-black font-bold py-3 tracking-[0.3em] transition-colors mb-2">[ SEND PING ]</button>
+            <button id="close-tracker" class="w-full text-center text-green-900 hover:text-green-600 transition-colors tracking-widest text-sm">[ ABORT TRACKING ]</button>
         </div>
     </div>
 
-    <!-- Dark Red Override Screen (Level 2 to 3) -->
+    <div id="decrypt-screen" class="hidden absolute inset-0 bg-[#050505] z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl bg-[#0a0500] border-2 border-amber-600 p-6 sm:p-10 flex flex-col relative shadow-[0_0_40px_rgba(255,183,0,0.15)]">
+            <h2 class="text-amber text-2xl sm:text-3xl mb-6 font-bold tracking-[0.2em] glitch text-center" data-text="CRYPTOGRAPHIC ANALYSIS">CRYPTOGRAPHIC ANALYSIS</h2>
+            
+            <div class="flex flex-col gap-8">
+                <!-- Stage 1 -->
+                <div class="flex flex-col">
+                    <label class="text-amber font-mono text-[11px] tracking-widest mb-1">STAGE I: ROT-13 SHIFT</label>
+                    <div class="bg-[#111] border border-amber-900 p-2 text-gray-400 font-mono text-[13px] mb-2 text-center tracking-[0.3em]">
+                        ZRZRGVP
+                    </div>
+                    <input type="text" id="dec-1" class="decrypt-input py-2" autocomplete="off" spellcheck="false" placeholder="DECRYPT...">
+                </div>
+                
+                <!-- Stage 2 -->
+                <div class="flex flex-col">
+                    <label class="text-amber font-mono text-[11px] tracking-widest mb-1">STAGE II: ATBASH REFLECTION</label>
+                    <div class="bg-[#111] border border-amber-900 p-2 text-gray-400 font-mono text-[13px] mb-2 text-center tracking-[0.3em]">
+                        VFXORW
+                    </div>
+                    <input type="text" id="dec-2" class="decrypt-input py-2" autocomplete="off" spellcheck="false" disabled placeholder="LOCKED">
+                </div>
+
+                <!-- Stage 3 -->
+                <div class="flex flex-col">
+                    <label class="text-amber font-mono text-[11px] tracking-widest mb-1">STAGE III: BACONIAN PROTOCOL (5-BIT ALPHA)</label>
+                    <div class="bg-[#111] border border-amber-900 p-2 text-gray-400 font-mono text-[13px] mb-2 text-center tracking-[0.3em]">
+                        ABABA AABAA BAABB AABAA BAAAB
+                    </div>
+                    <input type="text" id="dec-3" class="decrypt-input py-2" autocomplete="off" spellcheck="false" disabled placeholder="LOCKED">
+                </div>
+            </div>
+            
+            <button id="close-decrypt" class="text-amber-700 hover:text-amber transition-colors font-mono tracking-widest text-sm mt-8">[ ABORT DECRYPTION ]</button>
+        </div>
+    </div>
+
+    <div id="router-screen" class="hidden absolute inset-0 bg-[#050505] z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl border-2 border-amber-600 bg-[#0a0500] p-6 sm:p-10 flex flex-col relative shadow-[0_0_40px_rgba(255,183,0,0.15)] h-[80vh]">
+            <h2 class="text-amber text-2xl font-bold mb-4 tracking-[0.2em] glitch text-center" data-text="SITE-19 POWER ROUTING">SITE-19 POWER ROUTING</h2>
+            
+            <div class="flex-1 flex flex-col md:flex-row gap-8 overflow-hidden">
+                <!-- Rules Log -->
+                <div class="w-full md:w-1/2 flex flex-col h-full bg-[#110a00] border border-amber-900 p-6 overflow-y-auto">
+                    <span class="text-amber-dim text-[10px] font-bold tracking-widest mb-4 border-b border-amber-900 pb-2 block">LOGIC GATE PARAMETERS</span>
+                    <div class="font-mono text-[11px] sm:text-[13px] leading-loose text-gray-300 w-full space-y-4">
+                        <p><span class="text-amber">RULE I:</span> NODE 1 and NODE 5 must share the exact same polarity.</p>
+                        <p><span class="text-amber">RULE II:</span> NODE 2 and NODE 3 must have opposing polarity.</p>
+                        <p><span class="text-amber">RULE III:</span> If NODE 4 is ACTIVE, then NODE 1 must be INACTIVE.</p>
+                        <p><span class="text-amber">RULE IV:</span> NODE 2 cannot be ACTIVE while NODE 1 is ACTIVE.</p>
+                        <p><span class="text-red-500 font-bold">CRITICAL:</span> Exactly THREE (3) nodes must be ACTIVE to stabilize the grid.</p>
+                    </div>
+                </div>
+
+                <!-- Toggle Nodes -->
+                <div class="w-full md:w-1/2 flex flex-col gap-4 justify-center">
+                    <button id="r-node-1" class="router-node bg-[#111] text-gray-500 p-4 font-mono tracking-widest font-bold">NODE 1 : INACTIVE</button>
+                    <button id="r-node-2" class="router-node bg-[#111] text-gray-500 p-4 font-mono tracking-widest font-bold">NODE 2 : INACTIVE</button>
+                    <button id="r-node-3" class="router-node bg-[#111] text-gray-500 p-4 font-mono tracking-widest font-bold">NODE 3 : INACTIVE</button>
+                    <button id="r-node-4" class="router-node bg-[#111] text-gray-500 p-4 font-mono tracking-widest font-bold">NODE 4 : INACTIVE</button>
+                    <button id="r-node-5" class="router-node bg-[#111] text-gray-500 p-4 font-mono tracking-widest font-bold">NODE 5 : INACTIVE</button>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-amber-900 gap-4">
+                <button id="close-router" class="text-amber-700 hover:text-amber transition-colors font-mono tracking-widest text-sm">[ ABORT ROUTING ]</button>
+                <span id="router-feedback" class="font-mono text-red-500 text-sm font-bold text-center h-5"></span>
+                <button id="btn-submit-router" class="bg-amber-600 text-black px-6 py-2 font-mono font-bold hover:bg-white transition-colors tracking-[0.2em]">[ INITIATE ROUTING ]</button>
+            </div>
+        </div>
+    </div>
+
     <div id="override-screen" class="hidden absolute inset-0 bg-[#050505] z-50 flex-col justify-center items-center">
         <h2 class="text-amber text-2xl sm:text-4xl font-bold mb-12 tracking-[0.2em] glitch text-center" data-text="SECURITY CLEARANCE UPGRADE">SECURITY CLEARANCE UPGRADE</h2>
         <div class="flex gap-2 sm:gap-4 mb-8" id="override-dash-container">
@@ -196,7 +273,6 @@
         <button id="cancel-override" class="text-gray-500 hover:text-white transition-colors tracking-widest text-sm">[ CANCEL ]</button>
     </div>
 
-    <!-- Main Terminal Interface -->
     <div class="terminal-header relative flex" style="display: none;" id="main-header">
         <div class="flex-1 z-10">
             <h1 class="text-2xl font-bold tracking-widest text-amber">SCP FOUNDATION</h1>
@@ -231,51 +307,27 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script>
-        let currentClearanceLevel = 2;
         let globalTracker = ['_', '_', '_', '_', '_'];
-
+        let seals = { analyze: false, anchor: false, tracker: false, decrypt: false, router: false };
+        
         let audioContextStarted = false;
         const typeSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.05, sustain: 0, release: 0.01 } }).toDestination(); typeSynth.volume.value = -20;
         const alertSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 1 } }).toDestination(); alertSynth.volume.value = -15;
         const noiseSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.1 } }).toDestination(); noiseSynth.volume.value = -15;
 
-        function playTypeSound() { if (!audioContextStarted) return; typeSynth.triggerAttackRelease(["C4", "C#4", "D4", "D#4"][Math.floor(Math.random() * 4)], "32n"); }
-        function playSuccessSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("C5", "8n"); setTimeout(() => alertSynth.triggerAttackRelease("E5", "4n"), 150); }
-        function playErrorSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("G2", "4n"); noiseSynth.triggerAttackRelease("8n", "+0.1"); }
-        async function initAudio() { if (!audioContextStarted) { await Tone.start(); audioContextStarted = true; } }
+        function playTypeSound() { if (!audioContextStarted) return; typeSynth.triggerAttackRelease(["C4", "C#4", "D4", "D#4"][Math.floor(Math.random() * 4)], "32n", Tone.now()); }
+        function playSuccessSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("C5", "8n", Tone.now()); setTimeout(() => alertSynth.triggerAttackRelease("E5", "4n", Tone.now()), 150); }
+        function playErrorSound() { if (!audioContextStarted) return; alertSynth.triggerAttackRelease("G2", "4n", Tone.now()); noiseSynth.triggerAttackRelease("8n", Tone.now() + 0.1); }
+        async function initAudio() { if (!audioContextStarted) { audioContextStarted = true; await Tone.start(); } }
 
         window.onload = () => {
             const authScreen = document.getElementById('auth-screen');
-            // DEV BYPASS: Hardcoding clearance to 2 for testing
-            const clearance = 2; 
-            
             setTimeout(() => {
-                if (clearance < 2) {
-                    authScreen.innerHTML = `<div class="text-center"><h2 class="text-red-600 text-4xl font-bold glitch mb-4" data-text="SECURITY BREACH">SECURITY BREACH</h2><p class="text-red-400 text-xl font-mono">CLEARANCE LEVEL 2 REQUIRED.</p></div>`;
-                    setTimeout(() => window.location.href = 'index.html', 3000);
-                } else {
-                    authScreen.style.display = 'none';
-                    document.getElementById('main-header').style.display = 'flex';
-                    document.getElementById('terminal-output').style.display = 'flex';
-                    document.getElementById('cmd-input').focus();
-                    updateGlobalTracker(); initAudio(); 
-                    
-                    // Start Subliminal Flash Engine
-                    const triggerFlash = () => {
-                        const delay = Math.random() * 15000 + 10000; // Random delay between 10s and 25s
-                        setTimeout(() => {
-                            if(document.getElementById('override-screen').classList.contains('hidden') && document.getElementById('tracker-screen').classList.contains('hidden')) {
-                                const flash = document.getElementById('subliminal-flash');
-                                if (flash) {
-                                    flash.classList.remove('hidden');
-                                    setTimeout(() => flash.classList.add('hidden'), 60); // Barely perceptible 60ms flash
-                                }
-                            }
-                            triggerFlash();
-                        }, delay);
-                    };
-                    triggerFlash();
-                }
+                authScreen.style.display = 'none';
+                document.getElementById('main-header').style.display = 'flex';
+                document.getElementById('terminal-output').style.display = 'flex';
+                document.getElementById('cmd-input').focus();
+                updateGlobalTracker(); initAudio(); 
             }, 1500);
         };
 
@@ -287,20 +339,31 @@
         function scrollToBottom() { terminalOutput.scrollTop = terminalOutput.scrollHeight; }
 
         function updateGlobalTracker() {
+            if(seals.analyze) globalTracker[0] = 'Z';
+            if(seals.anchor) globalTracker[1] = '4';
+            if(seals.tracker) globalTracker[2] = 'L';
+            if(seals.decrypt) globalTracker[3] = '8';
+            if(seals.router) globalTracker[4] = 'Q';
             document.getElementById('header-tracker').textContent = `[ ${globalTracker.join(' ')} ]`;
         }
 
         const scpDatabase = {
             "HELP": { type: "text", content: [ 
                 "AVAILABLE COMMANDS:", 
-                "  help       - Display this message", 
                 "  clear      - Clear terminal output",
-                "  analyze    - Launch Threat Analysis Database (Wiki Required)",
-                "  anchor     - Launch Scranton Reality Anchor Calibration"
+                "  status     - View Sector Hash Progress",
+                "  analyze    - Launch Threat Analysis Database",
+                "  anchor     - Launch Reality Anchor Calibration",
+                "  tracker    - Launch Motion Proximity Tracker",
+                "  decrypt    - Launch Cryptographic Analysis",
+                "  router     - Launch Site-19 Power Routing"
             ] },
+            "STATUS": { type: "app", appName: "STATUS" },
             "ANALYZE": { type: "app", appName: "ANALYSIS" },
             "ANCHOR": { type: "app", appName: "ANCHOR_PUZZLE" },
-            "TRACKER": { type: "app", appName: "RADAR" }
+            "TRACKER": { type: "app", appName: "RADAR" },
+            "DECRYPT": { type: "app", appName: "DECRYPT_PUZZLE" },
+            "ROUTER": { type: "app", appName: "ROUTER_PUZZLE" }
         };
 
         function printLine(text, isHtml = false, speed = 10) {
@@ -318,21 +381,52 @@
             });
         }
 
+        async function printStatus() {
+            let s1 = seals.analyze ? "<span class='text-green-500'>[ SECURED ]</span>" : "<span class='text-red-500'>[ MISSING ]</span>";
+            let s2 = seals.anchor ? "<span class='text-green-500'>[ SECURED ]</span>" : "<span class='text-red-500'>[ MISSING ]</span>";
+            let s3 = seals.tracker ? "<span class='text-green-500'>[ SECURED ]</span>" : "<span class='text-red-500'>[ MISSING ]</span>";
+            let s4 = seals.decrypt ? "<span class='text-green-500'>[ SECURED ]</span>" : "<span class='text-red-500'>[ MISSING ]</span>";
+            let s5 = seals.router ? "<span class='text-green-500'>[ SECURED ]</span>" : "<span class='text-red-500'>[ MISSING ]</span>";
+
+            let output = `
+                <div class="my-4 border border-amber-600 bg-[#0a0500] p-4 font-mono w-full max-w-md mx-auto shadow-[inset_0_0_15px_rgba(255,183,0,0.1)]">
+                    <div class="text-amber border-b border-amber-600 pb-2 mb-2 font-bold tracking-[0.2em] text-center">SECTOR HASH ACQUISITION</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">THREAT ANALYSIS (Z):</span> ${s1}</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">REALITY ANCHOR (4):</span> ${s2}</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">PROXIMITY TRACKER (L):</span> ${s3}</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">CRYPTOGRAPHY (8):</span> ${s4}</div>
+                    <div class="flex justify-between"><span class="text-gray-400">POWER ROUTING (Q):</span> ${s5}</div>
+                </div>
+            `;
+            await printLine(output, true);
+            if(seals.analyze && seals.anchor && seals.tracker && seals.decrypt && seals.router) {
+                await printLine("<br><span class='text-green-500 font-bold text-lg text-center block w-full'>ALL HASH FRAGMENTS RECOVERED.<br>USE 'SECURE OVERRIDE' TO ACCESS LEVEL 3.</span><br>", true);
+            }
+        }
+
         async function processCommand(cmd) {
             initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
             await printLine(`C:\\SCiPNET\\LEVEL-2> ${fullCmd}`, false, 5);
             
-            const args = fullCmd.toUpperCase().split(/\s+/);
-            const baseCmd = args[0].replace(/[^A-Z0-9\-]/g, '');
+            const baseCmd = fullCmd.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
 
             if (baseCmd === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
+            if (baseCmd === 'J3LLYBEAN') {
+                seals.analyze = true; seals.anchor = true; seals.tracker = true; seals.decrypt = true; seals.router = true;
+                updateGlobalTracker(); playSuccessSound();
+                await printLine("<span class='text-green-500 font-bold'>[DEV OVERRIDE]: ALL HASHES ACQUIRED. OPEN SECURE OVERRIDE.</span>", true);
+                return;
+            }
 
-            const entry = scpDatabase[baseCmd.replace(/-/g, '')];
+            const entry = scpDatabase[baseCmd];
             if (entry) {
-                if (entry.type === 'app' && entry.appName === 'ANALYSIS') openAnalysis();
+                if (entry.type === 'app' && entry.appName === 'STATUS') await printStatus();
+                else if (entry.type === 'app' && entry.appName === 'ANALYSIS') openAnalysis();
                 else if (entry.type === 'app' && entry.appName === 'ANCHOR_PUZZLE') openAnchor();
                 else if (entry.type === 'app' && entry.appName === 'RADAR') openTracker();
-                else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); }
+                else if (entry.type === 'app' && entry.appName === 'DECRYPT_PUZZLE') openDecrypt();
+                else if (entry.type === 'app' && entry.appName === 'ROUTER_PUZZLE') openRouter();
+                else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 50)); }
             } else { playErrorSound(); await printLine("<span class='text-red-500'>ERROR: Command or File not recognized.</span>", true); }
         }
 
@@ -344,15 +438,14 @@
                 if (document.getElementById('analysis-screen').classList.contains('hidden') && 
                     document.getElementById('anchor-screen').classList.contains('hidden') && 
                     document.getElementById('tracker-screen').classList.contains('hidden') &&
+                    document.getElementById('decrypt-screen').classList.contains('hidden') &&
+                    document.getElementById('router-screen').classList.contains('hidden') &&
                     document.getElementById('override-screen').classList.contains('hidden')) {
                     inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
                 }
             } else playTypeSound();
         });
 
-        // ------------------
-        // THREAT ANALYSIS APP (WIKI PUZZLE)
-        // ------------------
         const analysisScreen = document.getElementById('analysis-screen');
         const analysisTextDisplay = document.getElementById('analysis-text');
         const analysisInput1 = document.getElementById('analysis-input-1');
@@ -360,51 +453,35 @@
         const analysisLabel2 = document.getElementById('analysis-label-2');
         
         let analysisIndex = 0;
-        
         const analysisPuzzles = [
-            {
-                text: "Anomaly is a predatory pack animal mimicking human voices to lure prey. It emits a highly specific amnestic aerosol to erase memories of encounters.",
-                label2: "IDENTIFY AEROSOL DESIGNATION",
-                ans1: "SCP939", ans2: "AMNC227", frag: "Z"
-            },
-            {
-                text: "Subterranean facility located in Yellowstone National Park designed to mass-clone humanity to prevent an XK-Class End-of-the-World scenario.",
-                label2: "IDENTIFY OBJECT CLASS",
-                ans1: "SCP2000", ans2: "THAUMIEL", frag: "4"
-            },
-            {
-                text: "A hostile, anomalous idea (Antimeme) that annihilates anyone who perceives it. Accessing its wiki document requires a specific numeric keypad code.",
-                label2: "INPUT KEYPAD ACCESS CODE",
-                ans1: "SCP3125", ans2: "55555", frag: "L"
-            }
+            { text: "Anomaly is a predatory pack animal mimicking human voices to lure prey. It emits a specific amnestic aerosol to erase memories.", label2: "IDENTIFY AEROSOL DESIGNATION", ans1: "SCP939", ans2: "AMNC227" },
+            { text: "Subterranean facility located in Yellowstone National Park designed to mass-clone humanity to prevent an XK-Class End-of-the-World scenario.", label2: "IDENTIFY OBJECT CLASS", ans1: "SCP2000", ans2: "THAUMIEL" },
+            { text: "A hostile, anomalous idea (Antimeme) that annihilates anyone who perceives it. Accessing its wiki document requires a specific numeric keypad code.", label2: "INPUT KEYPAD ACCESS CODE", ans1: "SCP3125", ans2: "55555" },
+            { text: "Seven subjects. Six deceased. The remaining subject is heavily guarded and subjected to an extreme, classified procedure to prevent an XK-Class scenario.", label2: "IDENTIFY PROCEDURE DESIGNATION", ans1: "SCP231", ans2: "110MONTAUK" }
         ];
 
         function openAnalysis() {
+            if(seals.analyze) { printLine("THREAT ANALYSIS ALREADY VERIFIED.", true); return; }
             analysisScreen.classList.remove('hidden'); analysisScreen.classList.add('flex');
-            cmdInput.disabled = true; 
-            
-            analysisIndex = globalTracker.slice(0,3).findIndex(f => f === '_');
-            if(analysisIndex === -1) analysisIndex = 3; 
-            
-            loadAnalysis(); playTypeSound();
+            cmdInput.disabled = true; analysisIndex = 0; loadAnalysis(); playTypeSound();
         }
 
         function loadAnalysis() {
             analysisInput1.value = ''; analysisInput2.value = '';
             
-            if (analysisIndex >= 3) {
-                document.getElementById('analysis-current').textContent = "3";
-                analysisTextDisplay.innerHTML = `<span class="text-green-500 text-xl font-bold tracking-widest text-center">ALL THREATS IDENTIFIED.<br>PROCEED TO REALITY ANCHOR CALIBRATION.</span>`;
+            if (analysisIndex >= 4) {
+                document.getElementById('analysis-current').textContent = "4";
+                analysisTextDisplay.innerHTML = `<span class="text-green-500 text-xl font-bold tracking-widest text-center">ALL THREATS IDENTIFIED.<br>HASH FRAGMENT (Z) SECURED.</span>`;
                 document.getElementById('btn-submit-analysis').style.display = 'none';
                 analysisInput1.disabled = true; analysisInput2.disabled = true;
+                seals.analyze = true; updateGlobalTracker();
+                setTimeout(() => document.getElementById('close-analysis').click(), 2500);
                 return;
             }
             document.getElementById('btn-submit-analysis').style.display = 'block';
             document.getElementById('analysis-current').textContent = (analysisIndex + 1);
-            
             analysisTextDisplay.textContent = analysisPuzzles[analysisIndex].text;
             analysisLabel2.textContent = analysisPuzzles[analysisIndex].label2;
-            
             setTimeout(() => analysisInput1.focus(), 100);
         }
 
@@ -414,18 +491,14 @@
             
             if (val1 === analysisPuzzles[analysisIndex].ans1 && val2 === analysisPuzzles[analysisIndex].ans2) {
                 playSuccessSound();
-                document.getElementById('analysis-status').textContent = "VERIFIED - HASH EXTRACTED";
+                document.getElementById('analysis-status').textContent = "VERIFIED";
                 document.getElementById('analysis-status').className = "text-green-500 tracking-widest font-bold";
-                
-                globalTracker[analysisIndex] = analysisPuzzles[analysisIndex].frag;
-                updateGlobalTracker();
                 analysisIndex++;
-                
                 setTimeout(() => {
                     document.getElementById('analysis-status').textContent = "AWAITING IDENTIFICATION";
                     document.getElementById('analysis-status').className = "text-amber tracking-widest animate-pulse";
                     loadAnalysis();
-                }, 1500);
+                }, 1000);
             } else {
                 playErrorSound();
                 document.getElementById('analysis-status').textContent = "ERROR: INCORRECT PARAMETERS";
@@ -446,26 +519,16 @@
         document.getElementById('close-analysis').addEventListener('click', () => {
             analysisScreen.classList.add('hidden'); analysisScreen.classList.remove('flex');
             inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(seals.analyze) printLine("<span class='text-amber'>[SYSTEM]: THREAT ANALYSIS VERIFIED. USE 'STATUS' TO VIEW PROGRESS.</span>", true);
         });
 
-
-        // ------------------
-        // ANCHOR CALIBRATION (INTERLOCKED RINGS)
-        // ------------------
         const anchorScreen = document.getElementById('anchor-screen');
-        // Initial fixed scrambled state
-        let ringRotations = [90, 180, 270];
+        let ringRotations = [90, 180, 270]; // Start misaligned
 
         function openAnchor() {
-            if (globalTracker[2] === '_') {
-                playErrorSound();
-                printLine("<span class='text-red-500'>ERROR: IDENTIFY THREATS 1-3 BEFORE ATTEMPTING CALIBRATION.</span>", true);
-                return;
-            }
+            if (seals.anchor) { printLine("ANCHORS ALREADY STABILIZED.", true); return; }
             anchorScreen.classList.remove('hidden'); anchorScreen.classList.add('flex');
-            cmdInput.disabled = true;
-            ringRotations = [90, 180, 270]; // Reset puzzle on open
-            updateRings();
+            cmdInput.disabled = true; ringRotations = [90, 180, 270]; updateRings();
         }
 
         function updateRings() {
@@ -474,56 +537,209 @@
             document.getElementById('ring-3').style.transform = `translate(-50%, -50%) rotate(${ringRotations[2]}deg)`;
         }
 
-        // Interlocking Logic
         document.getElementById('ring-1').addEventListener('click', (e) => {
             e.stopPropagation(); playTypeSound();
-            ringRotations[0] += 90; ringRotations[1] -= 90; // Ring 1 moves Ring 2 backward
+            ringRotations[0] += 90; ringRotations[1] -= 90; // R1 moves R2 back
             updateRings(); checkAnchorWin();
         });
         document.getElementById('ring-2').addEventListener('click', (e) => {
             e.stopPropagation(); playTypeSound();
-            ringRotations[1] += 90; ringRotations[2] += 90; // Ring 2 moves Ring 3 forward
+            ringRotations[1] += 90; ringRotations[2] -= 90; // R2 moves R3 back
             updateRings(); checkAnchorWin();
         });
         document.getElementById('ring-3').addEventListener('click', (e) => {
             e.stopPropagation(); playTypeSound();
-            ringRotations[2] += 90; ringRotations[0] -= 90; // Ring 3 moves Ring 1 backward
+            ringRotations[2] += 90; ringRotations[0] -= 90; // R3 moves R1 back
             updateRings(); checkAnchorWin();
         });
 
         function checkAnchorWin() {
-            // Check if all rings are effectively at 0 (or multiples of 360)
             let isAligned = ringRotations.every(rot => rot % 360 === 0);
-            if (isAligned && globalTracker[4] === '_') {
+            if (isAligned) {
                 playSuccessSound();
-                
-                // Add the final two fragments (8 and Q)
-                globalTracker[3] = '8'; globalTracker[4] = 'Q';
-                updateGlobalTracker();
-                
-                setTimeout(() => {
-                    anchorScreen.classList.add('hidden'); anchorScreen.classList.remove('flex');
-                    inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
-                    printLine("<span class='text-green-500'>[SYSTEM]: REALITY ANCHORS STABILIZED. FULL L3 HASH RECOVERED.</span>", true);
-                }, 1500);
+                seals.anchor = true; updateGlobalTracker();
+                setTimeout(() => document.getElementById('close-anchor').click(), 2000);
             }
         }
 
         document.getElementById('close-anchor').addEventListener('click', () => {
             anchorScreen.classList.add('hidden'); anchorScreen.classList.remove('flex');
             inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(seals.anchor) printLine("<span class='text-amber'>[SYSTEM]: ANCHORS STABILIZED. HASH FRAGMENT (4) SECURED.</span>", true);
         });
 
-        // ------------------
-        // OVERRIDE (Z4L8Q)
-        // ------------------
+        const trackerScreen = document.getElementById('tracker-screen');
+        const radarBlip = document.getElementById('radar-blip');
+        const distanceReadout = document.getElementById('distance-readout');
+        let trackerInterval; let trackerActive = false; let blipDistance = 50.0;
+
+        function openTracker() {
+            if(seals.tracker) { printLine("TELEMETRY ALREADY EXTRACTED.", true); return; }
+            trackerScreen.classList.remove('hidden'); trackerScreen.classList.add('flex');
+            cmdInput.disabled = true; trackerActive = true;
+            
+            blipDistance = 50.0; radarBlip.style.top = '15%'; radarBlip.style.left = '20%'; radarBlip.style.opacity = '0';
+            distanceReadout.textContent = `DISTANCE: ${blipDistance}m`;
+            distanceReadout.className = "text-green-500 font-mono";
+
+            trackerInterval = setInterval(() => {
+                if(!trackerActive) return;
+                playTypeSound(); 
+                radarBlip.style.opacity = '1'; setTimeout(() => radarBlip.style.opacity = '0', 600);
+                
+                blipDistance = Math.max(0, (blipDistance - (Math.random() * 3 + 1.5))).toFixed(1);
+                
+                let currentTop = parseFloat(radarBlip.style.top); let currentLeft = parseFloat(radarBlip.style.left);
+                radarBlip.style.top = `${currentTop + (50 - currentTop) * 0.15}%`;
+                radarBlip.style.left = `${currentLeft + (50 - currentLeft) * 0.15}%`;
+
+                if (blipDistance <= 0) {
+                    clearInterval(trackerInterval); trackerActive = false; playErrorSound();
+                    distanceReadout.className = "text-red-500 font-mono animate-pulse";
+                    distanceReadout.textContent = "ENTITY INTERSECT. YOU ARE DEAD.";
+                    setTimeout(() => document.getElementById('close-tracker').click(), 2500);
+                } else if (blipDistance < 15) {
+                    distanceReadout.className = "text-red-500 font-mono animate-pulse";
+                    distanceReadout.textContent = `DISTANCE: ${blipDistance}m - IMMINENT BREACH`;
+                } else {
+                    distanceReadout.textContent = `DISTANCE: ${blipDistance}m`;
+                }
+            }, 1000);
+        }
+
+        document.getElementById('btn-ping').addEventListener('click', () => {
+            if(!trackerActive) return;
+            clearInterval(trackerInterval); trackerActive = false;
+            
+            if (blipDistance <= 20.0 && blipDistance >= 15.0) {
+                playSuccessSound();
+                distanceReadout.className = "text-green-500 font-bold font-mono";
+                distanceReadout.textContent = "COORDINATES LOCKED. TELEMETRY EXTRACTED.";
+                seals.tracker = true; updateGlobalTracker();
+                setTimeout(() => document.getElementById('close-tracker').click(), 2500);
+            } else {
+                playErrorSound();
+                distanceReadout.className = "text-red-500 font-bold font-mono animate-pulse";
+                distanceReadout.textContent = "PING FAILED. ENTITY ALERTED.";
+                setTimeout(() => document.getElementById('close-tracker').click(), 2500);
+            }
+        });
+
+        document.getElementById('close-tracker').addEventListener('click', () => {
+            clearInterval(trackerInterval); trackerActive = false;
+            trackerScreen.classList.add('hidden'); trackerScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(seals.tracker) printLine("<span class='text-amber'>[SYSTEM]: PROXIMITY TELEMETRY SECURED. HASH FRAGMENT (L) RECOVERED.</span>", true);
+        });
+
+        const decryptScreen = document.getElementById('decrypt-screen');
+        const d1 = document.getElementById('dec-1'); const d2 = document.getElementById('dec-2'); const d3 = document.getElementById('dec-3');
+
+        function openDecrypt() {
+            if (seals.decrypt) { printLine("CRYPTOGRAPHY ALREADY CRACKED.", true); return; }
+            decryptScreen.classList.remove('hidden'); decryptScreen.classList.add('flex');
+            cmdInput.disabled = true;
+            d1.value = ''; d2.value = ''; d3.value = '';
+            d1.disabled = false; d2.disabled = true; d3.disabled = true;
+            d1.classList.remove('success'); d2.classList.remove('success'); d3.classList.remove('success');
+            setTimeout(() => d1.focus(), 100);
+        }
+
+        d1.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(d1.value.toUpperCase().trim() === 'MEMETIC') {
+                    playSuccessSound(); d1.classList.add('success'); d1.disabled = true;
+                    d2.disabled = false; d2.placeholder = "DECRYPT..."; d2.focus();
+                } else { playErrorSound(); d1.value = ''; }
+            } else playTypeSound();
+        });
+
+        d2.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(d2.value.toUpperCase().trim() === 'EUCLID') {
+                    playSuccessSound(); d2.classList.add('success'); d2.disabled = true;
+                    d3.disabled = false; d3.placeholder = "DECRYPT..."; d3.focus();
+                } else { playErrorSound(); d2.value = ''; }
+            } else playTypeSound();
+        });
+
+        d3.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(d3.value.toUpperCase().trim() === 'KETER') {
+                    playSuccessSound(); d3.classList.add('success'); d3.disabled = true;
+                    seals.decrypt = true; updateGlobalTracker();
+                    setTimeout(() => document.getElementById('close-decrypt').click(), 2500);
+                } else { playErrorSound(); d3.value = ''; }
+            } else playTypeSound();
+        });
+
+        document.getElementById('close-decrypt').addEventListener('click', () => {
+            decryptScreen.classList.add('hidden'); decryptScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(seals.decrypt) printLine("<span class='text-amber'>[SYSTEM]: CIPHERS BROKEN. HASH FRAGMENT (8) SECURED.</span>", true);
+        });
+
+        const routerScreen = document.getElementById('router-screen');
+        const routerFeedback = document.getElementById('router-feedback');
+        let rState = [false, false, false, false, false];
+
+        function openRouter() {
+            if (seals.router) { printLine("POWER GRID ALREADY STABILIZED.", true); return; }
+            routerScreen.classList.remove('hidden'); routerScreen.classList.add('flex');
+            cmdInput.disabled = true; routerFeedback.textContent = '';
+            rState = [false, false, false, false, false];
+            updateRouterUI();
+        }
+
+        function updateRouterUI() {
+            for(let i=0; i<5; i++) {
+                let btn = document.getElementById(`r-node-${i+1}`);
+                if(rState[i]) { btn.classList.add('active'); btn.textContent = `NODE ${i+1} : ACTIVE`; } 
+                else { btn.classList.remove('active'); btn.textContent = `NODE ${i+1} : INACTIVE`; }
+            }
+        }
+
+        for(let i=0; i<5; i++) {
+            document.getElementById(`r-node-${i+1}`).addEventListener('click', () => {
+                playTypeSound(); rState[i] = !rState[i]; updateRouterUI();
+            });
+        }
+
+        document.getElementById('btn-submit-router').addEventListener('click', () => {
+            let activeCount = rState.filter(v => v).length;
+            let errors = [];
+            
+            if (rState[0] !== rState[4]) errors.push("RULE I VIOLATION");
+            if (rState[1] === rState[2]) errors.push("RULE II VIOLATION");
+            if (rState[3] && rState[0]) errors.push("RULE III VIOLATION");
+            if (rState[0] && rState[1]) errors.push("RULE IV VIOLATION");
+            if (activeCount !== 3) errors.push("CRITICAL GRID IMBALANCE (NEEDS 3 ACTIVE)");
+
+            if (errors.length === 0) {
+                playSuccessSound();
+                routerFeedback.textContent = "GRID STABILIZED.";
+                routerFeedback.className = "font-mono text-green-500 text-sm font-bold text-center h-5";
+                seals.router = true; updateGlobalTracker();
+                setTimeout(() => document.getElementById('close-router').click(), 2500);
+            } else {
+                playErrorSound();
+                routerFeedback.textContent = "REJECTED: " + errors[0];
+                routerFeedback.className = "font-mono text-red-500 text-sm font-bold text-center h-5 animate-pulse";
+            }
+        });
+
+        document.getElementById('close-router').addEventListener('click', () => {
+            routerScreen.classList.add('hidden'); routerScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(seals.router) printLine("<span class='text-amber'>[SYSTEM]: POWER GRID STABILIZED. HASH FRAGMENT (Q) SECURED.</span>", true);
+        });
+
         const overrideScreen = document.getElementById('override-screen');
         const overrideInput = document.getElementById('override-input');
         const dashChars = document.querySelectorAll('.dash-char');
 
         document.getElementById('override-btn').addEventListener('click', () => {
-            initAudio(); 
-            overrideScreen.classList.remove('hidden'); overrideScreen.classList.add('flex');
+            initAudio(); overrideScreen.classList.remove('hidden'); overrideScreen.classList.add('flex');
             overrideInput.value = ''; updateDashes(); cmdInput.disabled = true; setTimeout(() => overrideInput.focus(), 10); playTypeSound();
         });
         
@@ -555,11 +771,8 @@
             
             if (val === 'Z4L8Q') {
                 playSuccessSound(); await printLine("VERIFYING CREDENTIALS...", false, 30); await new Promise(r => setTimeout(r, 500));
-                
                 localStorage.setItem('scp_clearance', '3');
                 await printLine(`<div class="my-6 border-y-2 border-amber-600 py-4 text-center bg-amber-600 bg-opacity-20 w-full"><h2 class="text-3xl font-bold text-amber glitch" data-text="LEVEL 3 AUTHORIZATION ACCEPTED">LEVEL 3 AUTHORIZATION ACCEPTED</h2></div>`, true);
-                
-                // Redirect to the non-existent Level 3 page
                 setTimeout(() => window.location.href = 'level3.html', 2000); 
             } else {
                 playErrorSound(); await printLine("<span class='text-red-500'>ERROR: INVALID OVERRIDE HASH.</span>", true);
@@ -567,86 +780,16 @@
             }
         }
 
-        // ------------------
-        // RADAR TRACKER
-        // ------------------
-        const trackerScreen = document.getElementById('tracker-screen');
-        const radarBlip = document.getElementById('radar-blip');
-        const distanceReadout = document.getElementById('distance-readout');
-        let trackerInterval;
-        let blipDistance = 45.2;
-
-        function openTracker() {
-            trackerScreen.classList.remove('hidden'); trackerScreen.classList.add('flex');
-            cmdInput.disabled = true; 
-            blipDistance = 45.2;
-            radarBlip.style.top = '15%'; radarBlip.style.left = '20%';
-            radarBlip.style.opacity = '0';
-            
-            let trackerActive = true;
-            
-            const closeTracker = (e) => {
-                if (!trackerActive) return; // Prevent aborting if already won
-                clearInterval(trackerInterval); trackerActive = false;
-                trackerScreen.classList.add('hidden'); trackerScreen.classList.remove('flex');
-                inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
-                distanceReadout.classList.remove('text-red-500', 'animate-pulse');
-                distanceReadout.classList.add('text-green-500');
-                document.removeEventListener('keydown', closeTracker);
-            };
-
-            trackerInterval = setInterval(() => {
-                playSuccessSound(); 
-                radarBlip.style.opacity = '1';
-                setTimeout(() => radarBlip.style.opacity = '0', 800);
-                
-                // Speed up the approach
-                blipDistance = Math.max(0, (blipDistance - (Math.random() * 6 + 4))).toFixed(1);
-                
-                let currentTop = parseFloat(radarBlip.style.top);
-                let currentLeft = parseFloat(radarBlip.style.left);
-                radarBlip.style.top = `${currentTop + (50 - currentTop) * 0.18}%`;
-                radarBlip.style.left = `${currentLeft + (50 - currentLeft) * 0.18}%`;
-
-                if (blipDistance <= 0) {
-                    // THEY HELD THEIR NERVE!
-                    clearInterval(trackerInterval); trackerActive = false;
-                    distanceReadout.classList.remove('text-green-500');
-                    distanceReadout.classList.add('text-red-500', 'animate-pulse');
-                    distanceReadout.textContent = "ENTITY INTERSECT. TELEMETRY EXTRACTED.";
-                    
-                    if (globalTracker[4] === '_') {
-                        globalTracker[4] = 'Q';
-                        updateGlobalTracker();
-                    }
-                    
-                    setTimeout(() => {
-                        trackerScreen.classList.add('hidden'); trackerScreen.classList.remove('flex');
-                        inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus();
-                        distanceReadout.classList.remove('text-red-500', 'animate-pulse');
-                        distanceReadout.classList.add('text-green-500');
-                        document.removeEventListener('keydown', closeTracker);
-                        printLine("<span class='text-amber'>[SYSTEM]: PROXIMITY TELEMETRY GATHERED. FINAL HASH FRAGMENT (Q) SECURED.</span>", true);
-                    }, 2500);
-                } else if (blipDistance < 12) {
-                    // DANGER ZONE
-                    distanceReadout.classList.remove('text-green-500');
-                    distanceReadout.classList.add('text-red-500', 'animate-pulse');
-                    distanceReadout.textContent = `DISTANCE: ${blipDistance}m - IMMINENT BREACH`;
-                } else {
-                    distanceReadout.textContent = `DISTANCE: ${blipDistance}m`;
-                }
-            }, 1200);
-
-            setTimeout(() => document.addEventListener('keydown', closeTracker), 500);
-        }
-
         document.body.addEventListener('click', (e) => {
             if (!overrideScreen.classList.contains('hidden')) overrideInput.focus();
             else if (!analysisScreen.classList.contains('hidden')) {
                 if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
-                    if (analysisInput1.value === '') analysisInput1.focus();
-                    else analysisInput2.focus();
+                    if (analysisInput1.value === '') analysisInput1.focus(); else analysisInput2.focus();
+                }
+            }
+            else if (!decryptScreen.classList.contains('hidden')) {
+                if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                    if(!d1.disabled) d1.focus(); else if(!d2.disabled) d2.focus(); else if(!d3.disabled) d3.focus();
                 }
             }
             else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.tagName !== 'BUTTON' && !e.target.classList.contains('ring')) cmdInput.focus();
