@@ -13,7 +13,6 @@
             --scp-red: #ff3333;
             --scp-white: #e0e0e0;
             --scp-green: #33ff33;
-            --scp-blue: #4da6ff;
         }
 
         body {
@@ -29,20 +28,18 @@
         }
 
         @keyframes flicker {
-            0% { opacity: 0.9; } 5% { opacity: 0.8; } 10% { opacity: 0.95; }
-            15% { opacity: 0.7; } 20% { opacity: 0.9; } 25% { opacity: 0.8; }
-            30% { opacity: 0.95; } 35% { opacity: 0.9; } 40% { opacity: 0.8; }
-            50% { opacity: 0.9; } 60% { opacity: 0.95; } 70% { opacity: 0.8; }
-            80% { opacity: 0.9; } 90% { opacity: 0.95; } 100% { opacity: 0.9; }
+            0% { opacity: 0.97; } 5% { opacity: 0.95; } 10% { opacity: 0.99; }
+            15% { opacity: 0.93; } 20% { opacity: 0.98; } 25% { opacity: 0.95; }
+            30% { opacity: 0.97; } 35% { opacity: 0.96; } 40% { opacity: 0.94; }
+            50% { opacity: 0.99; } 60% { opacity: 0.95; } 70% { opacity: 0.97; }
+            80% { opacity: 0.98; } 90% { opacity: 0.94; } 100% { opacity: 0.97; }
         }
-        .crt { animation: flicker 0.15s infinite; }
+        .crt { animation: flicker 0.3s infinite; }
 
         .terminal-header {
             border-bottom: 2px solid var(--scp-red);
-            padding: 1rem; display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem;
         }
-        .scp-logo { width: 75px; height: 75px; }
-        .scp-logo img { width: 100%; height: 100%; filter: invert(90%) sepia(100%) hue-rotate(310deg) saturate(300%); }
 
         .terminal-content { flex-grow: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; }
         .output-line { margin-bottom: 0.5rem; line-height: 1.4; }
@@ -79,22 +76,22 @@
         <h2 class="text-white text-2xl font-mono animate-pulse">VERIFYING CLEARANCE TOKENS...</h2>
     </div>
 
-    <!-- Red Assessment Screen (L1-HUB) -->
-    <div id="assessment-screen" class="hidden absolute inset-0 bg-[#220000] z-30 flex-col items-center justify-center p-4 sm:p-8">
-        <div class="w-full max-w-4xl border-2 border-red-900 p-8 bg-[#140000] shadow-[0_0_30px_rgba(255,0,0,0.2)] flex flex-col items-center relative">
-            <h2 class="text-red-500 text-2xl sm:text-4xl font-bold mb-4 tracking-[0.2em] text-center glitch" data-text="SECURE ASSESSMENT ENVIRONMENT">SECURE ASSESSMENT ENVIRONMENT</h2>
-            <p class="text-red-300 text-sm tracking-widest mb-8 border-b border-red-900 pb-4 w-full text-center">LEVEL 1 ADVANCED PROTOCOL INITIATED</p>
+    <!-- Deep Lore Assessment Screen (Red for Level 1) -->
+    <div id="assessment-screen" class="hidden absolute inset-0 bg-[#110000] z-30 flex-col items-center justify-center p-4 sm:p-8">
+        <div class="w-full max-w-4xl border-2 border-red-900 p-8 bg-[#0a0000] shadow-[0_0_30px_rgba(255,0,0,0.2)] flex flex-col items-center relative">
+            <h2 class="text-red-500 text-2xl sm:text-4xl font-bold mb-4 tracking-[0.2em] text-center glitch" data-text="SECURE DECRYPTION ENVIRONMENT">SECURE DECRYPTION ENVIRONMENT</h2>
+            <p class="text-red-400 text-sm tracking-widest mb-8 border-b border-red-900 pb-4 w-full text-center">LEVEL 1 DEEP LORE PROTOCOL INITIATED</p>
             
-            <div id="assessment-log" class="w-full h-64 overflow-y-auto mb-6 text-red-200 font-mono text-sm sm:text-base flex flex-col gap-4 p-4 border border-red-900 bg-black bg-opacity-50">
+            <div id="assessment-log" class="w-full h-64 overflow-y-auto mb-6 text-red-300 font-mono text-sm sm:text-base flex flex-col gap-4 p-4 border border-red-900 bg-black bg-opacity-50">
                 <!-- Assessment queries appear here -->
             </div>
             
-            <div class="w-full flex items-center border-b-2 border-red-500 pb-2">
+            <div class="w-full flex items-center border-b-2 border-red-600 pb-2">
                 <span class="text-red-500 mr-4 font-bold">></span>
                 <input type="text" id="assessment-input" class="w-full bg-transparent border-none text-red-100 outline-none text-xl font-mono" placeholder="INPUT ANSWER..." autocomplete="off">
             </div>
             
-            <button id="close-assessment" class="mt-8 text-red-800 hover:text-red-400 transition-colors tracking-widest text-sm">[ ABORT SESSION ]</button>
+            <button id="close-assessment" class="mt-8 text-red-800 hover:text-red-500 transition-colors tracking-widest text-sm">[ ABORT CONNECTION ]</button>
         </div>
     </div>
 
@@ -114,16 +111,18 @@
     </div>
 
     <!-- Main Terminal Interface -->
-    <div class="terminal-header" style="display: none;" id="main-header">
-        <div>
+    <div class="terminal-header relative flex" style="display: none;" id="main-header">
+        <div class="flex-1 z-10">
             <h1 class="text-2xl font-bold tracking-widest text-red-500">SCP FOUNDATION</h1>
             <p class="text-sm opacity-75">SECURE. CONTAIN. PROTECT.</p>
         </div>
-        <div class="scp-logo">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo">
+        
+        <!-- Centered Logo via Absolute Positioning -->
+        <div class="scp-logo absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center pointer-events-none z-0">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo" style="width: 75px; height: 75px; filter: invert(90%) sepia(100%) hue-rotate(310deg) saturate(300%);">
         </div>
-        <div class="text-right flex flex-col items-end">
-            <!-- Header Hash Tracker -->
+
+        <div class="flex-1 text-right flex flex-col items-end z-10">
             <div class="flex items-center mb-1">
                 <div class="text-green font-mono text-xl tracking-widest mr-4" id="header-tracker">[ _ _ _ _ _ ]</div>
                 <p class="text-sm text-red-500 font-bold tracking-widest">CLEARANCE: LEVEL 1</p>
@@ -138,7 +137,7 @@
             <h2 class="text-3xl font-bold text-red-500 glitch" data-text="LEVEL 1 SECURE WORKSPACE">LEVEL 1 SECURE WORKSPACE</h2>
             <p class="mt-2 text-gray-400">ENCRYPTION LIFTED. NEW DIRECTORIES ACCESSIBLE.</p>
         </div>
-        <div class="output-line mt-4 text-green">HINT: Access point 'L1-HUB' is now available for field testing.</div>
+        <div class="output-line mt-4 text-green">HINT: Access point 'L1-HUB' is now available for decryption.</div>
         
         <div class="input-line">
             <span class="prompt">C:\SCiPNET\LEVEL-1></span>
@@ -153,6 +152,7 @@
             const clearance = parseInt(localStorage.getItem('scp_clearance') || '0');
             
             setTimeout(() => {
+                // If they bypassed level 0, kick them out
                 if (clearance < 1) {
                     authScreen.innerHTML = `<div class="text-center"><h2 class="text-red-600 text-4xl font-bold glitch mb-4" data-text="SECURITY BREACH">SECURITY BREACH</h2><p class="text-red-400 text-xl font-mono">CLEARANCE LEVEL 1 REQUIRED.</p><p class="text-gray-500 mt-4 text-sm">Rerouting back to Level 0...</p></div>`;
                     setTimeout(() => window.location.href = 'index.html', 3000);
@@ -214,11 +214,11 @@
         async function processCommand(cmd) {
             initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
             await printLine(`C:\\SCiPNET\\LEVEL-1> ${fullCmd}`, false, 5);
-            const normalizedInput = fullCmd.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const normalizedInput = fullCmd.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
 
             if (normalizedInput === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
 
-            const entry = scpDatabase[normalizedInput];
+            const entry = scpDatabase[normalizedInput.replace(/-/g, '')];
             if (entry) {
                 if (entry.type === 'app' && entry.appName === 'ASSESSMENT') openAssessment();
                 else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 100)); }
@@ -229,21 +229,26 @@
             if (e.key === 'Enter') {
                 const val = this.value; this.value = ''; this.disabled = true; inputLine.style.display = 'none';
                 await processCommand(val);
-                inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
+                
+                if (assessmentScreen.classList.contains('hidden') && overrideScreen.classList.contains('hidden')) {
+                    inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
+                }
             } else playTypeSound();
         });
 
+        // DEEP LORE ASSESSMENT UI
         const assessmentScreen = document.getElementById('assessment-screen');
         const assessmentInput = document.getElementById('assessment-input');
         const assessmentLog = document.getElementById('assessment-log');
         let assessmentStep = 0;
         
+        // The Deep Lore Questions!
         const level1Queries = [
-            { q: "QUERY 1: The great eel of the Bay of Bengal. What is the specific chemical designation of the compound harvested from its exocrinations?", a: "Y909", frag: "X" },
-            { q: "QUERY 2: Protocol 10-Ezra (Femur Breaker). What is the specific required age bracket for the human subject?", a: "1025", frag: "7" },
-            { q: "QUERY 3: The Absolute Exclusion Harness. What is the full name of the technician who found himself trapped in the suit?", a: "PIETROWILSON", frag: "B" },
-            { q: "QUERY 4: The Coffee Machine. Agent Joseph was severely injured during a breach. What specific concept did Agent Jones request to dispense in order to save him?", a: "MEDICALKNOWLEDGE", frag: "9" },
-            { q: "QUERY 5: The Red Sea Object. According to the recovered texts from the alternate dimension, what religious term do the natives use to refer to the massive, faceless torsos?", a: "UNCLEAN", frag: "3" }
+            { q: "QUERY 1: The great eel of the Bay of Bengal. What is the specific chemical designation harvested from its excretions?", a: "Y909", frag: "X" },
+            { q: "QUERY 2: Protocol 10-Ezra. What is the required age bracket for the subject?", a: "1025", frag: "7" },
+            { q: "QUERY 3: The Absolute Exclusion Harness. What is the full name of the technician discovered inside?", a: "PIETROWILSON", frag: "B" },
+            { q: "QUERY 4: The Coffee Machine. What specific concept did the agent request to save his injured friend?", a: "MEDICALKNOWLEDGE", frag: "9" },
+            { q: "QUERY 5: The Red Sea Object. What specific religious term do the natives use to describe the massive torsos?", a: "UNCLEAN", frag: "3" }
         ];
 
         function openAssessment() {
@@ -253,10 +258,10 @@
             assessmentStep = globalTracker.findIndex(f => f === '_');
             if(assessmentStep === -1) assessmentStep = 5;
 
-            printToAssessment("> INITIALIZING LEVEL 1 DEEP-DIVE PROTOCOL...", "text-red-400");
+            printToAssessment("> INITIALIZING LEVEL 1 DEEP LORE PROTOCOL...", "text-red-400");
             setTimeout(() => { 
                 if(assessmentStep < 5) {
-                    printToAssessment("> WARNING: COGNITOHAZARD FILTERS DISABLED.", "text-red-500");
+                    printToAssessment("> WARNING: COGNITOHAZARD FILTERS ARE OFFLINE.", "text-red-500 font-bold");
                     setTimeout(() => printToAssessment(level1Queries[assessmentStep].q, "text-red-200 mt-4"), 1000);
                 } else {
                     printToAssessment("ALL QUERIES SATISFIED. MAXIMUM CLEARANCE FOR TIER ACHIEVED.", "text-green font-bold mt-4");
@@ -267,7 +272,9 @@
 
         function closeAssessment() {
             assessmentScreen.classList.add('hidden'); assessmentScreen.classList.remove('flex');
-            cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; 
+            setTimeout(() => { if (!cmdInput.disabled) cmdInput.focus(); }, 10); 
+            playTypeSound();
         }
 
         function printToAssessment(text, classes = "text-red-300") {
@@ -305,11 +312,14 @@
         });
         document.getElementById('close-assessment').addEventListener('click', closeAssessment);
 
+
+        // SECURE OVERRIDE LOGIC
         const overrideScreen = document.getElementById('override-screen');
         const overrideInput = document.getElementById('override-input');
         const dashChars = document.querySelectorAll('.dash-char');
 
         document.getElementById('override-btn').addEventListener('click', () => {
+            initAudio(); 
             overrideScreen.classList.remove('hidden'); overrideScreen.classList.add('flex');
             overrideInput.value = ''; updateDashes(); cmdInput.disabled = true; setTimeout(() => overrideInput.focus(), 10); playTypeSound();
         });
@@ -353,10 +363,11 @@
             }
         }
 
+        // Global focus handler to fix keyboard stealing
         document.body.addEventListener('click', (e) => {
             if (!overrideScreen.classList.contains('hidden')) overrideInput.focus();
             else if (!assessmentScreen.classList.contains('hidden')) assessmentInput.focus();
-            else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.id !== 'override-btn') cmdInput.focus();
+            else if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.tagName !== 'BUTTON') cmdInput.focus();
         });
     </script>
 </body>
