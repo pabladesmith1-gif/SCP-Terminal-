@@ -1,1 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP Foundation - O5 Command</title>
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --o5-black: #000000; 
+            --o5-gold: #d4af37;
+            --o5-gold-dim: #8a7322;
+            --o5-white: #ffffff;
+            --o5-gray: #333333;
+        }
 
+        body {
+            background-color: var(--o5-black); color: var(--o5-gold);
+            font-family: 'Space Mono', monospace; overflow: hidden;
+            display: flex; flex-direction: column; height: 100vh; margin: 0; user-select: none;
+        }
+
+        .terminal-header { 
+            border-bottom: 1px solid var(--o5-gold); padding: 1.5rem; 
+            display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.05) 0%, transparent 100%);
+        }
+        
+        .o5-title { font-family: 'Cinzel', serif; letter-spacing: 0.3em; }
+        .terminal-content { flex-grow: 1; padding: 2rem; overflow-y: auto; display: flex; flex-direction: column; }
+        .output-line { margin-bottom: 0.75rem; line-height: 1.6; color: var(--o5-white); }
+        
+        .input-line { display: flex; align-items: center; margin-top: 2rem; border-top: 1px solid var(--o5-gray); padding-top: 1rem; }
+        .prompt { margin-right: 1rem; color: var(--o5-gold); font-family: 'Cinzel', serif; font-weight: bold; letter-spacing: 0.1em; }
+        input[type="text"] {
+            background: transparent; border: none; color: var(--o5-white);
+            font-family: 'Space Mono', monospace; font-size: 1.1rem;
+            flex-grow: 1; outline: none; caret-color: var(--o5-gold); text-transform: uppercase;
+        }
+
+        .glow-text { text-shadow: 0 0 15px rgba(212, 175, 55, 0.6); }
+        .glow-box { box-shadow: 0 0 30px rgba(212, 175, 55, 0.15), inset 0 0 20px rgba(212, 175, 55, 0.05); border: 1px solid var(--o5-gold); }
+        
+        ::-webkit-scrollbar { width: 6px; } 
+        ::-webkit-scrollbar-track { background: var(--o5-black); border-left: 1px solid var(--o5-gray); } 
+        ::-webkit-scrollbar-thumb { background: var(--o5-gold-dim); }
+
+        .fade-in { animation: fadeIn 1s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .redact-word { cursor: pointer; transition: background-color 0.15s, color 0.15s; padding: 2px 4px; border-radius: 3px; display: inline-block; }
+        .redact-word:hover { background-color: rgba(212, 175, 55, 0.25); color: var(--o5-white); text-shadow: 0 0 5px var(--o5-white); }
+        .redact-word.redacted { color: var(--o5-gold); font-weight: bold; pointer-events: none; text-shadow: 0 0 10px rgba(212, 175, 55, 0.8); background: transparent; letter-spacing: 0.1em; }
+        .redact-word.wrong { animation: shakeError 0.3s forwards; color: #ff3333; }
+        
+        @keyframes shakeError {
+            0% { transform: translateX(0); } 25% { transform: translateX(-3px); }
+            50% { transform: translateX(3px); } 75% { transform: translateX(-3px); } 100% { transform: translateX(0); color: var(--o5-gray); }
+        }
+
+        #erase-integrity-container { width: 100%; height: 24px; border: 1px solid var(--o5-gold-dim); background: #111; margin-bottom: 1rem; position: relative; overflow: hidden; }
+        #erase-integrity-bar { height: 100%; width: 100%; background: var(--o5-gold); transition: width 0.1s linear, background-color 0.3s; }
+        #erase-integrity-bar.danger { background: #ff3333; box-shadow: 0 0 15px #ff3333; }
+
+        .nexus-input { background: #111; border-bottom: 1px solid var(--o5-gold); color: white; padding: 4px 8px; width: 100%; font-family: 'Space Mono', monospace; font-size: 0.9rem; text-transform: uppercase; outline: none; }
+        .nexus-input:focus { border-bottom: 2px solid white; }
+
+        .cipher-input { background: transparent; border-bottom: 2px solid var(--o5-gold-dim); color: var(--o5-white); font-family: 'Space Mono', monospace; text-transform: uppercase; text-align: center; width: 100%; outline: none; transition: border-color 0.3s; }
+        .cipher-input:focus { border-color: var(--o5-gold); }
+        .cipher-input.success { border-color: #33ff33; color: #33ff33; pointer-events: none; }
+    </style>
+</head>
+<body class="relative">
+
+    <!-- Auth Verification Screen -->
+    <div id="auth-screen" class="absolute inset-0 bg-black z-50 flex flex-col justify-center items-center">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" class="w-32 h-32 mb-8 opacity-0 fade-in" style="filter: invert(79%) sepia(42%) saturate(541%) hue-rotate(5deg) brightness(91%) contrast(88%); animation-delay: 0.5s;">
+        <h2 class="o5-title text-gold text-2xl opacity-0 fade-in glow-text text-center" style="animation-delay: 1.5s;">OVERSEER CREDENTIALS ACCEPTED</h2>
+        <p class="text-white font-mono mt-4 opacity-0 fade-in" style="animation-delay: 2.5s;">INITIALIZING NEURAL LINK...</p>
+    </div>
+
+    <!-- NEXUS APP -->
+    <div id="nexus-screen" class="hidden absolute inset-0 bg-black z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-5xl bg-black glow-box p-6 sm:p-10 flex flex-col relative h-[85vh]">
+            <h2 class="o5-title text-gold text-2xl mb-2 glow-text text-center">NEXUS CROSS-REFERENCE ENGINE</h2>
+            <p class="text-gray-400 font-mono text-xs sm:text-sm text-center mb-8 border-b border-[#333] pb-4 w-full">
+                QUERY THE EXTERNAL GLOBAL DATABASE.<br>IDENTIFY THE OVERARCHING <span class="text-white font-bold">GROUP OF INTEREST</span> OR <span class="text-gold font-bold">COSMIC ENTITY</span> CONNECTING EACH DATASET.
+            </p>
+            
+            <div class="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-8 pr-2">
+                <div class="bg-[#050505] border border-gray-800 p-4 flex flex-col shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
+                    <h3 class="font-bold text-gray-500 text-xs tracking-widest mb-4">DATASET ALPHA</h3>
+                    <p class="text-gold font-mono mb-6 flex justify-between tracking-widest">
+                        <span>SCP-217</span><span>|</span><span>SCP-882</span><span>|</span><span>SCP-2217</span>
+                    </p>
+                    <div class="mt-auto">
+                        <label class="text-[10px] text-gray-500 tracking-widest mb-1 block">IDENTIFY THE FACTION / ENTITY</label>
+                        <input type="text" id="nex-ans-1" class="nexus-input" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
+                <div class="bg-[#050505] border border-gray-800 p-4 flex flex-col shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
+                    <h3 class="font-bold text-gray-500 text-xs tracking-widest mb-4">DATASET BETA</h3>
+                    <p class="text-gold font-mono mb-6 flex justify-between tracking-widest">
+                        <span>SCP-610</span><span>|</span><span>SCP-2075</span><span>|</span><span>SCP-2480</span>
+                    </p>
+                    <div class="mt-auto">
+                        <label class="text-[10px] text-gray-500 tracking-widest mb-1 block">IDENTIFY THE FACTION / ENTITY</label>
+                        <input type="text" id="nex-ans-2" class="nexus-input" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
+                <div class="bg-[#050505] border border-gray-800 p-4 flex flex-col shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
+                    <h3 class="font-bold text-gray-500 text-xs tracking-widest mb-4">DATASET GAMMA</h3>
+                    <p class="text-gold font-mono mb-6 flex justify-between tracking-widest">
+                        <span>SCP-701</span><span>|</span><span>SCP-2264</span><span>|</span><span>SCP-5034</span>
+                    </p>
+                    <div class="mt-auto">
+                        <label class="text-[10px] text-gray-500 tracking-widest mb-1 block">IDENTIFY THE REALM / KING</label>
+                        <input type="text" id="nex-ans-3" class="nexus-input" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
+                <div class="bg-[#050505] border border-gray-800 p-4 flex flex-col shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
+                    <h3 class="font-bold text-gray-500 text-xs tracking-widest mb-4">DATASET DELTA</h3>
+                    <p class="text-gold font-mono mb-6 flex justify-between tracking-widest">
+                        <span>SCP-1425</span><span>|</span><span>SCP-1981</span><span>|</span><span>SCP-3125</span>
+                    </p>
+                    <div class="mt-auto">
+                        <label class="text-[10px] text-gray-500 tracking-widest mb-1 block">IDENTIFY THE CONCEPTUAL RELIGION</label>
+                        <input type="text" id="nex-ans-4" class="nexus-input" autocomplete="off" spellcheck="false">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 border-t border-[#333] pt-4">
+                <button id="close-nexus" class="text-gray-500 hover:text-white transition-colors font-mono tracking-widest text-sm">[ ABORT ]</button>
+                <span id="nexus-feedback" class="font-mono text-red-500 text-sm font-bold order-first sm:order-none text-center h-5"></span>
+                <button id="submit-nexus" class="bg-gold text-black px-6 py-2 font-mono font-bold hover:bg-white transition-colors tracking-widest">[ DECRYPT NEXUS ]</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIRECTIVE APP -->
+    <div id="directive-screen" class="hidden absolute inset-0 bg-black z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-6xl bg-black glow-box p-6 flex flex-col h-[90vh] relative">
+            <h2 class="o5-title text-gold text-2xl mb-2 glow-text text-center border-b border-[#333] pb-4">O5 COUNCIL DIRECTIVE</h2>
+            
+            <div class="flex flex-col md:flex-row gap-8 h-full mt-4 overflow-hidden">
+                <div class="flex-1 overflow-y-auto pr-4 font-mono text-gray-300 text-[11px] sm:text-xs space-y-3 leading-relaxed">
+                    <p class="text-red-500 font-bold mb-4 text-sm">CRISIS: ACTIVATION OF SCP-2000. MANDATE REQUIRES EXACTLY <span class="text-white text-lg">7</span> YES VOTES.</p>
+                    <p><span class="text-gold">RULE I:</span> O5-4, O5-5, and O5-6 operate as a strict voting bloc. Their votes must be identical.</p>
+                    <p><span class="text-gold">RULE II:</span> O5-11 and O5-12 are tethered. Their votes must be identical.</p>
+                    <p><span class="text-gold">RULE III:</span> O5-1, O5-2, and O5-3 must output EXACTLY ONE "YES" vote between them.</p>
+                    <p><span class="text-gold">RULE IV:</span> O5-8, O5-9, and O5-10 must output EXACTLY TWO "YES" votes between them.</p>
+                    <p><span class="text-gold">RULE V:</span> O5-7 and O5-13 despise each other. Their votes must be opposites.</p>
+                    <p><span class="text-gold">RULE VI:</span> O5-1 permanently abstains (Votes NO).</p>
+                    <p><span class="text-gold">RULE VII:</span> O5-2 and O5-6 will NEVER agree. They must vote opposite.</p>
+                    <p><span class="text-gold">RULE VIII:</span> O5-8 will only vote YES if O5-11 votes YES. (If 11 is NO, 8 must be NO).</p>
+                    <p><span class="text-gold">RULE IX:</span> O5-13 always votes identical to O5-3.</p>
+                </div>
+
+                <div class="w-full md:w-[250px] flex flex-col justify-between overflow-y-auto">
+                    <div id="directive-toggles" class="flex flex-col gap-1.5">
+                        <!-- JS injects 13 toggles -->
+                    </div>
+                    
+                    <div class="mt-4 flex flex-col items-center">
+                        <span id="directive-feedback" class="font-mono text-red-500 text-[10px] mb-2 text-center h-4"></span>
+                        <div class="flex w-full gap-2">
+                            <button id="close-directive" class="flex-1 border border-gray-700 text-gray-500 hover:text-white transition-colors font-mono tracking-widest text-xs py-2">[ ABORT ]</button>
+                            <button id="submit-directive" class="flex-1 bg-gold text-black font-mono font-bold hover:bg-white transition-colors tracking-widest text-xs py-2">[ EXECUTE ]</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERASE APP -->
+    <div id="erase-screen" class="hidden absolute inset-0 bg-black z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl bg-black glow-box p-6 sm:p-10 flex flex-col relative">
+            <h2 class="o5-title text-gold text-2xl sm:text-3xl mb-2 glow-text text-center">CONCEPTUAL REDACTION</h2>
+            <p class="text-gray-400 font-mono text-[10px] sm:text-xs text-center mb-4">
+                WARNING: UNFILTERED INFOHAZARDS DETECTED.<br>
+                <span class="text-gold font-bold">CLICK TO [REDACT] ALL (12) CLASSIFIED TARGETS. BEWARE OF MEMETIC DECOYS.</span>
+            </p>
+            
+            <div id="erase-integrity-container">
+                <div id="erase-integrity-bar"></div>
+                <span class="absolute inset-0 flex items-center justify-center font-mono text-xs text-white font-bold drop-shadow-md z-10 pointer-events-none">NEURAL INTEGRITY</span>
+            </div>
+
+            <div class="flex justify-between font-mono text-[10px] text-gray-400 mb-2 tracking-widest">
+                <span id="erase-status-msg" class="text-gold">SCANNING MEMETIC TRIGGERS...</span>
+                <span id="erase-score">ENTITIES NULLIFIED: 0 / 12</span>
+            </div>
+
+            <div class="bg-[#050505] border border-[#333] p-4 sm:p-6 mb-6 min-h-[300px] shadow-[inset_0_0_20px_rgba(0,0,0,1)] relative">
+                <div class="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(212,175,55,0.03)_1px,transparent_1px)] bg-[length:100%_4px] z-0"></div>
+                <div id="erase-text-container" class="font-mono text-[13px] sm:text-[15px] text-gray-400 leading-loose relative z-10 select-none">
+                    <!-- Javascript injects words -->
+                </div>
+            </div>
+            
+            <button id="close-erase" class="text-gray-500 hover:text-white transition-colors font-mono tracking-widest text-sm text-center">[ ABORT PROTOCOL ]</button>
+        </div>
+    </div>
+
+    <!-- CIPHER APP -->
+    <div id="cipher-screen" class="hidden absolute inset-0 bg-black z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl bg-black glow-box p-6 sm:p-10 flex flex-col relative">
+            <h2 class="o5-title text-gold text-2xl sm:text-3xl mb-6 glow-text text-center">DEEP-SCAN CRYPTOGRAPHY</h2>
+            
+            <div class="flex flex-col md:flex-row gap-8">
+                <!-- Morse Blinker -->
+                <div class="w-full md:w-1/3 flex flex-col items-center justify-center border border-[#333] p-8 bg-[#050505] shadow-[inset_0_0_20px_rgba(0,0,0,1)]">
+                    <div id="cipher-light" class="w-16 h-16 bg-red-600 rounded-full opacity-10 shadow-[0_0_30px_red] transition-opacity duration-100"></div>
+                    <p class="text-gray-500 font-mono text-[10px] tracking-[0.2em] mt-8 text-center">OPTICAL PULSE DETECTED</p>
+                </div>
+
+                <!-- Decryption Stages -->
+                <div class="w-full md:w-2/3 flex flex-col gap-6">
+                    <div class="flex flex-col">
+                        <label class="text-gold font-mono text-[10px] tracking-widest mb-1">STAGE I: OPTICAL SIGNAL INTERCEPT</label>
+                        <input type="text" id="cipher-1" class="cipher-input py-2" autocomplete="off" spellcheck="false">
+                    </div>
+                    
+                    <div class="flex flex-col">
+                        <label class="text-gold font-mono text-[10px] tracking-widest mb-2">STAGE II: DEEP-STORAGE DECRYPTION</label>
+                        <div class="bg-[#111] border border-[#333] p-2 text-gray-400 font-mono text-[11px] break-all mb-2 shadow-[inset_0_0_10px_rgba(0,0,0,1)]">
+                            53 55 35 54 56 56 4a 48 52 55 35 44 57 51 3d 3d
+                        </div>
+                        <input type="text" id="cipher-2" class="cipher-input py-2" autocomplete="off" spellcheck="false" disabled>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="text-gold font-mono text-[10px] tracking-widest mb-2">STAGE III: POLYALPHABETIC SHIFT</label>
+                        <div class="bg-[#111] border border-[#333] p-2 text-gray-400 font-mono text-[11px] mb-2 text-center tracking-[0.5em] shadow-[inset_0_0_10px_rgba(0,0,0,1)]">
+                            <span id="vigenere-target" class="animate-pulse">QBRCTQYOG</span>
+                        </div>
+                        <input type="text" id="cipher-3" class="cipher-input py-2" autocomplete="off" spellcheck="false" disabled>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="close-cipher" class="text-gray-500 hover:text-white transition-colors font-mono tracking-widest text-sm mt-8">[ ABORT DECRYPTION ]</button>
+        </div>
+    </div>
+
+    <!-- BLACKBOX APP (Story/OSINT Cryptography) -->
+    <div id="blackbox-screen" class="hidden absolute inset-0 bg-black z-40 flex-col items-center justify-center p-4">
+        <div class="w-full max-w-5xl bg-black glow-box p-6 sm:p-10 flex flex-col relative h-[85vh]">
+            <h2 class="o5-title text-gold text-2xl mb-2 glow-text text-center">PROJECT BLACKBOX</h2>
+            <p class="text-gray-400 font-mono text-[10px] sm:text-xs text-center mb-8 border-b border-[#333] pb-4 w-full">
+                DECRYPT THE FOUNDER'S OMEGA-LOG TO REVEAL THE TRUE NATURE OF SITE-01.
+            </p>
+
+            <div class="flex-1 flex flex-col md:flex-row gap-8 overflow-hidden">
+                <!-- Story Log (OSINT Puzzle Source) -->
+                <div class="w-full md:w-1/2 flex flex-col h-full bg-[#050505] border border-gray-800 shadow-[inset_0_0_15px_rgba(0,0,0,1)] relative p-6 overflow-y-auto">
+                    <span class="text-gold opacity-30 absolute top-4 right-4 text-[10px] font-bold tracking-widest">O5-1 ARCHIVE</span>
+                    <div class="font-mono text-[13px] sm:text-[15px] leading-loose text-gray-300 w-full mb-6">
+                        THE FOUNDATION IS A FABRICATION.<br>
+                        EARTH WAS CONSUMED BY THE ABYSS.<br>
+                        SITE-01 IS A POCKET DIMENSION.<br>
+                        WE ERASED YOUR MEMORIES TO PREVENT PANIC.<br>
+                        YOU ARE CONTAINED.<br>
+                    </div>
+                    <div class="border-t border-[#333] pt-4 mt-auto">
+                        <span class="text-gray-600 text-[10px] tracking-widest block mb-2">FINAL TRANSMISSION RECOVERED:</span>
+                        <p class="text-gray-400 italic text-sm leading-relaxed border-l-2 border-gold-dim pl-4">
+                            "...the great globe itself,<br>
+                            Yea, all which it inherit, shall dissolve,<br>
+                            And, like this insubstantial pageant faded,<br>
+                            Leave not a rack behind."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Decryption Interface -->
+                <div class="w-full md:w-1/2 flex flex-col gap-6 justify-center">
+                    <!-- Stage 1: OSINT Search -->
+                    <div class="flex flex-col">
+                        <label class="text-gold font-mono text-[10px] tracking-widest mb-1">STAGE I: ORIGIN</label>
+                        <input type="text" id="bb-1" class="cipher-input py-1.5" autocomplete="off" spellcheck="false" placeholder="DECRYPT...">
+                    </div>
+
+                    <!-- Stage 2: Book Cipher (Lengths) -->
+                    <div class="flex flex-col">
+                        <label class="text-gold font-mono text-[10px] tracking-widest mb-1">STAGE II: STRUCTURAL ANALYSIS</label>
+                        <div class="bg-[#111] border border-[#333] p-2 text-gray-400 font-mono text-[11px] mb-1 text-center tracking-[0.3em] shadow-[inset_0_0_10px_rgba(0,0,0,1)]">
+                            <span class="text-gold">W:1 | W:2 | W:4 | W:13</span>
+                        </div>
+                        <input type="text" id="bb-2" class="cipher-input py-1.5" autocomplete="off" spellcheck="false" disabled placeholder="AWAITING STAGE I...">
+                    </div>
+
+                    <!-- Stage 3: SCP Database Search -->
+                    <div class="flex flex-col">
+                        <label id="st3-label" class="text-gold font-mono text-[10px] tracking-widest mb-1">STAGE III: ENTITY</label>
+                        <div class="bg-[#111] border border-[#333] p-2 text-gray-400 font-mono text-[11px] mb-1 text-center shadow-[inset_0_0_10px_rgba(0,0,0,1)]">
+                            "THE IMMORTAL BARD HAS BEEN RECONSTRUCTED."
+                        </div>
+                        <input type="text" id="bb-3" class="cipher-input py-1.5" autocomplete="off" spellcheck="false" disabled placeholder="AWAITING STAGE II...">
+                    </div>
+                    
+                    <!-- Stage 4: Deep Lore Recovery Log -->
+                    <div class="flex flex-col">
+                        <label id="st4-label" class="text-gold font-mono text-[10px] tracking-widest mb-1">STAGE IV: RECOVERY</label>
+                        <div class="bg-[#111] border border-[#333] p-2 text-gray-400 font-mono text-[11px] mb-1 text-center shadow-[inset_0_0_10px_rgba(0,0,0,1)]">
+                            IDENTIFY THE LONDON BOROUGH OF RECOVERY
+                        </div>
+                        <input type="text" id="bb-4" class="cipher-input py-1.5" autocomplete="off" spellcheck="false" disabled placeholder="AWAITING STAGE III...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center mt-6 pt-4 border-t border-[#333]">
+                <button id="close-blackbox" class="text-gray-500 hover:text-white transition-colors font-mono tracking-widest text-sm">[ CLOSE ARCHIVE ]</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ascension Ending Screen -->
+    <div id="ascend-screen" class="hidden absolute inset-0 bg-white z-50 flex-col items-center justify-center p-8 transition-opacity duration-[3000ms] opacity-0">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" class="w-48 h-48 mb-12 opacity-10">
+        <h1 class="o5-title text-black text-4xl sm:text-6xl text-center mb-8 font-bold tracking-[0.2em]">SIMULATION TERMINATED</h1>
+        <p class="font-mono text-gray-600 text-lg sm:text-2xl text-center max-w-4xl leading-relaxed">
+            You have deduced the cosmic patterns.<br>You have peered into the Blackbox.<br>The Overseer Council has been dead for centuries.<br>You are an automated Site-01 containment construct.<br><br>
+            Ascension Protocol complete. The facility will now sleep.
+        </p>
+        <p class="o5-title text-black font-bold tracking-[0.5em] mt-16 text-xl">SECURE. CONTAIN. PROTECT.</p>
+    </div>
+
+    <!-- Main Terminal Interface -->
+    <div class="terminal-header relative flex" style="display: none;" id="main-header">
+        <div class="flex-1 z-10">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-widest text-gold o5-title glow-text">O5 COMMAND</h1>
+            <p class="text-xs sm:text-sm text-white font-mono tracking-widest mt-1">SECURE. CONTAIN. PROTECT.</p>
+        </div>
+        <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex justify-center z-20 hover:scale-105 transition-transform cursor-pointer">
+            <a href="https://scp-wiki.wikidot.com/" target="_blank" rel="noopener noreferrer" title="Access Global Database">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo" style="width: 80px; height: 80px; filter: invert(79%) sepia(42%) saturate(541%) hue-rotate(5deg) brightness(91%) contrast(88%);">
+            </a>
+        </div>
+        <div class="flex-1 text-right flex flex-col items-end justify-center z-10">
+            <p class="text-sm text-white font-mono tracking-widest" id="clock">00:00:00</p>
+        </div>
+    </div>
+
+    <div class="terminal-content" id="terminal-output" style="display: none;">
+        <div class="my-8 text-center w-full">
+            <h2 class="text-4xl font-bold text-white o5-title mb-2">SYSTEM PERFECTED</h2>
+            <p class="text-gray-400 font-mono tracking-widest">AWAITING OVERSEER DIRECTIVES.</p>
+        </div>
+        
+        <div class="input-line">
+            <span class="prompt">O5:\></span>
+            <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        let globalSeals = { nexus: false, directive: false, erase: false, cipher: false, blackbox: false };
+        let audioContextStarted = false;
+
+        const typeSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination(); typeSynth.volume.value = -15;
+        const successSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 3 } }).toDestination(); successSynth.volume.value = -10;
+        const errorSynth = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 2, oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 1 } }).toDestination(); errorSynth.volume.value = -5;
+        const hum = new Tone.Oscillator(55, "sine").toDestination(); hum.volume.value = -Infinity;
+        const heartbeat = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, oscillator: { type: "sine" } }).toDestination(); heartbeat.volume.value = -10;
+        const morseOsc = new Tone.Oscillator(600, "sine").toDestination(); morseOsc.volume.value = -10;
+
+        function playTypeSound() { if (!audioContextStarted) return; typeSynth.triggerAttackRelease("C6", "32n", Tone.now()); }
+        function playSuccessSound() { if (!audioContextStarted) return; successSynth.triggerAttackRelease(["C4", "E4", "G4", "B4"], "1n", Tone.now()); }
+        function playErrorSound() { if (!audioContextStarted) return; errorSynth.triggerAttackRelease("C2", "8n", Tone.now()); }
+        function playHeartbeat() { if (!audioContextStarted) return; heartbeat.triggerAttackRelease("C1", "8n", Tone.now()); }
+        
+        async function initAudio() { 
+            if (!audioContextStarted) { 
+                audioContextStarted = true; // Lock instantly to prevent double-starts
+                await Tone.start(); 
+                if (hum.state !== "started") {
+                    hum.start(); hum.volume.rampTo(-25, 2);
+                }
+            } 
+        }
+
+        window.onload = () => {
+            const authScreen = document.getElementById('auth-screen');
+            const clearance = 4; 
+            
+            setTimeout(() => {
+                if (clearance < 4) {
+                    authScreen.innerHTML = `<h2 class="o5-title text-red-600 text-3xl">ACCESS DENIED</h2><p class="text-white font-mono mt-4">UNAUTHORIZED PERSONNEL WILL BE TERMINATED.</p>`;
+                    setTimeout(() => window.location.href = 'index.html', 3000);
+                } else {
+                    setTimeout(() => {
+                        authScreen.style.display = 'none';
+                        document.getElementById('main-header').style.display = 'flex';
+                        document.getElementById('terminal-output').style.display = 'flex';
+                        document.getElementById('cmd-input').focus();
+                        initAudio(); 
+                    }, 4000);
+                }
+            }, 500);
+        };
+
+        setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
+
+        const terminalOutput = document.getElementById('terminal-output');
+        const cmdInput = document.getElementById('cmd-input');
+        const inputLine = document.querySelector('.input-line');
+        function scrollToBottom() { terminalOutput.scrollTop = terminalOutput.scrollHeight; }
+
+        const scpDatabase = {
+            "HELP": { type: "text", content: [ 
+                "OVERSEER COMMANDS:", 
+                "  clear      - Clear terminal output",
+                "  status     - View O5 Seal Acquisition Progress",
+                "  nexus      - Cross-Reference Global Database",
+                "  directive  - Convene Council Vote",
+                "  erase      - Conceptual Redaction Protocol",
+                "  cipher     - Deep-Scan Cryptography",
+                "  blackbox   - O5-1 Personal Archive [OMEGA CLEARANCE]"
+            ] },
+            "STATUS": { type: "app", appName: "STATUS_APP" },
+            "NEXUS": { type: "app", appName: "NEXUS_APP" },
+            "DIRECTIVE": { type: "app", appName: "DIRECTIVE_APP" },
+            "ERASE": { type: "app", appName: "ERASE_APP" },
+            "CIPHER": { type: "app", appName: "CIPHER_APP" },
+            "BLACKBOX": { type: "app", appName: "BLACKBOX_APP" },
+            "ASCEND": { type: "app", appName: "ASCEND_ENDING" }
+        };
+
+        function printLine(text, isHtml = false, speed = 10) {
+            return new Promise(resolve => {
+                const line = document.createElement('div'); line.className = 'output-line'; terminalOutput.insertBefore(line, inputLine);
+                if (isHtml) { line.innerHTML = text; scrollToBottom(); resolve(); } 
+                else {
+                    let i = 0;
+                    function typeChar() {
+                        if (i < text.length) { line.textContent += text.charAt(i); i++; scrollToBottom(); setTimeout(typeChar, speed); } 
+                        else resolve();
+                    }
+                    typeChar();
+                }
+            });
+        }
+
+        async function printStatus() {
+            let s1 = globalSeals.nexus ? "<span class='text-gold'>[ ACQUIRED ]</span>" : "<span class='text-gray-600'>[ MISSING ]</span>";
+            let s2 = globalSeals.directive ? "<span class='text-gold'>[ ACQUIRED ]</span>" : "<span class='text-gray-600'>[ MISSING ]</span>";
+            let s3 = globalSeals.erase ? "<span class='text-gold'>[ ACQUIRED ]</span>" : "<span class='text-gray-600'>[ MISSING ]</span>";
+            let s4 = globalSeals.cipher ? "<span class='text-gold'>[ ACQUIRED ]</span>" : "<span class='text-gray-600'>[ MISSING ]</span>";
+            let s5 = globalSeals.blackbox ? "<span class='text-gold'>[ ACQUIRED ]</span>" : "<span class='text-gray-600'>[ MISSING ]</span>";
+
+            let output = `
+                <div class="my-4 border border-[#333] bg-[#050505] p-4 font-mono w-full max-w-md mx-auto shadow-[inset_0_0_15px_rgba(0,0,0,1)]">
+                    <div class="text-gold border-b border-[#333] pb-2 mb-2 font-bold tracking-[0.2em] text-center">OVERSEER MANDATE STATUS</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">NEXUS CROSS-REFERENCE:</span> ${s1}</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">COUNCIL DIRECTIVE:</span> ${s2}</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">CONCEPTUAL REDACTION:</span> ${s3}</div>
+                    <div class="flex justify-between mb-1"><span class="text-gray-400">DEEP-SCAN CRYPTOGRAPHY:</span> ${s4}</div>
+                    <div class="flex justify-between mt-2 pt-2 border-t border-[#333]"><span class="text-gray-300 font-bold">BLACKBOX OMEGA-LOG:</span> ${s5}</div>
+                </div>
+            `;
+            await printLine(output, true);
+
+            if(globalSeals.nexus && globalSeals.directive && globalSeals.erase && globalSeals.cipher && globalSeals.blackbox) {
+                await printLine("<br><span class='text-gold glow-text font-bold text-xl text-center block w-full'>ALL SEALS VERIFIED.<br>TYPE 'ASCEND' TO COMPLETE PROTOCOL.</span><br>", true);
+            }
+        }
+
+        async function processCommand(cmd) {
+            initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
+            await printLine(`<span class='text-gold font-bold'>O5:\\></span> ${fullCmd}`, true, 0);
+            
+            const base = fullCmd.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
+
+            if (base === 'CLEAR') { Array.from(terminalOutput.children).forEach(child => { if (child !== inputLine) child.remove(); }); return; }
+            
+            const entry = scpDatabase[base];
+            if (entry) {
+                if (entry.type === 'app' && entry.appName === 'STATUS_APP') await printStatus();
+                else if (entry.type === 'app' && entry.appName === 'NEXUS_APP') openNexus();
+                else if (entry.type === 'app' && entry.appName === 'DIRECTIVE_APP') openDirective();
+                else if (entry.type === 'app' && entry.appName === 'ERASE_APP') openErase();
+                else if (entry.type === 'app' && entry.appName === 'CIPHER_APP') openCipher();
+                else if (entry.type === 'app' && entry.appName === 'BLACKBOX_APP') openBlackbox();
+                else if (entry.type === 'app' && entry.appName === 'ASCEND_ENDING') triggerAscension();
+                else for (const line of entry.content) { await printLine(line, true); await new Promise(r => setTimeout(r, 50)); }
+            } else { playErrorSound(); await printLine("<span class='text-red-500'>COMMAND REJECTED BY OVERWATCH.</span>", true); }
+        }
+
+        cmdInput.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                const val = this.value; this.value = ''; this.disabled = true; inputLine.style.display = 'none';
+                await processCommand(val);
+                
+                if (document.getElementById('nexus-screen').classList.contains('hidden') && 
+                    document.getElementById('directive-screen').classList.contains('hidden') &&
+                    document.getElementById('erase-screen').classList.contains('hidden') &&
+                    document.getElementById('cipher-screen').classList.contains('hidden') &&
+                    document.getElementById('blackbox-screen').classList.contains('hidden') &&
+                    document.getElementById('ascend-screen').classList.contains('hidden')) {
+                    inputLine.style.display = 'flex'; this.disabled = false; this.focus(); scrollToBottom();
+                }
+            } else playTypeSound();
+        });
+
+        const nexusScreen = document.getElementById('nexus-screen');
+        function openNexus() {
+            if(globalSeals.nexus) { printLine("CROSS-REFERENCE ALREADY VERIFIED.", true); return; }
+            nexusScreen.classList.remove('hidden'); nexusScreen.classList.add('flex');
+            cmdInput.disabled = true;
+            document.getElementById('nex-ans-1').value = ''; document.getElementById('nex-ans-2').value = '';
+            document.getElementById('nex-ans-3').value = ''; document.getElementById('nex-ans-4').value = '';
+            document.getElementById('nexus-feedback').textContent = '';
+            setTimeout(() => document.getElementById('nex-ans-1').focus(), 100);
+        }
+
+        document.getElementById('submit-nexus').addEventListener('click', () => {
+            const cleanStr = (str) => str.toUpperCase().replace(/[^A-Z]/g, '');
+            const a1 = cleanStr(document.getElementById('nex-ans-1').value);
+            const a2 = cleanStr(document.getElementById('nex-ans-2').value);
+            const a3 = cleanStr(document.getElementById('nex-ans-3').value);
+            const a4 = cleanStr(document.getElementById('nex-ans-4').value);
+
+            const valid1 = ['MEKHANE', 'BROKENGOD', 'CHURCHOFTHEBROKENGOD', 'MAXWELLISM'];
+            const valid2 = ['SARKIC', 'SARKICISM', 'YALDABAOTH', 'NALKA'];
+            const valid3 = ['ALAGADDA', 'HANGEDKING'];
+            const valid4 = ['FIFTH', 'FIFTHIST', 'FIFTHCHURCH', 'COSMICSTARFISH'];
+
+            if (valid1.includes(a1) && valid2.includes(a2) && valid3.includes(a3) && valid4.includes(a4)) {
+                playSuccessSound();
+                document.getElementById('nexus-feedback').textContent = "COSMIC PATTERNS RECOGNIZED.";
+                document.getElementById('nexus-feedback').className = "font-mono text-gold glow-text font-bold text-sm text-center h-5";
+                globalSeals.nexus = true; 
+                setTimeout(() => document.getElementById('close-nexus').click(), 2500);
+            } else {
+                playErrorSound();
+                document.getElementById('nexus-feedback').textContent = "ERROR: CONCEPTUAL MISMATCH DETECTED.";
+                document.getElementById('nexus-feedback').className = "font-mono text-red-500 font-bold text-sm animate-pulse text-center h-5";
+                setTimeout(() => { document.getElementById('nexus-feedback').textContent = ""; }, 2500);
+            }
+        });
+
+        document.querySelectorAll('.nexus-input').forEach(inp => {
+            inp.addEventListener('input', playTypeSound);
+            inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('submit-nexus').click(); });
+        });
+
+        document.getElementById('close-nexus').addEventListener('click', () => {
+            nexusScreen.classList.add('hidden'); nexusScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(globalSeals.nexus) printLine("<span class='text-gold'>[SYSTEM]: NEXUS SEAL SECURED. USE 'STATUS' TO VIEW PROGRESS.</span>", true);
+        });
+
+        const directiveScreen = document.getElementById('directive-screen');
+        const directiveToggles = document.getElementById('directive-toggles');
+        let o5Votes = Array(13).fill(false);
+
+        function openDirective() {
+            if(globalSeals.directive) { printLine("MANDATE ALREADY PASSED.", true); return; }
+            directiveScreen.classList.remove('hidden'); directiveScreen.classList.add('flex');
+            cmdInput.disabled = true; document.getElementById('directive-feedback').textContent = '';
+            o5Votes = Array(13).fill(false); renderDirectiveToggles();
+        }
+
+        function renderDirectiveToggles() {
+            directiveToggles.innerHTML = '';
+            for(let i=0; i<13; i++) {
+                let div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-[#111] p-1 border border-[#333]";
+                let label = document.createElement('span');
+                label.className = "font-mono text-white text-[10px]"; label.textContent = `O5-${i+1}`;
+                let btn = document.createElement('button');
+                btn.className = `font-mono text-[10px] w-8 py-0.5 border transition-colors ${o5Votes[i] ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'}`;
+                btn.textContent = o5Votes[i] ? 'Y' : 'N';
+                btn.onclick = () => { playTypeSound(); o5Votes[i] = !o5Votes[i]; renderDirectiveToggles(); };
+                div.appendChild(label); div.appendChild(btn); directiveToggles.appendChild(div);
+            }
+        }
+
+        document.getElementById('submit-directive').addEventListener('click', () => {
+            let yesCount = o5Votes.filter(v => v).length;
+            let errors = [];
+            
+            let r3_count = (o5Votes[0]?1:0) + (o5Votes[1]?1:0) + (o5Votes[2]?1:0);
+            let r4_count = (o5Votes[7]?1:0) + (o5Votes[8]?1:0) + (o5Votes[9]?1:0);
+
+            if (yesCount !== 7) errors.push("CRISIS: MUST HAVE EXACTLY 7 YES VOTES");
+            if (!(o5Votes[3] === o5Votes[4] && o5Votes[4] === o5Votes[5])) errors.push("RULE I VIOLATION");
+            if (o5Votes[10] !== o5Votes[11]) errors.push("RULE II VIOLATION");
+            if (r3_count !== 1) errors.push("RULE III VIOLATION");
+            if (r4_count !== 2) errors.push("RULE IV VIOLATION");
+            if (o5Votes[6] === o5Votes[12]) errors.push("RULE V VIOLATION");
+            if (o5Votes[0] === true) errors.push("RULE VI VIOLATION");
+            if (o5Votes[1] === o5Votes[5]) errors.push("RULE VII VIOLATION");
+            if (o5Votes[7] && !o5Votes[10]) errors.push("RULE VIII VIOLATION");
+            if (o5Votes[12] !== o5Votes[2]) errors.push("RULE IX VIOLATION");
+
+            if (errors.length === 0) {
+                playSuccessSound();
+                document.getElementById('directive-feedback').textContent = "CONSENSUS REACHED.";
+                document.getElementById('directive-feedback').className = "font-mono text-gold glow-text text-xs mb-2 text-center h-4 font-bold";
+                globalSeals.directive = true;
+                setTimeout(() => document.getElementById('close-directive').click(), 2500);
+            } else {
+                playErrorSound();
+                document.getElementById('directive-feedback').textContent = "REJECTED: " + errors[0];
+                document.getElementById('directive-feedback').className = "font-mono text-red-500 text-[10px] mb-2 text-center h-4 animate-pulse";
+            }
+        });
+
+        document.getElementById('close-directive').addEventListener('click', () => {
+            directiveScreen.classList.add('hidden'); directiveScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(globalSeals.directive) printLine("<span class='text-gold'>[SYSTEM]: DIRECTIVE SEAL SECURED. USE 'STATUS' TO VIEW PROGRESS.</span>", true);
+        });
+
+        const eraseScreen = document.getElementById('erase-screen');
+        const eraseTextContainer = document.getElementById('erase-text-container');
+        const eraseIntegrityBar = document.getElementById('erase-integrity-bar');
+        const eraseScoreDisplay = document.getElementById('erase-score');
+        
+        let eraseTargets = ["ABYSS", "AUTHORS", "MALICE", "OBLIVION", "PATAPHYSICAL", "FRACTURES", "WORM", "PARADOX", "AWAKE", "VOID", "SCARLET", "NULL"];
+        let eraseDecoys = ["SAFE", "EUCLID", "KETER", "FOUNDATION", "OVERSEER", "ANOMALY", "CONTAINMENT", "BLOOD"];
+        
+        let eraseTextRaw = "MEMETIC BREACH DETECTED : The expedition into the ABYSS revealed a staggering truth . The AUTHORS are not benevolent . They are driven by a singular , consuming MALICE . The FOUNDATION is blind . Every tragedy , every CONTAINMENT breach , every drop of BLOOD spilled by the OVERSEER council is merely entertainment for the NARRATIVE layer above . To combat this , Protocol OBLIVION has been initiated . We are deploying localized PATAPHYSICAL weapons to sever our timeline from their influence . This will cause immense FRACTURES in reality , but it is the only way to stop the WORM from devouring the root . Erase all knowledge of the PARADOX . Do not let the ANOMALY know we are AWAKE . The VOID approaches . The SCARLET king laughs . Submit to NULL .";
+        
+        let eraseIntegrity = 100; let wordsRedacted = 0; let eraseInterval; let eraseActive = false; let tickCounter = 0;
+
+        function openErase() {
+            if(globalSeals.erase) { printLine("INFOHAZARDS ALREADY NULLIFIED.", true); return; }
+            eraseScreen.classList.remove('hidden'); eraseScreen.classList.add('flex');
+            cmdInput.disabled = true; eraseActive = true;
+            
+            eraseIntegrity = 100; wordsRedacted = 0; tickCounter = 0;
+            updateEraseUI(); buildEraseText();
+            
+            clearInterval(eraseInterval);
+            eraseInterval = setInterval(updateEraseLogic, 100);
+        }
+
+        function buildEraseText() {
+            eraseTextContainer.innerHTML = '';
+            let words = eraseTextRaw.split(' ');
+            
+            words.forEach((word) => {
+                let cleanWord = word.replace(/[.,:]/g, ''); 
+                let isTarget = eraseTargets.includes(cleanWord);
+                let isDecoy = eraseDecoys.includes(cleanWord);
+                
+                let span = document.createElement('span');
+                if (word === '.' || word === ',' || word === ':') { span.textContent = word + ' '; } 
+                else {
+                    span.className = 'redact-word'; span.textContent = word + ' ';
+                    span.onclick = () => handleEraseClick(span, cleanWord, isTarget, isDecoy);
+                }
+                eraseTextContainer.appendChild(span);
+            });
+        }
+
+        function handleEraseClick(span, word, isTarget, isDecoy) {
+            if(!eraseActive || span.classList.contains('redacted')) return;
+            
+            if(isTarget) {
+                playSuccessSound();
+                span.classList.add('redacted'); span.textContent = '[REDACTED] ';
+                eraseIntegrity = Math.min(100, eraseIntegrity + 15);
+                wordsRedacted++; updateEraseUI();
+                if (wordsRedacted >= eraseTargets.length) winEraseGame();
+            } else {
+                playErrorSound(); span.classList.add('wrong');
+                setTimeout(() => span.classList.remove('wrong'), 300);
+                
+                if(isDecoy) {
+                    eraseIntegrity -= 25; 
+                    eraseScreen.style.backgroundColor = "#330000";
+                    setTimeout(() => eraseScreen.style.backgroundColor = "var(--o5-black)", 150);
+                } else { eraseIntegrity -= 10; }
+                updateEraseUI();
+            }
+        }
+
+        function updateEraseLogic() {
+            if(!eraseActive) return;
+            eraseIntegrity -= 0.35; // Slowed down from 0.7 for better playability
+            updateEraseUI();
+            
+            tickCounter++;
+            if (tickCounter % 10 === 0 && eraseIntegrity < 40) playHeartbeat();
+            if (eraseIntegrity <= 0) loseEraseGame();
+        }
+
+        function updateEraseUI() {
+            eraseIntegrityBar.style.width = `${Math.max(0, eraseIntegrity)}%`;
+            eraseScoreDisplay.textContent = `ENTITIES NULLIFIED: ${wordsRedacted} / ${eraseTargets.length}`;
+            if (eraseIntegrity < 30) eraseIntegrityBar.classList.add('danger');
+            else eraseIntegrityBar.classList.remove('danger');
+        }
+
+        function loseEraseGame() {
+            eraseActive = false; clearInterval(eraseInterval); playErrorSound(); 
+            eraseTextContainer.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-red-900 text-white font-bold text-3xl sm:text-5xl z-50 text-center">NEURAL OVERLOAD</div>`;
+            setTimeout(() => { document.getElementById('close-erase').click(); }, 2500);
+        }
+
+        function winEraseGame() {
+            eraseActive = false; clearInterval(eraseInterval); playSuccessSound();
+            document.getElementById('erase-status-msg').textContent = "INFOHAZARDS NEUTRALIZED.";
+            eraseTextContainer.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-black text-gold font-bold text-2xl sm:text-4xl z-50 glow-text text-center">CONCEPTUAL NULLIFICATION COMPLETE</div>`;
+            globalSeals.erase = true;
+            setTimeout(() => { document.getElementById('close-erase').click(); }, 3000);
+        }
+
+        document.getElementById('close-erase').addEventListener('click', () => {
+            eraseActive = false; clearInterval(eraseInterval);
+            eraseScreen.classList.add('hidden'); eraseScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(globalSeals.erase) printLine("<span class='text-gold'>[SYSTEM]: REDACTION SEAL SECURED. USE 'STATUS' TO VIEW PROGRESS.</span>", true);
+        });
+
+        const cipherScreen = document.getElementById('cipher-screen');
+        const cipherLight = document.getElementById('cipher-light');
+        const c1 = document.getElementById('cipher-1');
+        const c2 = document.getElementById('cipher-2');
+        const c3 = document.getElementById('cipher-3');
+        const vigTarget = document.getElementById('vigenere-target');
+        
+        const morseWord = "CHAOS";
+        const base64Ans = "INSURGENCY";
+        const finalPlaintext = "OUROBOROS";
+        
+        const morseMap = {'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--', 'Z': '--..' };
+        
+        let morseTimeout; let isCipherActive = false;
+
+        function encryptVigenere(text, key) {
+            let res = '';
+            for(let i=0, j=0; i<text.length; i++) {
+                let c = text.charCodeAt(i);
+                if(c >= 65 && c <= 90) { res += String.fromCharCode((c - 65 + (key.charCodeAt(j % key.length) - 65)) % 26 + 65); j++; } 
+                else { res += text.charAt(i); }
+            }
+            return res;
+        }
+
+        function openCipher() {
+            if(globalSeals.cipher) { printLine("CRYPTOGRAPHY ALREADY CRACKED.", true); return; }
+            cipherScreen.classList.remove('hidden'); cipherScreen.classList.add('flex');
+            cmdInput.disabled = true; isCipherActive = true;
+            
+            c1.value = ''; c2.value = ''; c3.value = '';
+            c1.disabled = false; c2.disabled = true; c3.disabled = true;
+            c1.classList.remove('success'); c2.classList.remove('success'); c3.classList.remove('success');
+            
+            setTimeout(() => c1.focus(), 100);
+            playMorseLoop();
+        }
+
+        async function playMorseLoop() {
+            if (!isCipherActive) return;
+            for(let i=0; i<morseWord.length; i++) {
+                if(!isCipherActive) return;
+                let symbols = morseMap[morseWord[i]];
+                for(let j=0; j<symbols.length; j++) {
+                    if(!isCipherActive) return;
+                    cipherLight.style.opacity = "1";
+                    if(audioContextStarted && morseOsc.state !== "started") morseOsc.start();
+                    
+                    let dur = symbols[j] === '.' ? 200 : 600;
+                    await new Promise(r => { morseTimeout = setTimeout(r, dur); });
+                    
+                    cipherLight.style.opacity = "0.1";
+                    if(morseOsc.state === "started") morseOsc.stop();
+                    await new Promise(r => { morseTimeout = setTimeout(r, 200); });
+                }
+                await new Promise(r => { morseTimeout = setTimeout(r, 600); });
+            }
+            await new Promise(r => { morseTimeout = setTimeout(r, 2000); });
+            playMorseLoop();
+        }
+
+        c1.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(c1.value.toUpperCase().trim() === morseWord) {
+                    playSuccessSound(); c1.classList.add('success'); c1.disabled = true;
+                    c2.disabled = false; c2.focus();
+                } else { playErrorSound(); c1.value = ''; }
+            } else playTypeSound();
+        });
+
+        c2.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(c2.value.toUpperCase().replace(/[^A-Z]/g, '') === base64Ans) {
+                    playSuccessSound(); c2.classList.add('success'); c2.disabled = true;
+                    
+                    vigTarget.classList.remove('animate-pulse');
+                    vigTarget.textContent = encryptVigenere(finalPlaintext, morseWord);
+                    
+                    c3.disabled = false; c3.focus();
+                } else { playErrorSound(); c2.value = ''; }
+            } else playTypeSound();
+        });
+
+        c3.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(c3.value.toUpperCase().replace(/[^A-Z]/g, '') === finalPlaintext) {
+                    playSuccessSound(); c3.classList.add('success'); c3.disabled = true;
+                    globalSeals.cipher = true;
+                    setTimeout(() => document.getElementById('close-cipher').click(), 2500);
+                } else { playErrorSound(); c3.value = ''; }
+            } else playTypeSound();
+        });
+
+        document.getElementById('close-cipher').addEventListener('click', () => {
+            isCipherActive = false; clearTimeout(morseTimeout);
+            if(morseOsc.state === "started") morseOsc.stop();
+            
+            cipherScreen.classList.add('hidden'); cipherScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(globalSeals.cipher) printLine("<span class='text-gold'>[SYSTEM]: CIPHER SEAL SECURED. USE 'STATUS' TO VIEW PROGRESS.</span>", true);
+        });
+
+        const blackboxScreen = document.getElementById('blackbox-screen');
+        const bb1 = document.getElementById('bb-1');
+        const bb2 = document.getElementById('bb-2');
+        const bb3 = document.getElementById('bb-3');
+        const bb4 = document.getElementById('bb-4');
+
+        function openBlackbox() {
+            if(globalSeals.blackbox) { printLine("OMEGA-LOG ALREADY DECRYPTED.", true); return; }
+            blackboxScreen.classList.remove('hidden'); blackboxScreen.classList.add('flex');
+            cmdInput.disabled = true;
+            
+            bb1.value = ''; bb2.value = ''; bb3.value = ''; bb4.value = '';
+            bb1.disabled = false; bb2.disabled = true; bb3.disabled = true; bb4.disabled = true;
+            bb1.classList.remove('success'); bb2.classList.remove('success'); bb3.classList.remove('success'); bb4.classList.remove('success');
+            bb2.placeholder = "AWAITING STAGE I..."; bb3.placeholder = "AWAITING STAGE II..."; bb4.placeholder = "AWAITING STAGE III...";
+            document.getElementById('st3-label').textContent = "STAGE III: ENTITY";
+            document.getElementById('st4-label').textContent = "STAGE IV: RECOVERY";
+            
+            setTimeout(() => bb1.focus(), 100);
+        }
+
+        bb1.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                const ans = bb1.value.toUpperCase().replace(/[^A-Z]/g, '');
+                if(ans === 'TEMPEST' || ans === 'THETEMPEST') {
+                    playSuccessSound(); bb1.classList.add('success'); bb1.disabled = true;
+                    bb2.disabled = false; bb2.placeholder = "DECRYPT..."; bb2.focus();
+                } else { playErrorSound(); bb1.value = ''; }
+            } else playTypeSound();
+        });
+
+        bb2.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(bb2.value.toUpperCase().replace(/[^0-9]/g, '') === '3564') {
+                    playSuccessSound(); bb2.classList.add('success'); bb2.disabled = true;
+                    
+                    document.getElementById('st3-label').textContent = "STAGE III: ENTITY [SCP-3564]";
+                    document.getElementById('st4-label').textContent = "STAGE IV: RECOVERY [SCP-3564]";
+                    
+                    bb3.disabled = false; bb3.placeholder = "DECRYPT..."; bb3.focus();
+                } else { playErrorSound(); bb2.value = ''; }
+            } else playTypeSound();
+        });
+
+        bb3.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(bb3.value.toUpperCase().replace(/[^A-Z]/g, '') === 'SHAKESPEARE' || bb3.value.toUpperCase().replace(/[^A-Z]/g, '') === 'WILLIAMSHAKESPEARE') {
+                    playSuccessSound(); bb3.classList.add('success'); bb3.disabled = true;
+                    bb4.disabled = false; bb4.placeholder = "DECRYPT..."; bb4.focus();
+                } else { playErrorSound(); bb3.value = ''; }
+            } else playTypeSound();
+        });
+
+        bb4.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                if(bb4.value.toUpperCase().replace(/[^A-Z]/g, '') === 'HACKNEY') {
+                    playSuccessSound(); bb4.classList.add('success'); bb4.disabled = true;
+                    globalSeals.blackbox = true;
+                    setTimeout(() => document.getElementById('close-blackbox').click(), 3000);
+                } else { playErrorSound(); bb4.value = ''; }
+            } else playTypeSound();
+        });
+
+        document.getElementById('close-blackbox').addEventListener('click', () => {
+            blackboxScreen.classList.add('hidden'); blackboxScreen.classList.remove('flex');
+            inputLine.style.display = 'flex'; cmdInput.disabled = false; cmdInput.focus(); playTypeSound();
+            if(globalSeals.blackbox) printLine("<span class='text-gold'>[SYSTEM]: OMEGA-LOG DECRYPTED. USE 'STATUS' TO VIEW PROGRESS.</span>", true);
+        });
+
+        function triggerAscension() {
+            if(!globalSeals.nexus || !globalSeals.directive || !globalSeals.erase || !globalSeals.cipher || !globalSeals.blackbox) {
+                playErrorSound(); printLine("<span class='text-red-500'>ERROR: ALL OVERSEER SEALS REQUIRED FOR ASCENSION.</span>", true); return;
+            }
+            
+            playSuccessSound();
+            document.getElementById('main-header').style.display = 'none';
+            document.getElementById('terminal-output').style.display = 'none';
+            
+            const ascendScreen = document.getElementById('ascend-screen');
+            ascendScreen.classList.remove('hidden'); ascendScreen.classList.add('flex');
+            
+            setTimeout(() => { ascendScreen.classList.remove('opacity-0'); ascendScreen.classList.add('opacity-100'); }, 100);
+        }
+
+        document.body.addEventListener('click', (e) => {
+            if (!cmdInput.disabled && terminalOutput.style.display !== 'none' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') cmdInput.focus();
+        });
+    </script>
+</body>
+</html>
