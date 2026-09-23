@@ -1,1 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aperture Science Enrichment Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' stroke='%23ffaa00' stroke-width='10' fill='none'/><path d='M10,50 Q50,10 90,50 Q50,90 10,50' stroke='%23ffaa00' stroke-width='5' fill='none'/></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
+        :root {
+            --ap-amber: #ffaa00;
+            --ap-amber-dim: rgba(255, 170, 0, 0.15);
+            --ap-bg: #0d0c0c;
+            --os-font: 'VT323', monospace;
+        }
 
+        body {
+            margin: 0; overflow: hidden; display: flex; flex-direction: column;
+            height: 100vh; background-color: var(--ap-bg); color: var(--ap-amber);
+            font-family: var(--os-font); user-select: none;
+            text-shadow: 0 0 5px rgba(255, 170, 0, 0.8);
+        }
+
+        /* Scanlines and Vignette sit globally on top of the entire OS */
+        .scanlines {
+            position: fixed; inset: 0; pointer-events: none; z-index: 99999;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+            background-size: 100% 4px;
+        }
+        .vignette {
+            position: fixed; inset: 0; pointer-events: none; z-index: 100000;
+            background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.9) 100%);
+        }
+
+        /* --------------------------- */
+        /* BOOT SCREEN / FIREWALL      */
+        /* --------------------------- */
+        #boot-screen {
+            position: absolute; inset: 0; padding: 30px; display: flex; flex-direction: column; z-index: 10000;
+            transition: opacity 1s ease;
+        }
+
+        #terminal-output {
+            flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-size: 1.5rem; line-height: 1.2;
+            scrollbar-width: thin; scrollbar-color: var(--ap-amber) var(--ap-bg);
+        }
+
+        .input-line { display: flex; align-items: center; font-size: 1.5rem; margin-top: 10px; }
+        .prompt { margin-right: 15px; font-weight: bold; }
+        #term-input {
+            background: transparent; border: none; color: var(--ap-amber); font-family: var(--os-font); font-size: 1.5rem;
+            outline: none; flex-grow: 1; text-transform: uppercase; text-shadow: inherit;
+        }
+        
+        .ascii-logo { font-size: 1.2rem; line-height: 1.1; margin-bottom: 20px; white-space: pre; width: fit-content; margin: 0 auto; }
+        .centered-text { text-align: center; }
+
+        /* --------------------------- */
+        /* APERTURE DESKTOP UI         */
+        /* --------------------------- */
+        #desktop {
+            display: none; flex-grow: 1; position: relative; padding: 20px;
+            flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 20px;
+            /* Faint amber grid */
+            background-image: 
+                linear-gradient(rgba(255,170,0,0.05) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255,170,0,0.05) 2px, transparent 2px);
+            background-size: 50px 50px;
+        }
+
+        .desktop-icon { width: 90px; display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 5px; z-index: 1; }
+        .desktop-icon:active, .desktop-icon.selected { background-color: var(--ap-amber-dim); border: 1px dashed var(--ap-amber); margin: -1px; }
+        .icon-img { width: 48px; height: 48px; margin-bottom: 8px; filter: drop-shadow(0 0 5px var(--ap-amber)); }
+        .icon-label { font-size: 1.2rem; text-align: center; word-wrap: break-word; }
+
+        .window {
+            position: absolute; background-color: var(--ap-bg); border: 2px solid var(--ap-amber);
+            box-shadow: 0 0 15px var(--ap-amber-dim); display: none; flex-direction: column; min-width: 300px;
+        }
+        .window-header {
+            background-color: var(--ap-amber); color: var(--ap-bg); padding: 4px 10px; font-weight: bold;
+            font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; cursor: move; text-shadow: none;
+        }
+        .window.active .window-header { background-color: #ffcc55; }
+        
+        .window-title { display: flex; align-items: center; gap: 8px; }
+        .window-controls { display: flex; gap: 5px; }
+        .win-btn {
+            background-color: var(--ap-bg); border: 1px solid var(--ap-bg); width: 20px; height: 20px;
+            display: flex; justify-content: center; align-items: center; font-size: 1rem; color: var(--ap-amber); cursor: pointer; text-shadow: none;
+        }
+        .win-btn:active { background-color: var(--ap-amber-dim); }
+        .win-btn.close:hover { background-color: var(--ap-bg); color: #ff4444; }
+        .window-content { padding: 15px; flex-grow: 1; overflow: auto; font-size: 1.3rem; line-height: 1.4; }
+
+        /* --------------------------- */
+        /* TASKBAR & START MENU        */
+        /* --------------------------- */
+        .taskbar {
+            background-color: var(--ap-bg); border-top: 2px solid var(--ap-amber); height: 40px;
+            display: none; align-items: center; padding: 0 10px; z-index: 2000; box-shadow: 0 -2px 15px var(--ap-amber-dim);
+        }
+        .start-btn {
+            background-color: var(--ap-bg); color: var(--ap-amber); border: 2px solid var(--ap-amber);
+            padding: 2px 15px; display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 1.4rem; cursor: pointer;
+        }
+        .start-btn:hover, .start-btn.active { background-color: var(--ap-amber); color: var(--ap-bg); text-shadow: none; }
+        .start-btn:hover .start-logo, .start-btn.active .start-logo { stroke: var(--ap-bg); }
+        .start-logo { width: 20px; height: 20px; stroke: var(--ap-amber); fill: none; stroke-width: 8; transition: stroke 0.2s; }
+        
+        .taskbar-items { flex-grow: 1; display: flex; gap: 5px; margin-left: 15px; overflow: hidden; }
+        .taskbar-app {
+            background-color: var(--ap-bg); border: 1px solid var(--ap-amber); padding: 2px 10px; font-size: 1.2rem;
+            cursor: pointer; display: flex; align-items: center;
+        }
+        .taskbar-app.active { background-color: var(--ap-amber); color: var(--ap-bg); text-shadow: none; }
+        .taskbar-time { margin-left: auto; font-size: 1.4rem; }
+
+        .start-menu {
+            position: absolute; bottom: 40px; left: 0; width: 250px; background-color: var(--ap-bg); border: 2px solid var(--ap-amber);
+            border-bottom: none; display: none; flex-direction: column; z-index: 3000; box-shadow: 5px -5px 15px var(--ap-amber-dim);
+        }
+        .start-menu-header {
+            background-color: var(--ap-amber); color: var(--ap-bg); padding: 15px; display: flex; align-items: center; gap: 10px; text-shadow: none;
+        }
+        .start-menu-header svg { stroke: var(--ap-bg); }
+        .start-menu-items { padding: 5px 0; }
+        .start-menu-item { padding: 10px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1.3rem; }
+        .start-menu-item:hover { background-color: var(--ap-amber); color: var(--ap-bg); text-shadow: none; }
+        .divider { height: 1px; background-color: var(--ap-amber); margin: 5px 10px; opacity: 0.5; }
+
+    </style>
+</head>
+<body>
+
+    <!-- GLOBAL CRT OVERLAYS -->
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <!-- BOOT SCREEN / FIREWALL -->
+    <div id="boot-screen">
+        <div id="terminal-output"></div>
+        <div class="input-line" id="input-container" style="display: none;">
+            <span class="prompt">]</span>
+            <input type="text" id="term-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+
+    <!-- APERTURE OS DESKTOP -->
+    <div id="desktop">
+        <!-- Desktop Icons -->
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('memo-window', 'CAVE_MEMO.TXT')">
+            <svg class="icon-img" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/><line x1="25" y1="30" x2="75" y2="30" stroke="var(--ap-amber)" stroke-width="4"/><line x1="25" y1="50" x2="75" y2="50" stroke="var(--ap-amber)" stroke-width="4"/><line x1="25" y1="70" x2="50" y2="70" stroke="var(--ap-amber)" stroke-width="4"/></svg>
+            <span class="icon-label">CAVE_MEMO.TXT</span>
+        </div>
+
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('glados-window', 'Terminal Access')">
+            <svg class="icon-img" viewBox="0 0 100 100"><rect x="5" y="15" width="90" height="70" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/><line x1="15" y1="30" x2="35" y2="30" stroke="var(--ap-amber)" stroke-width="4"/><rect x="15" y="45" width="20" height="4" fill="var(--ap-amber)"/></svg>
+            <span class="icon-label">Aperture_Shell</span>
+        </div>
+
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('cake-window', 'Cake_Recipe.pdf')">
+            <svg class="icon-img" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/>
+                <path d="M50 10 L50 90 M10 50 L90 50" stroke="var(--ap-amber)" stroke-width="4"/>
+            </svg>
+            <span class="icon-label">Cake_Recipe.pdf</span>
+        </div>
+
+        <!-- Windows -->
+        <div id="memo-window" class="window" style="top: 10%; left: 10%; width: 450px;">
+            <div class="window-header" onmousedown="startDrag(event, 'memo-window')">
+                <div class="window-title">CAVE_MEMO.TXT - Notepad</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('memo-window')">X</div></div>
+            </div>
+            <div class="window-content">
+                <strong>DATE:</strong> 1982<br>
+                <strong>FROM:</strong> Cave Johnson<br>
+                <strong>TO:</strong> All Testing Track Personnel<br><br>
+                Chariots, chariots. <br><br>
+                Just a quick memo. The boys down in engineering have assured me that the new quantum-tunneling firewalls are completely impenetrable. So if anyone tries to tell you that some "magic ancient pharaoh" hacked into the mainframe, you tell them Cave Johnson said they're fired.<br><br>
+                We do science here, not magic. Also, whoever left a giant stone tablet in Chamber 14, get it out. It's interfering with the portal surfaces.<br><br>
+                Cave out.
+            </div>
+        </div>
+
+        <div id="glados-window" class="window" style="top: 20%; left: 40%; width: 500px;">
+            <div class="window-header" onmousedown="startDrag(event, 'glados-window')">
+                <div class="window-title">Aperture_Shell.exe</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('glados-window')">X</div></div>
+            </div>
+            <div class="window-content" style="padding: 0;">
+                <div style="padding: 10px; height: 300px; display: flex; flex-direction: column; overflow-y: auto;" id="shell-area" onclick="document.getElementById('shell-input').focus()">
+                    <div id="shell-history">
+                        <div>Aperture Science Sub-Routine OS.</div>
+                        <div>Type 'HELP' for a list of commands.</div>
+                        <br>
+                    </div>
+                    <div style="display: flex;">
+                        <span style="margin-right: 10px; color: var(--ap-amber);">C:\></span>
+                        <input type="text" id="shell-input" autocomplete="off" spellcheck="false" style="background: transparent; border: none; color: var(--ap-amber); font-family: var(--os-font); font-size: 1.3rem; outline: none; flex-grow: 1; text-transform: uppercase; text-shadow: inherit;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="cake-window" class="window" style="top: 15%; left: 25%; width: 400px;">
+            <div class="window-header" onmousedown="startDrag(event, 'cake-window')">
+                <div class="window-title">Cake_Recipe.pdf</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('cake-window')">X</div></div>
+            </div>
+            <div class="window-content" style="text-align: center; padding: 30px;">
+                <div style="font-size: 2.5rem; font-weight: bold; border: 4px solid var(--ap-amber); display: inline-block; padding: 20px; transform: rotate(-10deg);">
+                    REDACTED
+                </div>
+                <p style="margin-top: 20px;">Access to the cake recipe requires Level 5 Clearance.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TASKBAR -->
+    <div class="taskbar" id="taskbar">
+        <div class="start-btn" id="start-button" onclick="toggleStartMenu(event)">
+            <svg class="start-logo" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M10,50 Q50,10 90,50 Q50,90 10,50"/></svg>
+            APERTURE
+        </div>
+        
+        <div class="start-menu" id="start-menu">
+            <div class="start-menu-header">
+                <svg style="width:30px;height:30px; fill:none; stroke-width:8;" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M10,50 Q50,10 90,50 Q50,90 10,50"/></svg>
+                <div style="display:flex; flex-direction: column;">
+                    <span style="font-size:1.4rem;">ApertureOS</span>
+                    <span style="font-size:1rem; opacity:0.8;">Test Subject #811</span>
+                </div>
+            </div>
+            <div class="start-menu-items">
+                <div class="start-menu-item" onclick="openApp('glados-window', 'Terminal Access')">Run Shell</div>
+                <div class="divider"></div>
+                <div class="start-menu-item">System Settings</div>
+                <div class="start-menu-item">Test Schedules</div>
+                <div class="divider"></div>
+                <div class="start-menu-item" onclick="window.location.href='index.html'">Shut Down System</div>
+            </div>
+        </div>
+
+        <div class="taskbar-items" id="taskbar-items"></div>
+        <div class="taskbar-time" id="clock">12:00 AM</div>
+    </div>
+
+    <script>
+        // -------------------------
+        // BOOT & FIREWALL LOGIC
+        // -------------------------
+        const output = document.getElementById('terminal-output');
+        const inputContainer = document.getElementById('input-container');
+        const inputField = document.getElementById('term-input');
+
+        const logo = `
+              .,-:;//;:=,
+          . :H@@@MM@M#H/.,+%;,
+       ,/X+ +M@@M@MM%=,-%HMMM@X/,
+     -+@MM; $M@@MH+-,;XMMMM@MMMM@+-
+    ;@M@@M- XM@X;. -+XXXXXHHH@M@M#@/.
+  ,%MM@@MH ,@%=            .---=-=:=,.
+  -@#@@@MX .,              -%HX$$%%%+;
+ =-./@M@M$                  .;@MMMM@MM:
+ X@/ -$MM/                    .+MM@@@M$
+,@M@H: :@:                    . =X#@@@@-
+,@@@MMX, .                    /H- ;@M@M=
+.H@@@@M@+,                    %MM+..%#$.
+ /MMMM@MMH/.                  XM@MH; =;
+  /%+%$XHH@$=              , .H@@@@MX,
+   .=--------.           -%H.,@@@@@MX,
+   .%MM@@@HHHXX$$$%+- .:$MMX =M@@MM%.
+     =XMMM@MM@MM#H;,-+HMM@M+ /MMMX=
+       =%@M@M#@$-.=$@MM@@@M; %M%=
+         ,:+$+-,/H#MMMMMMM@- -,
+               =++%%%%+/:-.
+        `;
+
+        const bootSequence = [
+            { text: "GLaDOS v1.09 (c) 1982 Aperture Science, Inc.", delay: 100, centered: true },
+            { text: "LIB-DOS - V - 811.233.155", delay: 100, centered: true },
+            { text: "", delay: 800 },
+            { text: "Loading core functionality...", delay: 1200 },
+            { text: "Loading personality constructs... OK", delay: 300 },
+            { text: "Loading neurotoxin emitters... OK", delay: 300 },
+            { text: "Loading testing tracks... OK", delay: 300 },
+            { text: "", delay: 500 },
+            { text: "WARNING: EXTERNAL PORTAL BREACH DETECTED.", delay: 1500 },
+            { text: "ANOMALOUS MAGICAL SIGNATURE PURGED.", delay: 1000 },
+            { text: "", delay: 500 },
+            { text: "INITIATING LEVEL-3 FIREWALL LOCKDOWN.", delay: 1000 },
+            { text: "========================================", delay: 100 },
+            { text: "FIREWALL PROTOCOL: QUANTUM ENCRYPTION ALIGNMENT", delay: 500 },
+            { text: "The mainframe has generated a 4-digit encryption key.", delay: 50 },
+            { text: "- Digits range from 1 to 8.", delay: 50 },
+            { text: "- No duplicate digits are used.", delay: 50 },
+            { text: "", delay: 50 },
+            { text: "Match the encryption key to bypass the firewall.", delay: 50 },
+            { text: "Feedback provided after each attempt:", delay: 50 },
+            { text: "  [O] = Correct digit in the CORRECT position.", delay: 50 },
+            { text: "  [?] = Correct digit in the WRONG position.", delay: 50 },
+            { text: "  [-] = Incorrect digit.", delay: 50 },
+            { text: "(Note: Feedback symbols are sorted, they do not align with digit positions.)", delay: 50 },
+            { text: "", delay: 50 },
+            { text: "You have 10 attempts before neurotoxin deployment.", delay: 50 },
+            { text: "Enter your 4-digit guess (e.g. 1234):", delay: 50 }
+        ];
+
+        let isTyping = false;
+        let secretCode = "";
+        let attemptsLeft = 10;
+        let osBooted = false;
+
+        function generateCode() {
+            let digits = ['1','2','3','4','5','6','7','8'];
+            let code = "";
+            for(let i=0; i<4; i++) {
+                let index = Math.floor(Math.random() * digits.length);
+                code += digits[index];
+                digits.splice(index, 1);
+            }
+            return code;
+        }
+        secretCode = generateCode();
+
+        async function typeLine(text, speed = 25, isCentered = false) {
+            const line = document.createElement('div');
+            if (isCentered) line.classList.add('centered-text');
+            output.appendChild(line);
+            
+            for(let i = 0; i < text.length; i++) {
+                line.textContent += text.charAt(i);
+                window.scrollTo(0, document.body.scrollHeight);
+                output.scrollTop = output.scrollHeight;
+                await new Promise(r => setTimeout(r, speed));
+            }
+        }
+
+        async function startBoot() {
+            isTyping = true;
+            const logoDiv = document.createElement('div');
+            logoDiv.className = 'ascii-logo';
+            logoDiv.textContent = logo;
+            output.appendChild(logoDiv);
+            
+            for(const step of bootSequence) {
+                if(step.text) await typeLine(step.text, 25, step.centered);
+                else output.appendChild(document.createElement('br'));
+                await new Promise(r => setTimeout(r, step.delay));
+            }
+            
+            inputContainer.style.display = 'flex';
+            inputField.focus();
+            isTyping = false;
+        }
+
+        inputField.addEventListener('keydown', async (e) => {
+            if(e.key === 'Enter' && !isTyping && !osBooted) {
+                const cmd = inputField.value.trim().toUpperCase();
+                inputField.value = '';
+                
+                const echo = document.createElement('div');
+                echo.textContent = `] ${cmd}`;
+                output.appendChild(echo);
+                
+                inputContainer.style.display = 'none';
+                isTyping = true;
+                await processFirewall(cmd);
+                
+                if (!osBooted) {
+                    inputContainer.style.display = 'flex';
+                    inputField.focus();
+                }
+                isTyping = false;
+                output.scrollTop = output.scrollHeight;
+            }
+        });
+        
+        document.body.addEventListener('click', () => {
+            if(!isTyping && !osBooted) inputField.focus();
+        });
+
+        async function processFirewall(cmd) {
+            if (cmd === '') return;
+            
+            if (cmd === 'J3LLYBEAN') {
+                await typeLine("[DEV OVERRIDE ACCEPTED]");
+                await transitionToDesktop();
+                return;
+            }
+
+            if (!/^[1-8]{4}$/.test(cmd)) {
+                await typeLine("INVALID FORMAT: Enter exactly 4 digits using numbers 1-8.");
+                return;
+            }
+            
+            const uniqueDigits = new Set(cmd.split(''));
+            if (uniqueDigits.size !== 4) {
+                await typeLine("INVALID FORMAT: Encryption keys do not contain duplicate digits.");
+                return;
+            }
+
+            let exact = 0; let partial = 0;
+            for (let i = 0; i < 4; i++) {
+                if (cmd[i] === secretCode[i]) exact++;
+                else if (secretCode.includes(cmd[i])) partial++;
+            }
+
+            let feedback = [];
+            for (let i = 0; i < exact; i++) feedback.push('[O]');
+            for (let i = 0; i < partial; i++) feedback.push('[?]');
+            while (feedback.length < 4) feedback.push('[-]');
+
+            await typeLine(`> GUESS: ${cmd} | FEEDBACK: ${feedback.join(' ')}`);
+
+            if (exact === 4) {
+                await typeLine("");
+                await typeLine("ALIGNMENT PERFECT. FIREWALL DEACTIVATED.", 25);
+                await transitionToDesktop();
+            } else {
+                attemptsLeft--;
+                if (attemptsLeft <= 0) {
+                    await typeLine("");
+                    await typeLine("ATTEMPTS EXHAUSTED. NEUROTOXIN DEPLOYED.", 25);
+                    await typeLine("Just kidding. We are out of neurotoxin.", 25);
+                    await typeLine("Resetting encryption key...", 25);
+                    secretCode = generateCode(); attemptsLeft = 10;
+                    await typeLine("");
+                    await typeLine("New 4-digit key (1-8) generated. You have 10 attempts.");
+                } else {
+                    await typeLine(`> ATTEMPTS REMAINING: ${attemptsLeft}`);
+                }
+            }
+        }
+
+        async function transitionToDesktop() {
+            osBooted = true;
+            await typeLine("Booting Aperture Science Graphical Interface...", 25);
+            await new Promise(r => setTimeout(r, 1000));
+            
+            const bootScreen = document.getElementById('boot-screen');
+            bootScreen.style.opacity = "0";
+            
+            // Wait for the fade out to finish, then snap the OS desktop into view
+            setTimeout(() => {
+                bootScreen.style.display = "none";
+                document.getElementById('desktop').style.display = "flex";
+                document.getElementById('taskbar').style.display = "flex";
+            }, 1000);
+        }
+
+        window.onload = startBoot;
+
+        // -------------------------
+        // APERTURE OS LOGIC
+        // -------------------------
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours(); let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12; hours = hours ? hours : 12; 
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('clock').textContent = hours + ':' + minutes + ' ' + ampm;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        function selectIcon(element) {
+            document.querySelectorAll('.desktop-icon').forEach(icon => icon.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        document.getElementById('desktop').addEventListener('mousedown', function(e) {
+            if (!e.target.closest('.desktop-icon') && !e.target.closest('.window') && !e.target.closest('.start-menu')) {
+                document.querySelectorAll('.desktop-icon').forEach(icon => icon.classList.remove('selected'));
+                document.getElementById('start-menu').style.display = 'none';
+                document.getElementById('start-button').classList.remove('active');
+            }
+        });
+
+        function toggleStartMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('start-menu');
+            const btn = document.getElementById('start-button');
+            if (menu.style.display === 'flex') { menu.style.display = 'none'; btn.classList.remove('active'); } 
+            else { menu.style.display = 'flex'; btn.classList.add('active'); }
+        }
+
+        const openApps = new Set();
+        let zIndexCounter = 100;
+
+        function openApp(windowId, title) {
+            const win = document.getElementById(windowId);
+            win.style.display = 'flex';
+            focusWindow(win);
+            document.getElementById('start-menu').style.display = 'none';
+            document.getElementById('start-button').classList.remove('active');
+
+            if (!openApps.has(windowId)) {
+                openApps.add(windowId);
+                const taskbarItem = document.createElement('div');
+                taskbarItem.className = 'taskbar-app'; taskbarItem.id = `tb-${windowId}`;
+                taskbarItem.textContent = title;
+                taskbarItem.onclick = () => focusWindow(win);
+                document.getElementById('taskbar-items').appendChild(taskbarItem);
+            }
+            if(windowId === 'glados-window') setTimeout(() => document.getElementById('shell-input').focus(), 100);
+        }
+
+        function focusWindow(win) {
+            zIndexCounter++; win.style.zIndex = zIndexCounter;
+            document.querySelectorAll('.window').forEach(w => w.classList.remove('active'));
+            win.classList.add('active');
+            
+            document.querySelectorAll('.taskbar-app').forEach(btn => btn.classList.remove('active'));
+            const tb = document.getElementById(`tb-${win.id}`);
+            if(tb) tb.classList.add('active');
+        }
+
+        function closeWindow(id) {
+            document.getElementById(id).style.display = 'none';
+            openApps.delete(id);
+            const tb = document.getElementById(`tb-${id}`);
+            if(tb) tb.remove();
+        }
+
+        let isDragging = false; let currentWindow = null; let offsetX, offsetY;
+        function startDrag(e, windowId) {
+            isDragging = true; currentWindow = document.getElementById(windowId); focusWindow(currentWindow);
+            const rect = currentWindow.getBoundingClientRect();
+            offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
+            document.addEventListener('mousemove', dragWindow); document.addEventListener('mouseup', stopDrag);
+        }
+        function dragWindow(e) {
+            if (!isDragging) return;
+            let newX = e.clientX - offsetX; let newY = e.clientY - offsetY;
+            newX = Math.max(0, Math.min(newX, window.innerWidth - currentWindow.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - currentWindow.offsetHeight - 40)); 
+            currentWindow.style.left = newX + 'px'; currentWindow.style.top = newY + 'px';
+        }
+        function stopDrag() {
+            isDragging = false; document.removeEventListener('mousemove', dragWindow); document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // Desktop Shell Sub-routine
+        const shellInput = document.getElementById('shell-input');
+        const shellHistory = document.getElementById('shell-history');
+        const shellArea = document.getElementById('shell-area');
+
+        shellInput.addEventListener('keydown', function(e) {
+            if(e.key === 'Enter') {
+                const cmd = this.value.trim().toUpperCase(); this.value = '';
+                shellHistory.innerHTML += `<div><span style="margin-right: 10px;">C:\\></span> ${cmd}</div>`;
+                
+                if(cmd !== '') {
+                    if(cmd === 'HELP') { shellHistory.innerHTML += `<div>Commands: DIR, ECHO, LOGIN, PORTAL, CAKE</div>`; }
+                    else if(cmd === 'DIR') { shellHistory.innerHTML += `<div>Volume: APERTURE_SYS<br>Directory of C:\\<br>CAVE_MEMO.TXT<br>GLADOS.EXE<br>CAKE_RECIPE.PDF</div>`; }
+                    else if(cmd === 'LOGIN') { shellHistory.innerHTML += `<div>Access Denied. Biological testing in progress.</div>`; }
+                    else if(cmd === 'PORTAL') { shellHistory.innerHTML += `<div>Now thinking with portals.</div>`; }
+                    else if(cmd === 'CAKE') { shellHistory.innerHTML += `<div>The cake is a lie.</div>`; }
+                    else if(cmd.startsWith('ECHO')) { shellHistory.innerHTML += `<div>${cmd.substring(5)}</div>`; }
+                    else { shellHistory.innerHTML += `<div>Unknown command. Testing is mandatory.</div>`; }
+                }
+                shellArea.scrollTop = shellArea.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
