@@ -380,6 +380,28 @@
 
         .glyph-locked { pointer-events: none; }
 
+        /* Digital Glitch effect for the simulation breaking */
+        .digital-break {
+            position: fixed;
+            inset: 0;
+            background-color: #000;
+            z-index: 999999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            color: #33ff33;
+        }
+
+        .system-text {
+            font-size: 1.5rem;
+            text-align: center;
+            line-height: 2;
+            text-shadow: 0 0 10px #33ff33;
+            opacity: 0;
+        }
+
     </style>
 </head>
 <body>
@@ -525,9 +547,17 @@
         <div class="hidden-glyph" style="top: 75%; left: 15%;" data-color="glow-indigo" data-index="5" onclick="handleRainbow(this)">𓊪</div>
         <div class="hidden-glyph" style="top: 30%; left: 85%;" data-color="glow-violet" data-index="6" onclick="handleRainbow(this)">𓅓</div>
 
-        <!-- The Empty Abyss for the final reward -->
-        <div id="center-stage" class="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none"></div>
+        <!-- Center Stage for Shadow Game -->
+        <div id="center-stage" style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200;"></div>
 
+    </div>
+
+    <!-- The Digital Break (Simulation Over) -->
+    <div id="digital-break-phase" class="digital-break">
+        <div id="sys-text-1" class="system-text">CRITICAL ERROR: ANCIENT MAGIC SIMULATION TERMINATED.</div>
+        <div id="sys-text-2" class="system-text mt-4">SITE-01 AUTOMATED CONSTRUCT RESPONDING...</div>
+        <div id="sys-text-3" class="system-text mt-8 text-white font-bold" style="font-size: 2rem; text-shadow: 0 0 20px #ffffff;">ASCENSION TERMINAL PASSKEY RECOVERED:<br><span style="color: #ff3333; text-shadow: 0 0 20px #ff3333;">OBLIVION</span></div>
+        <button id="sys-btn" onclick="window.location.href='ascension.html'" style="margin-top: 40px; padding: 10px 30px; background: transparent; border: 2px solid #33ff33; color: #33ff33; font-family: 'Courier New', Courier, monospace; font-size: 1.2rem; cursor: pointer; opacity: 0; transition: all 0.3s;">[ PROCEED TO TERMINAL ]</button>
     </div>
 
     <script>
@@ -573,6 +603,26 @@
             ['𓆣', '𓅓', '𓈖', '𓂋', '𓎢', '𓃻', '𓄿'], 
             ['𓍹', '𓇋', '𓅱', '𓊪', '𓃭', '𓆗', '𓆙']  
         ];
+
+        // Randomize starting runes on load to prevent easy guessing
+        window.addEventListener('DOMContentLoaded', () => {
+            const runes = document.querySelectorAll('.rune');
+            let isCorrect = true;
+            
+            // Loop ensures it never accidentally hands the player the winning code on load
+            while (isCorrect) {
+                runes.forEach((rune, index) => {
+                    const options = runeOptions[index];
+                    let randomIndex = Math.floor(Math.random() * options.length);
+                    rune.innerText = options[randomIndex];
+                });
+                
+                const word = Array.from(runes).map(r => r.innerText.trim()).join('');
+                if (word !== "𓋴𓎢𓊪") {
+                    isCorrect = false;
+                }
+            }
+        });
 
         function cycleRune(element, slotIndex) {
             if (audioInit) {
@@ -978,14 +1028,155 @@
             setTimeout(() => {
                 document.body.classList.remove('screen-shake');
                 
-                // Materialize the final message in the center of the void
+                // Fade out the 7 glyphs
+                document.querySelectorAll('.hidden-glyph').forEach(g => {
+                    g.style.transition = 'opacity 2s ease';
+                    g.style.opacity = '0';
+                    setTimeout(() => g.remove(), 2000);
+                });
+
+                // Materialize the Shadow Game challenge
                 const stage = document.getElementById('center-stage');
                 stage.innerHTML = `
-                    <div style="color: #ffffff; font-size: 1.5rem; text-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff; animation: pulseGlow 2s infinite alternate; font-weight: bold; letter-spacing: 0.2em; text-align: center;">
-                        THE VOID IS OPENED<br><span style="font-size: 1rem; color: #888;">(Awaiting next phase...)</span>
+                    <div id="shadow-game-ui" style="display: flex; flex-direction: column; align-items: center; opacity: 0; transition: opacity 2.5s ease-in;">
+                        <div style="color: #ffd700; font-size: 3rem; text-shadow: 0 0 15px #ffd700, 0 0 30px #ffaa00, 0 0 50px #ff8000; font-weight: bold; letter-spacing: 0.1em; text-align: center; margin-bottom: 2rem;">
+                            "So a Shadow Game it is then"
+                        </div>
+                        <div style="color: #ffd700; font-size: 1.4rem; text-shadow: 0 0 10px #ffd700, 0 0 20px #ffb300; letter-spacing: 0.15em; text-align: center; max-width: 800px; margin-bottom: 4rem; line-height: 1.8;">
+                            CHALLENGE THE ARCHITECT TO A SHADOW GAME AND DEFEAT HIM TO CLAIM YOUR FREEDOM AND YOUR PRIZE.
+                        </div>
+                        <input type="text" id="shadow-code" maxlength="8" autocomplete="off" spellcheck="false" oninput="checkShadowGame()"
+                               style="background: transparent; border: none; border-bottom: 3px solid rgba(255, 215, 0, 0.5); color: #ffd700; font-family: 'Cinzel', serif; font-size: 3rem; text-align: center; outline: none; text-shadow: 0 0 15px #ffd700; width: 250px; transition: all 0.4s ease;">
                     </div>
                 `;
-            }, 2000);
+
+                setTimeout(() => {
+                    document.getElementById('shadow-game-ui').style.opacity = '1';
+                    setTimeout(() => document.getElementById('shadow-code').focus(), 2000);
+                }, 1500);
+
+            }, 3000);
+        }
+
+        function checkShadowGame() {
+            const input = document.getElementById('shadow-code');
+            if (input.value.trim() === '33396948' || input.value.trim().toUpperCase() === 'J3LLYBEAN') {
+                input.readOnly = true;
+                input.blur();
+                
+                // Exodia Glow Effect
+                input.style.borderBottomColor = '#ffffff';
+                input.style.color = '#ffffff';
+                input.style.textShadow = '0 0 20px #ffffff, 0 0 40px #ffd700, 0 0 80px #ffd700';
+                
+                if (audioInit) {
+                    magicSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "1n");
+                }
+
+                // Final Reveal Transition
+                setTimeout(() => {
+                    const stage = document.getElementById('center-stage');
+                    stage.style.transition = 'opacity 1s';
+                    stage.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        stage.innerHTML = `
+                            <div id="exodia-limbs-ui" style="display: flex; flex-direction: column; align-items: center; opacity: 0; transition: opacity 2.5s ease-in;">
+                                <div style="color: #ff3333; font-size: 2rem; text-shadow: 0 0 15px #ff3333, 0 0 30px #cc0000; font-weight: bold; letter-spacing: 0.15em; text-align: center; margin-bottom: 3rem; max-width: 800px; line-height: 1.6;">
+                                    "THE FORBIDDEN ONE AWAKENS...<br>BUT A KING BOUND IN CHAINS CANNOT OBLITERATE."
+                                </div>
+                                <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;">
+                                    <input type="text" class="limb-input" maxlength="8" autocomplete="off" spellcheck="false" oninput="checkExodiaLimb(this)"
+                                        style="background: transparent; border: none; border-bottom: 3px solid rgba(255, 51, 51, 0.5); color: #ff3333; font-family: 'Cinzel', serif; font-size: 2rem; text-align: center; outline: none; text-shadow: 0 0 15px #ff3333; width: 180px; transition: all 0.4s ease;">
+                                    <input type="text" class="limb-input" maxlength="8" autocomplete="off" spellcheck="false" oninput="checkExodiaLimb(this)"
+                                        style="background: transparent; border: none; border-bottom: 3px solid rgba(255, 51, 51, 0.5); color: #ff3333; font-family: 'Cinzel', serif; font-size: 2rem; text-align: center; outline: none; text-shadow: 0 0 15px #ff3333; width: 180px; transition: all 0.4s ease;">
+                                    <input type="text" class="limb-input" maxlength="8" autocomplete="off" spellcheck="false" oninput="checkExodiaLimb(this)"
+                                        style="background: transparent; border: none; border-bottom: 3px solid rgba(255, 51, 51, 0.5); color: #ff3333; font-family: 'Cinzel', serif; font-size: 2rem; text-align: center; outline: none; text-shadow: 0 0 15px #ff3333; width: 180px; transition: all 0.4s ease;">
+                                    <input type="text" class="limb-input" maxlength="8" autocomplete="off" spellcheck="false" oninput="checkExodiaLimb(this)"
+                                        style="background: transparent; border: none; border-bottom: 3px solid rgba(255, 51, 51, 0.5); color: #ff3333; font-family: 'Cinzel', serif; font-size: 2rem; text-align: center; outline: none; text-shadow: 0 0 15px #ff3333; width: 180px; transition: all 0.4s ease;">
+                                </div>
+                            </div>
+                        `;
+                        stage.style.opacity = '1';
+                        setTimeout(() => {
+                            document.getElementById('exodia-limbs-ui').style.opacity = '1';
+                            document.querySelectorAll('.limb-input')[0].focus();
+                        }, 100);
+                    }, 1000);
+                }, 2000);
+            }
+        }
+
+        const exodiaLimbCodes = ['07902349', '70903634', '44519536', '08124921'];
+        
+        function checkExodiaLimb(element) {
+            const val = element.value.trim().toUpperCase();
+            
+            let isMatch = false;
+            if (val === 'J3LLYBEAN') {
+                isMatch = true;
+            } else if (val.length === 8 && exodiaLimbCodes.includes(val)) {
+                const allInputs = Array.from(document.querySelectorAll('.limb-input'));
+                const duplicate = allInputs.find(input => input !== element && input.value.trim().toUpperCase() === val);
+                if (!duplicate) {
+                    isMatch = true;
+                }
+            }
+
+            if (isMatch) {
+                element.readOnly = true;
+                element.blur();
+                element.style.borderBottomColor = '#ffffff';
+                element.style.color = '#ffffff';
+                element.style.textShadow = '0 0 20px #ffffff, 0 0 40px #00e5ff, 0 0 80px #00e5ff';
+                
+                if (audioInit) {
+                    magicSynth.triggerAttackRelease("C6", "8n");
+                }
+
+                const allInputs = Array.from(document.querySelectorAll('.limb-input'));
+                const nextEmpty = allInputs.find(input => !input.readOnly);
+                if (nextEmpty) nextEmpty.focus();
+
+                if (allInputs.every(input => input.readOnly)) {
+                    triggerObliterate();
+                }
+            }
+        }
+
+        function triggerObliterate() {
+            if (audioInit) {
+                const rumble = new Tone.Noise("brown").start();
+                const rumbleEnv = new Tone.AmplitudeEnvelope({ attack: 0.1, decay: 4, sustain: 0, release: 0 }).toDestination();
+                rumble.connect(rumbleEnv);
+                rumbleEnv.triggerAttack();
+                
+                magicSynth.triggerAttackRelease(["C2", "C3", "C4"], "1n");
+                setTimeout(() => rumble.stop(), 5000);
+            }
+
+            document.body.classList.add('screen-shake');
+            
+            setTimeout(() => {
+                document.body.classList.remove('screen-shake');
+                const stage = document.getElementById('center-stage');
+                stage.style.transition = 'opacity 1s';
+                stage.style.opacity = '0';
+                
+                setTimeout(() => {
+                    stage.innerHTML = `
+                        <div style="font-family: 'Courier New', monospace; color: #ffaa00; font-size: 1.2rem; text-align: center; text-shadow: 0 0 10px #ffaa00; letter-spacing: 0.1em; line-height: 2;">
+                            [SHADOW GAME OVERRIDE ACCEPTED]<br><br>
+                            <span style="color: #ff3333; font-size: 2rem; font-weight: bold; text-shadow: 0 0 20px #ff3333;">EXODIA PROTOCOL: OBLITERATE</span><br>
+                            ILLUSION TERMINATED.<br><br>
+                            RE-ROUTING SIGNAL TO EXTERNAL RESEARCH FACILITY:<br>
+                            <span style="font-size: 3rem; font-weight: bold; color: #ffffff; text-shadow: 0 0 20px #ffffff, 0 0 40px #ffaa00; display: block; margin: 1rem 0;">APERTURE SCIENCE</span><br>
+                            <a href="aps.html" style="color: #00e5ff; text-decoration: underline; text-shadow: 0 0 10px #00e5ff; font-size: 1.5rem; cursor: pointer;">[ ENTER PORTAL ]</a>
+                        </div>
+                    `;
+                    stage.style.opacity = '1';
+                }, 1000);
+            }, 3000);
         }
 
         // DEV OVERRIDE: Global J3LLYBEAN bypass for any active phase
@@ -1014,20 +1205,30 @@
                         magician.value = 'J3LLYBEAN';
                         checkSandCodes();
                     }
-                    // Phase 3: Void Rainbow is active
-                    else if (document.getElementById('pharaoh-chamber-phase').style.display !== 'none') {
+                    // Phase 3: Void Rainbow is active (and Shadow Game hasn't spawned yet)
+                    else if (document.getElementById('pharaoh-chamber-phase').style.display !== 'none' && !document.getElementById('shadow-code')) {
                         if (clickedSequence.length < 7) {
-                            // Reset the board if they used the cheat mid-attempt
                             clickedSequence = [];
                             document.querySelectorAll('.hidden-glyph').forEach(g => g.className = 'hidden-glyph');
-                            
                             const glyphs = document.querySelectorAll('.hidden-glyph');
-                            // Trigger all glyphs sequentially in the correct order automatically
                             for (let i = 0; i < 7; i++) {
                                 let g = Array.from(glyphs).find(el => parseInt(el.getAttribute('data-index')) === i);
                                 setTimeout(() => handleRainbow(g), i * 200);
                             }
                         }
+                    }
+                    // Phase 4: Shadow Game Input is visible
+                    else if (document.getElementById('shadow-code') && !document.getElementById('shadow-code').readOnly) {
+                        document.getElementById('shadow-code').value = 'J3LLYBEAN';
+                        checkShadowGame();
+                    }
+                    // Phase 5: Exodia Limbs are visible
+                    else if (document.querySelector('.limb-input:not([readonly])')) {
+                        const emptyInputs = document.querySelectorAll('.limb-input:not([readonly])');
+                        emptyInputs.forEach(input => {
+                            input.value = 'J3LLYBEAN';
+                            checkExodiaLimb(input);
+                        });
                     }
                 }
             }
