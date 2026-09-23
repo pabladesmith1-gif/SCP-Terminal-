@@ -869,6 +869,26 @@
                 document.body.style.animation = 'none'; void document.body.offsetWidth; 
                 document.body.style.animation = 'crtBoot 1.5s ease-out forwards';
                 setTimeout(() => openApp('alert-window', 'Simulation Terminated'), 1000);
+            } else if (pwd === 'H7EY21A8V') {
+                // Cipher text for ACCESS DENIED (Base64)
+                const errorDisplay = document.getElementById('boot-error');
+                document.getElementById('boot-password').disabled = true;
+                let timeLeft = 10;
+                
+                errorDisplay.style.color = '#cc0000';
+                
+                const interval = setInterval(() => {
+                    errorDisplay.textContent = `QUNDRVNTIERFTklFRA== [${timeLeft}s]`;
+                    timeLeft--;
+                    if (timeLeft < 0) {
+                        clearInterval(interval);
+                        // Attempt to close window (Browsers may block this if the tab wasn't opened by a script)
+                        window.close();
+                        // Fallback: Wipe the screen entirely to simulate termination
+                        document.body.innerHTML = '<div style="background:black; width:100vw; height:100vh; display:flex; justify-content:center; align-items:center; color:red; font-family:\'VT323\', monospace; font-size:32px; letter-spacing:4px; z-index:999999; position:absolute; inset:0;">CONNECTION SEVERED.</div>';
+                    }
+                }, 1000);
+                errorDisplay.textContent = `QUNDRVNTIERFTklFRA== [10s]`;
             } else {
                 document.getElementById('boot-error').textContent = 'ERR: INVALID PASSKEY';
                 document.getElementById('boot-password').value = ''; document.getElementById('boot-password').focus();
