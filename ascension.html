@@ -96,6 +96,7 @@
         .window-title { display: flex; align-items: center; gap: 4px; }
         .window-title-icon { width: 14px; height: 14px; }
         .window-controls { display: flex; gap: 2px; }
+        
         .win-btn {
             background-color: var(--win-gray); border-top: 1px solid var(--win-border-light); border-left: 1px solid var(--win-border-light);
             border-right: 1px solid var(--win-border-dark); border-bottom: 1px solid var(--win-border-dark); width: 16px; height: 14px; display: flex; justify-content: center;
@@ -863,7 +864,7 @@
 
         function attemptBoot() {
             const pwd = document.getElementById('boot-password').value.trim().toUpperCase();
-            if(pwd === 'H7EY21A8V' || pwd === 'J3LLYBEAN') {
+            if(pwd === 'XY6T3PL9F' || pwd === 'J3LLYBEAN') {
                 document.getElementById('login-screen').style.display = 'none';
                 document.body.style.animation = 'none'; void document.body.offsetWidth; 
                 document.body.style.animation = 'crtBoot 1.5s ease-out forwards';
