@@ -1,1 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITE-01 // SCP-1644-B</title>
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --magic-glow: #00e5ff;
+            --magic-glow-dim: rgba(0, 229, 255, 0.25);
+            /* Base colors for the sandstone */
+            --stone-face: #6a5d4d;
+            --stone-edge: #2a231b;
+        }
 
+        body {
+            background-color: #030303;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1200px; 
+        }
+
+        /* Ambient lighting for the stone room */
+        .ambient-light {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 40%, rgba(30, 25, 20, 0.8) 0%, #000000 80%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ------------------------- */
+        /* EGYPTIAN TABLET PHASE     */
+        /* ------------------------- */
+        .tablet-assembly {
+            position: relative;
+            width: 85vw;
+            max-width: 600px;
+            height: 75vh;
+            max-height: 750px;
+            transform-style: preserve-3d;
+            z-index: 10;
+            animation: heavyHover 12s ease-in-out infinite;
+        }
+
+        @keyframes heavyHover {
+            0%, 100% { transform: translateY(0) rotateX(12deg) rotateY(-8deg); }
+            50% { transform: translateY(-20px) rotateX(18deg) rotateY(-2deg); }
+        }
+
+        /* Master clip-path for jagged edges */
+        .stone-shape {
+            clip-path: polygon(
+                2% 4%, 10% 1%, 25% 3%, 38% 0%, 50% 2%, 70% 0%, 85% 3%, 98% 5%, 
+                100% 18%, 96% 30%, 99% 45%, 95% 60%, 100% 75%, 97% 90%, 93% 98%, 
+                75% 100%, 60% 97%, 45% 99%, 30% 96%, 12% 99%, 4% 95%, 
+                0% 80%, 3% 65%, 0% 50%, 2% 35%, 0% 15%
+            );
+        }
+
+        .tablet-thickness {
+            position: absolute;
+            inset: 0;
+            background-color: var(--stone-edge);
+            transform: translateZ(-35px) translateY(10px) translateX(10px);
+            filter: drop-shadow(-30px 40px 30px rgba(0,0,0,0.9));
+        }
+
+        .tablet-face {
+            position: absolute;
+            inset: 0;
+            background-color: var(--stone-face);
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.6) 100%);
+            transform: translateZ(0);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4rem 3rem;
+        }
+
+        /* Procedural SVG bump map for realism */
+        .realistic-texture {
+            position: absolute;
+            inset: 0;
+            background-color: inherit;
+            filter: url(#stone-bump-map);
+            mix-blend-mode: multiply;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .content-layer {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .engraved {
+            color: rgba(25, 20, 15, 0.85);
+            text-shadow: -1px -2px 2px rgba(0,0,0,0.9), 1px 1px 1px rgba(255,255,255,0.25);
+            text-align: center;
+        }
+
+        .title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 0.25em;
+            margin-bottom: 2rem;
+            border-bottom: 3px solid rgba(25, 20, 15, 0.6);
+            padding-bottom: 1rem;
+            width: 90%;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .lore-text {
+            font-size: 1.3rem;
+            line-height: 1.9;
+            letter-spacing: 0.05em;
+            margin-bottom: 3rem;
+            font-weight: 600;
+        }
+
+        .rune-slots {
+            display: flex;
+            gap: 2.5rem;
+            margin-top: auto;
+        }
+
+        .rune {
+            width: 75px;
+            height: 95px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Persistent Glow */
+            color: #ffffff;
+            background-color: rgba(0, 229, 255, 0.1);
+            text-shadow: 0 0 10px #ffffff, 0 0 20px var(--magic-glow), 0 0 40px var(--magic-glow);
+            box-shadow: inset 4px 6px 15px rgba(0,0,0,0.9), inset 0 0 20px var(--magic-glow-dim), 0 0 40px var(--magic-glow-dim);
+        }
+
+        .rune:active { transform: scale(0.92); }
+
+        .dust {
+            position: absolute;
+            background-color: rgba(255, 240, 200, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 5px rgba(255, 240, 200, 0.2);
+            animation: drift linear infinite;
+            z-index: 5;
+        }
+
+        @keyframes drift {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(-10vh) translateX(50px); opacity: 0; }
+        }
+
+        /* Tablet Explosion Classes */
+        .supercharge-runes {
+            color: #ffffff !important;
+            background-color: rgba(0, 229, 255, 0.4) !important;
+            text-shadow: 0 0 20px #ffffff, 0 0 40px var(--magic-glow), 0 0 80px var(--magic-glow) !important;
+            box-shadow: inset 4px 6px 15px rgba(0,0,0,0.9), inset 0 0 40px var(--magic-glow), 0 0 100px var(--magic-glow) !important;
+        }
+        .screen-shake { animation: intenseShake 0.08s infinite !important; }
+        @keyframes intenseShake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-10px, 8px) rotate(-1deg); }
+            50% { transform: translate(12px, -10px) rotate(1deg); }
+            75% { transform: translate(-12px, -8px) rotate(-1deg); }
+        }
+        .blue-glow-bg {
+            background: radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.4) 0%, #000000 100%) !important;
+            animation: pulseGlow 0.15s infinite alternate !important;
+        }
+        @keyframes pulseGlow {
+            from { filter: brightness(1) contrast(1); }
+            to { filter: brightness(2) contrast(1.2); }
+        }
+        .explosion-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            opacity: 0;
+            animation: boomFlash 2.5s forwards;
+            pointer-events: none;
+        }
+        @keyframes boomFlash {
+            0% { opacity: 0; background-color: var(--magic-glow); }
+            3% { opacity: 1; background-color: var(--magic-glow); }
+            8% { opacity: 1; background-color: #ffffff; }
+            100% { opacity: 1; background-color: #ffffff; }
+        }
+
+        /* ------------------------- */
+        /* FALLING SAND PHASE        */
+        /* ------------------------- */
+        #silicate-phase {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            background-color: #030303; 
+        }
+
+        #sand-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .sand-writing-layer {
+            position: absolute;
+            z-index: 60;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 3s ease-in-out;
+        }
+
+        /* Styling for the prophecy carved in the sand */
+        .sand-text {
+            font-family: 'Cinzel', serif;
+            color: rgba(45, 35, 15, 0.85); /* Deep sand shadow */
+            text-shadow: -1px -2px 2px rgba(0,0,0,0.8), 1px 1px 1px rgba(255,255,255,0.4);
+            text-align: center;
+        }
+
+        .sand-prompt {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 4rem;
+            letter-spacing: 0.15em;
+            line-height: 1.8;
+            max-width: 800px;
+        }
+
+        .sand-inputs-container {
+            display: flex;
+            gap: 4rem;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Base input styling (looks carved into sand) */
+        .sand-input {
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 3px solid rgba(45, 35, 15, 0.4) !important;
+            outline: none !important;
+            width: 250px;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: rgba(45, 35, 15, 0.85); /* Ensures text color is explicitly set */
+            caret-color: rgba(45, 35, 15, 0.85);
+            transition: all 0.4s ease;
+        }
+
+        /* 
+         * SUCCESS GLOW OVERRIDES
+         * Important tags used to aggressively override browser defaults for disabled/readonly inputs
+         */
+        .dragon-glow {
+            pointer-events: none;
+            color: #ffffff !important;
+            border-bottom-color: #82b1ff !important;
+            text-shadow: 
+                0 0 10px #ffffff,
+                0 0 20px #82b1ff,
+                0 0 40px #2979ff,
+                0 0 80px #2979ff,
+                0 0 120px #2979ff !important;
+        }
+
+        .magician-glow {
+            pointer-events: none;
+            color: #ffffff !important;
+            border-bottom-color: #ea80fc !important;
+            text-shadow: 
+                0 0 10px #ffffff,
+                0 0 20px #ea80fc,
+                0 0 40px #e040fb,
+                0 0 80px #d500f9,
+                0 0 120px #d500f9 !important;
+        }
+
+        .dragon-hint {
+            color: #ffffff !important;
+            text-shadow: 
+                0 0 10px #ffffff,
+                0 0 20px #82b1ff,
+                0 0 40px #2979ff,
+                0 0 80px #2979ff !important;
+        }
+
+        .magician-hint {
+            color: #ffffff !important;
+            text-shadow: 
+                0 0 10px #ffffff,
+                0 0 20px #ea80fc,
+                0 0 40px #e040fb,
+                0 0 80px #d500f9 !important;
+        }
+
+        /* ------------------------- */
+        /* THE DARK VOID PHASE       */
+        /* ------------------------- */
+        #pharaoh-chamber-phase {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none; 
+            background-color: #000000;
+            overflow: hidden;
+            transition: background-color 0.2s ease;
+        }
+
+        .hidden-glyph {
+            position: absolute;
+            font-size: 4rem;
+            color: transparent;
+            cursor: pointer;
+            transition: color 0.4s ease, text-shadow 0.4s ease, transform 0.2s;
+            user-select: none;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: translate(-50%, -50%);
+            /* Very faint hint of existence on hover */
+        }
+
+        .hidden-glyph:hover {
+            color: rgba(255, 255, 255, 0.02);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        /* The ROYGBIV Color Spectrum */
+        .glow-red { color: #ff3333; text-shadow: 0 0 20px #ff3333, 0 0 40px #ff0000, 0 0 60px #ff0000; }
+        .glow-orange { color: #ffaa00; text-shadow: 0 0 20px #ffaa00, 0 0 40px #ff6600, 0 0 60px #ff6600; }
+        .glow-yellow { color: #ffff33; text-shadow: 0 0 20px #ffff33, 0 0 40px #cccc00, 0 0 60px #cccc00; }
+        .glow-green { color: #33ff33; text-shadow: 0 0 20px #33ff33, 0 0 40px #00cc00, 0 0 60px #00cc00; }
+        .glow-blue { color: #3399ff; text-shadow: 0 0 20px #3399ff, 0 0 40px #0066ff, 0 0 60px #0066ff; }
+        .glow-indigo { color: #9933ff; text-shadow: 0 0 20px #9933ff, 0 0 40px #6600cc, 0 0 60px #6600cc; }
+        .glow-violet { color: #ff33ff; text-shadow: 0 0 20px #ff33ff, 0 0 40px #cc00cc, 0 0 60px #cc00cc; }
+
+        .glyph-locked { pointer-events: none; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 3D Bump Map generation for realistic sandstone -->
+    <svg style="width: 0; height: 0; position: absolute;" aria-hidden="true">
+        <defs>
+            <filter id="stone-bump-map">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="6" result="noise" />
+                <feDiffuseLighting in="noise" lighting-color="#ffffff" surfaceScale="3" result="light">
+                    <feDistantLight azimuth="45" elevation="35" />
+                </feDiffuseLighting>
+            </filter>
+        </defs>
+    </svg>
+
+    <div class="ambient-light"></div>
+    <div id="dust-container" class="absolute inset-0 pointer-events-none overflow-hidden z-0"></div>
+
+    <!-- EGYPTIAN TABLET PHASE -->
+    <div class="tablet-assembly">
+        <div class="stone-shape tablet-thickness"></div>
+        <div class="stone-shape tablet-face">
+            <div class="realistic-texture"></div>
+            
+            <!-- Deep, jagged fissures strictly confined to the outer corners -->
+            <svg class="cracks-overlay" viewBox="0 0 400 600" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.3)); opacity: 0.85;">
+                <g fill="none" stroke-linejoin="miter" stroke-miterlimit="10">
+                    <!-- Top Left (Strictly corner) -->
+                    <path d="M 30,0 L 45,40 L 20,70 L 60,100 L 40,130" stroke="#110d0a" stroke-width="3" />
+                    <path d="M 45,40 L 80,30 L 95,50" stroke="#110d0a" stroke-width="1.5" />
+                    
+                    <!-- Bottom Left (Strictly corner) -->
+                    <path d="M 0,450 L 40,480 L 30,520 L 70,560" stroke="#110d0a" stroke-width="3" />
+                    <path d="M 40,480 L 80,470 L 90,490" stroke="#110d0a" stroke-width="1.5" />
+                    
+                    <!-- Bottom Right Fissure (Strictly corner) -->
+                    <path d="M 400,480 L 360,450 L 340,490 L 300,510" stroke="#110d0a" stroke-width="3.5" />
+                    <path d="M 360,450 L 370,410 L 340,380" stroke="#110d0a" stroke-width="2" />
+                    
+                    <!-- Top Right Edge Fissure -->
+                    <path d="M 400,120 L 360,150 L 380,190 L 340,210" stroke="#110d0a" stroke-width="2.5" />
+                </g>
+            </svg>
+
+            <div class="content-layer">
+                <div class="title engraved">SCP-1644-B</div>
+                <div class="lore-text engraved">
+                    The hand of Atem<br>extends beyond death itself.
+                </div>
+                <div class="rune-slots">
+                    <div class="rune" onclick="cycleRune(this, 0)">𓁹</div>
+                    <div class="rune" onclick="cycleRune(this, 1)">𓆣</div>
+                    <div class="rune" onclick="cycleRune(this, 2)">𓍹</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Sand Phase (Hidden by default) -->
+    <div id="silicate-phase">
+        <canvas id="sand-canvas"></canvas>
+        <div id="sand-writing-layer" class="sand-writing-layer">
+            
+            <!-- Double Door & Millennium Puzzle Silhouette Watermark -->
+            <div class="absolute inset-0 flex justify-center items-center pointer-events-none" style="z-index: -1;">
+                <svg id="door-svg" viewBox="0 0 300 420" style="width: 75vw; max-width: 700px; opacity: 0.15; filter: drop-shadow(-1px -2px 2px rgba(0,0,0,0.8)) drop-shadow(1px 1px 1px rgba(255,255,255,0.4)); transition: opacity 1.5s, filter 1.5s;">
+                    <defs>
+                        <!-- Perfect 50/50 split masks -->
+                        <clipPath id="clip-left"><rect x="0" y="0" width="150" height="420" /></clipPath>
+                        <clipPath id="clip-right"><rect x="150" y="0" width="150" height="420" /></clipPath>
+                        
+                        <!-- The Master Door Design -->
+                        <g id="door-contents" fill="none" stroke="rgba(45, 35, 15, 0.85)" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- Massive Stone Architrave (Outer Frame) -->
+                            <path d="M 20 400 L 20 20 L 280 20 L 280 400" stroke-width="5" />
+                            <path d="M 40 400 L 40 40 L 260 40 L 260 400" stroke-width="3" />
+                            
+                            <!-- Left Door -->
+                            <rect x="50" y="50" width="100" height="350" stroke-width="3" />
+                            <!-- Right Door -->
+                            <rect x="150" y="50" width="100" height="350" stroke-width="3" />
+
+                            <!-- Door Handles -->
+                            <circle cx="135" cy="270" r="6" stroke-width="3" />
+                            <line x1="135" y1="276" x2="135" y2="300" stroke-width="3" />
+                            
+                            <circle cx="165" cy="270" r="6" stroke-width="3" />
+                            <line x1="165" y1="276" x2="165" y2="300" stroke-width="3" />
+
+                            <!-- Millennium Puzzle -->
+                            <g transform="translate(90, 110)" stroke-width="3">
+                                <circle cx="60" cy="15" r="8" />
+                                <path d="M 60 23 L 10 110 L 110 110 Z" />
+                                <path d="M 45 75 Q 60 60 75 75 Q 60 90 45 75 Z" />
+                                <circle cx="60" cy="75" r="4" fill="rgba(45, 35, 15, 0.85)" />
+                                <path d="M 60 23 L 60 45 L 45 55 L 75 55 L 60 65 L 60 70" />
+                                <path d="M 33 70 L 45 70" />
+                                <path d="M 75 70 L 87 70" />
+                                <path d="M 22 90 L 40 90 L 45 110" />
+                                <path d="M 98 90 L 80 90 L 75 110" />
+                                <path d="M 40 90 L 60 110" />
+                                <path d="M 80 90 L 60 110" />
+                            </g>
+                        </g>
+                    </defs>
+
+                    <!-- The blinding light that pours from the crack -->
+                    <rect id="door-light" x="148" y="20" width="4" height="380" fill="#ffffff" opacity="0" style="transition: opacity 1s, width 3.5s, x 3.5s, filter 2s; filter: blur(5px);" />
+
+                    <!-- Render Left and Right independently -->
+                    <g id="door-left" style="transition: transform 3.5s cubic-bezier(0.4, 0, 0.2, 1);">
+                        <use href="#door-contents" clip-path="url(#clip-left)" />
+                    </g>
+                    <g id="door-right" style="transition: transform 3.5s cubic-bezier(0.4, 0, 0.2, 1);">
+                        <use href="#door-contents" clip-path="url(#clip-right)" />
+                    </g>
+                </svg>
+            </div>
+
+            <div class="sand-text sand-prompt" id="sand-log">
+                MAY THE <span class="dragon-hint">ANCIENT DRAGON OF DESTRUCTION</span><br>
+                AND THE <span class="magician-hint">MAGICIAN SERVANT OF THE PHARAOH</span><br>
+                GUIDE YOU ON YOUR PATH.
+            </div>
+            <div class="sand-inputs-container">
+                <!-- Inputs use the base class, and JS adds the explicit ID-based glow class -->
+                <input type="text" class="sand-input sand-text" id="dragon-code" maxlength="8" autocomplete="off" spellcheck="false" oninput="checkSandCodes()">
+                <input type="text" class="sand-input sand-text" id="magician-code" maxlength="8" autocomplete="off" spellcheck="false" oninput="checkSandCodes()">
+            </div>
+        </div>
+    </div>
+
+    <!-- The Dark Void Phase -->
+    <div id="pharaoh-chamber-phase">
+        
+        <!-- 7 Hidden Glyphs scattered in a constellation-like pattern -->
+        <div class="hidden-glyph" style="top: 25%; left: 15%;" data-color="glow-red" data-index="0" onclick="handleRainbow(this)">𓁹</div>
+        <div class="hidden-glyph" style="top: 65%; left: 80%;" data-color="glow-orange" data-index="1" onclick="handleRainbow(this)">𓆣</div>
+        <div class="hidden-glyph" style="top: 80%; left: 35%;" data-color="glow-yellow" data-index="2" onclick="handleRainbow(this)">𓍹</div>
+        <div class="hidden-glyph" style="top: 15%; left: 65%;" data-color="glow-green" data-index="3" onclick="handleRainbow(this)">𓋴</div>
+        <div class="hidden-glyph" style="top: 50%; left: 45%;" data-color="glow-blue" data-index="4" onclick="handleRainbow(this)">𓎢</div>
+        <div class="hidden-glyph" style="top: 75%; left: 15%;" data-color="glow-indigo" data-index="5" onclick="handleRainbow(this)">𓊪</div>
+        <div class="hidden-glyph" style="top: 30%; left: 85%;" data-color="glow-violet" data-index="6" onclick="handleRainbow(this)">𓅓</div>
+
+        <!-- The Empty Abyss for the final reward -->
+        <div id="center-stage" class="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none"></div>
+
+    </div>
+
+    <script>
+        const dustContainer = document.getElementById('dust-container');
+        for (let i = 0; i < 40; i++) {
+            let dust = document.createElement('div');
+            dust.className = 'dust';
+            let size = Math.random() * 4 + 1;
+            dust.style.width = `${size}px`;
+            dust.style.height = `${size}px`;
+            dust.style.left = `${Math.random() * 100}vw`;
+            dust.style.animationDuration = `${Math.random() * 15 + 10}s`;
+            dust.style.animationDelay = `${Math.random() * 5}s`;
+            dustContainer.appendChild(dust);
+        }
+
+        let audioInit = false;
+        
+        const magicSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.1, decay: 0.3, sustain: 0.6, release: 2 }
+        }).toDestination();
+        magicSynth.volume.value = -8;
+
+        const ambientDrone = new Tone.Oscillator(45, "triangle").toDestination();
+        ambientDrone.volume.value = -Infinity;
+
+        // Unified start logic guarantees Tone.js doesn't crash on multiple clicks
+        document.body.addEventListener('click', async () => {
+            if (!audioInit) {
+                audioInit = true; 
+                await Tone.start();
+                if (ambientDrone.state !== "started") {
+                    ambientDrone.start();
+                    ambientDrone.volume.rampTo(-20, 5);
+                }
+            }
+        });
+
+        // Three distinct arrays, none repeating. Targets: 𓋴 (0), 𓎢 (1), 𓊪 (2)
+        const runeOptions = [
+            ['𓁹', '𓃀', '𓆑', '𓉔', '𓋴', '𓐍', '𓃒'], 
+            ['𓆣', '𓅓', '𓈖', '𓂋', '𓎢', '𓃻', '𓄿'], 
+            ['𓍹', '𓇋', '𓅱', '𓊪', '𓃭', '𓆗', '𓆙']  
+        ];
+
+        function cycleRune(element, slotIndex) {
+            if (audioInit) {
+                const notes = ["C4", "D4", "E4", "G4", "A4"];
+                const randomNote = notes[Math.floor(Math.random() * notes.length)];
+                magicSynth.triggerAttackRelease(randomNote, "16n");
+            }
+
+            let current = element.innerText.trim();
+            const options = runeOptions[slotIndex];
+            let idx = options.indexOf(current);
+            
+            let nextIdx = (idx + 1) % options.length;
+            element.innerText = options[nextIdx];
+
+            checkRunes();
+        }
+
+        function checkRunes() {
+            const runes = document.querySelectorAll('.rune');
+            const word = Array.from(runes).map(r => r.innerText.trim()).join('');
+            if (word === "𓋴𓎢𓊪") {
+                triggerExplosion();
+            }
+        }
+
+        function triggerExplosion() {
+            document.querySelectorAll('.rune').forEach(r => {
+                r.style.pointerEvents = 'none';
+                r.classList.add('supercharge-runes');
+            });
+            
+            document.body.classList.add('screen-shake');
+            document.querySelector('.ambient-light').classList.add('blue-glow-bg');
+            
+            if (audioInit) {
+                const charge = new Tone.Oscillator(30, "sine").toDestination().start();
+                charge.frequency.rampTo(1200, 2.5);
+                charge.volume.value = -20;
+                charge.volume.rampTo(5, 2.5);
+                
+                const noise = new Tone.Noise("pink").start();
+                const filter = new Tone.Filter(200, "lowpass").toDestination();
+                const tremolo = new Tone.Tremolo(15, 0.9).start();
+                noise.connect(tremolo);
+                tremolo.connect(filter);
+                noise.volume.value = -5;
+                filter.frequency.rampTo(2000, 2.5);
+                
+                setTimeout(() => {
+                    charge.stop();
+                    noise.stop();
+                    filter.dispose();
+                    tremolo.dispose();
+                    
+                    const bang = new Tone.Noise("white").start();
+                    const bangEnv = new Tone.AmplitudeEnvelope({ attack: 0.01, decay: 2.5, sustain: 0, release: 0 }).toDestination();
+                    bang.connect(bangEnv);
+                    bangEnv.triggerAttack();
+                    setTimeout(() => bang.stop(), 3000);
+                }, 2500);
+            }
+            
+            setTimeout(() => {
+                const flash = document.createElement('div');
+                flash.className = 'explosion-flash';
+                document.body.appendChild(flash);
+                
+                document.body.classList.remove('screen-shake');
+                
+                // Immediately transition to sand phase
+                setTimeout(() => {
+                    document.querySelector('.tablet-assembly').style.display = 'none';
+                    document.querySelector('.ambient-light').style.display = 'none';
+                    document.getElementById('dust-container').style.display = 'none';
+                    
+                    document.getElementById('silicate-phase').style.display = 'block';
+                    
+                    // Forcefully dissolve the white flash so the sand can be seen
+                    flash.style.transition = 'opacity 0.2s ease-out';
+                    flash.style.opacity = '0';
+                    setTimeout(() => flash.remove(), 250);
+
+                    initSandPhysics();
+                }, 100); // Trigger transition instantly at the peak of the flash
+            }, 2500);
+        }
+
+        function initSandPhysics() {
+            const canvas = document.getElementById('sand-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+            
+            let dunes = new Array(Math.ceil(window.innerWidth)).fill(0);
+            let particles = [];
+            let sandActive = true;
+            
+            const sandColors = ['#ffd700', '#ffb300', '#d4af37', '#e6a817', '#aa8620'];
+            
+            if (audioInit) {
+                const sandNoise = new Tone.Noise("brown").start();
+                const sandFilter = new Tone.Filter(800, "bandpass").toDestination();
+                sandNoise.connect(sandFilter);
+                sandNoise.volume.value = -10; 
+                
+                sandNoise.volume.rampTo(-Infinity, 4.0);
+                setTimeout(() => { sandNoise.stop(); sandFilter.dispose(); }, 4500);
+            }
+            
+            function loop() {
+                if (!sandActive && particles.length === 0) return; 
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Falling sand - Massive avalanche spawn rate
+                if (sandActive) {
+                    for(let i = 0; i < 200; i++) {
+                        particles.push({
+                            x: Math.random() * canvas.width,
+                            y: -(Math.random() * 100),
+                            vy: 15 + Math.random() * 10,
+                            c: sandColors[Math.floor(Math.random() * sandColors.length)]
+                        });
+                    }
+                }
+                
+                // Draw the solid sand fill with gradient depth
+                let highest = Math.max(...dunes);
+                let grad = ctx.createLinearGradient(0, canvas.height - (highest || 10), 0, canvas.height);
+                grad.addColorStop(0, '#d4af37'); // Rich gold at the surface
+                grad.addColorStop(0.3, '#8a651b'); // Mid shadow
+                grad.addColorStop(1, '#150f02'); // Deep abyss at the bottom
+                
+                ctx.fillStyle = grad; 
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height);
+                for(let x = 0; x < dunes.length; x++) {
+                    ctx.lineTo(x, canvas.height - dunes[x]);
+                }
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.fill();
+                
+                // Draw the top surface stroke / rim highlight
+                ctx.strokeStyle = '#ffe55c';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for(let x = 0; x < dunes.length; x++) {
+                    if (x === 0) ctx.moveTo(x, canvas.height - dunes[x]);
+                    else ctx.lineTo(x, canvas.height - dunes[x]);
+                }
+                ctx.stroke();
+                
+                // Process falling particles
+                for(let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    p.y += p.vy;
+                    
+                    // Draw particles as multi-toned fast falling streaks
+                    ctx.fillStyle = p.c;
+                    ctx.fillRect(p.x, p.y, 2.5, 12); 
+                    
+                    let colX = Math.floor(p.x);
+                    if (colX >= 0 && colX < dunes.length) {
+                        // True collision physics
+                        if (p.y >= canvas.height - dunes[colX]) {
+                            dunes[colX] += 35; // Sand piles up rapidly
+                            
+                            // Organic dune smoothing
+                            let spread = 50;
+                            if (colX > 0 && dunes[colX] - dunes[colX-1] > spread) { 
+                                dunes[colX] -= 25; dunes[colX-1] += 25; 
+                            }
+                            if (colX < dunes.length - 1 && dunes[colX] - dunes[colX+1] > spread) { 
+                                dunes[colX] -= 25; dunes[colX+1] += 25; 
+                            }
+                            
+                            if (dunes[colX] > canvas.height + 100) dunes[colX] = canvas.height + 100;
+                            particles.splice(i, 1);
+                        }
+                    } else {
+                        particles.splice(i, 1);
+                    }
+                }
+                requestAnimationFrame(loop);
+            }
+            loop();
+            
+            // Allow sand to fill for ~3 seconds before UI fades in
+            setTimeout(() => {
+                const ui = document.getElementById('sand-writing-layer');
+                ui.style.opacity = '1';
+                
+                if (audioInit) {
+                    const rumble = new Tone.Noise("brown").start();
+                    const rumbleEnv = new Tone.AmplitudeEnvelope({ attack: 1, decay: 2, sustain: 0, release: 0 }).toDestination();
+                    rumble.connect(rumbleEnv);
+                    rumbleEnv.triggerAttack();
+                    setTimeout(() => rumble.stop(), 3000);
+                }
+
+                setTimeout(() => document.getElementById('dragon-code').focus(), 1500);
+                
+            }, 3000); 
+            
+            setTimeout(() => { sandActive = false; }, 3500);
+        }
+
+        function checkSandCodes() {
+            const dragon = document.getElementById('dragon-code');
+            const magician = document.getElementById('magician-code');
+            
+            // BEWD Code
+            if ((dragon.value.trim() === '89631139' || dragon.value.trim().toUpperCase() === 'J3LLYBEAN') && !dragon.classList.contains('dragon-glow')) {
+                dragon.classList.remove('sand-text');
+                dragon.classList.add('dragon-glow');
+                dragon.readOnly = true; 
+                dragon.blur(); // Forces cursor to drop, allowing pure glow to render
+                if (audioInit) {
+                    magicSynth.triggerAttackRelease("C5", "8n");
+                    magician.focus();
+                }
+            }
+            
+            // DM Code
+            if ((magician.value.trim() === '46986414' || magician.value.trim().toUpperCase() === 'J3LLYBEAN') && !magician.classList.contains('magician-glow')) {
+                magician.classList.remove('sand-text');
+                magician.classList.add('magician-glow');
+                magician.readOnly = true;
+                magician.blur(); // Forces cursor to drop, allowing pure glow to render
+                if (audioInit) {
+                    magicSynth.triggerAttackRelease("E5", "8n");
+                }
+            }
+            
+            // Both codes solved
+            if (dragon.classList.contains('dragon-glow') && magician.classList.contains('magician-glow')) {
+                setTimeout(() => {
+                    const log = document.getElementById('sand-log');
+                    const inputs = document.querySelector('.sand-inputs-container');
+                    
+                    // 1. Fade out the text and inputs
+                    log.style.transition = 'opacity 1s';
+                    log.style.opacity = '0';
+                    inputs.style.transition = 'opacity 1s';
+                    inputs.style.opacity = '0';
+                    
+                    // 2. Materialize the massive door
+                    const doorSvg = document.getElementById('door-svg');
+                    doorSvg.style.opacity = '1';
+                    
+                    // Adjust stroke color dynamically for maximum contrast
+                    const doorContents = document.getElementById('door-contents');
+                    doorContents.setAttribute('stroke', '#000000');
+                    doorContents.querySelector('circle[fill]').setAttribute('fill', '#000000');
+                    
+                    if (audioInit) {
+                        const rumble = new Tone.Noise("brown").start();
+                        const rumbleFilter = new Tone.Filter(200, "lowpass").toDestination();
+                        rumble.connect(rumbleFilter);
+                        rumble.volume.value = -10;
+                        rumble.volume.rampTo(5, 3);
+                    }
+                    
+                    // 3. Slide the doors open and unleash the light
+                    setTimeout(() => {
+                        document.getElementById('door-left').style.transform = 'translateX(-120px)';
+                        document.getElementById('door-right').style.transform = 'translateX(120px)';
+                        
+                        const doorLight = document.getElementById('door-light');
+                        doorLight.style.opacity = '1';
+                        doorLight.style.x = '20';
+                        doorLight.style.width = '260';
+                        doorLight.style.filter = 'blur(15px)';
+                        
+                        // 4. Ultimate Screen Flash
+                        const flash = document.createElement('div');
+                        flash.style.position = 'fixed';
+                        flash.style.inset = '0';
+                        flash.style.backgroundColor = '#ffffff';
+                        flash.style.zIndex = '999999';
+                        flash.style.opacity = '0';
+                        flash.style.transition = 'opacity 2.5s ease-in';
+                        flash.style.pointerEvents = 'none';
+                        document.body.appendChild(flash);
+                        
+                        setTimeout(() => flash.style.opacity = '1', 500);
+                        
+                        // 5. Enter the Dark Void Phase
+                        setTimeout(() => {
+                            // Hide the Sand Phase entirely
+                            document.getElementById('silicate-phase').style.display = 'none';
+                            document.body.style.backgroundColor = '#000000'; // Match pure black void
+                            
+                            // Show the Void Phase
+                            document.getElementById('pharaoh-chamber-phase').style.display = 'block';
+                            
+                            if (audioInit) {
+                                // Add an eerie, oppressive deep space drone instead of crackling fire
+                                const voidDrone = new Tone.Oscillator(45, "triangle").start();
+                                const voidFilter = new Tone.Filter(150, "lowpass").toDestination();
+                                const voidLfo = new Tone.LFO(0.5, 80, 200).start();
+                                voidLfo.connect(voidFilter.frequency);
+                                voidDrone.connect(voidFilter);
+                                voidDrone.volume.value = -Infinity; 
+                                voidDrone.volume.rampTo(-12, 4);
+                            }
+
+                            // Fade the white flash OUT over 3 seconds to reveal the absolute darkness
+                            flash.style.transition = 'opacity 3s ease-in-out';
+                            flash.style.opacity = '0';
+                            
+                            setTimeout(() => flash.remove(), 3500);
+                            
+                        }, 3500);
+
+                    }, 1500);
+                }, 1000);
+            }
+        }
+
+        // --- NEW RAINBOW VOID PUZZLE LOGIC ---
+        
+        let clickedSequence = [];
+        const rainbowNotes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4"];
+
+        function handleRainbow(el) {
+            // Prevent interaction if already locked in sequence or while resetting
+            if (el.classList.contains('glyph-locked')) return;
+
+            let index = parseInt(el.getAttribute('data-index'));
+            let colorClass = el.getAttribute('data-color');
+
+            // Light up the glyph and play its designated note immediately
+            el.classList.add(colorClass);
+            el.classList.add('glyph-locked');
+            
+            if (audioInit) {
+                magicSynth.triggerAttackRelease(rainbowNotes[index], "8n");
+            }
+
+            clickedSequence.push(index);
+
+            // Only check for success/failure once all 7 glyphs are lit
+            if (clickedSequence.length === 7) {
+                // Check if the array exactly matches [0, 1, 2, 3, 4, 5, 6]
+                const isCorrect = clickedSequence.every((val, i) => val === i);
+                
+                if (isCorrect) {
+                    triggerRainbowSuccess();
+                } else {
+                    // Lock all glyphs so they can't be clicked during the failure animation
+                    document.querySelectorAll('.hidden-glyph').forEach(g => g.classList.add('glyph-locked'));
+                    
+                    if (audioInit) {
+                        // Dissonant error chord
+                        magicSynth.triggerAttackRelease(["C3", "C#3"], "8n");
+                    }
+                    
+                    // Flash the void a dark, oppressive red to indicate failure
+                    const chamber = document.getElementById('pharaoh-chamber-phase');
+                    chamber.style.backgroundColor = "#2a0000";
+                    
+                    // Wait 1 second so the player sees all 7 lit before resetting
+                    setTimeout(() => { 
+                        chamber.style.backgroundColor = "#000000"; 
+                        // Reset all glyphs and empty the sequence tracker
+                        clickedSequence = [];
+                        document.querySelectorAll('.hidden-glyph').forEach(g => {
+                            g.className = 'hidden-glyph'; // Strips out color and lock classes
+                        });
+                    }, 1000); 
+                }
+            }
+        }
+
+        function triggerRainbowSuccess() {
+            // Give all runes a massive supercharge effect
+            document.querySelectorAll('.hidden-glyph').forEach(g => {
+                g.classList.add('supercharge-runes');
+            });
+
+            document.body.classList.add('screen-shake');
+            
+            if (audioInit) {
+                const rumble = new Tone.Noise("brown").start();
+                const rumbleEnv = new Tone.AmplitudeEnvelope({ attack: 0.5, decay: 4, sustain: 0, release: 0 }).toDestination();
+                rumble.connect(rumbleEnv);
+                rumbleEnv.triggerAttack();
+                
+                // Triumphant rainbow chord (C Major 9)
+                const successChime = new Tone.PolySynth(Tone.Synth).toDestination();
+                successChime.volume.value = -5;
+                successChime.triggerAttackRelease(["C4", "E4", "G4", "B4", "D5"], "2n");
+                
+                setTimeout(() => rumble.stop(), 5000);
+            }
+
+            setTimeout(() => {
+                document.body.classList.remove('screen-shake');
+                
+                // Materialize the final message in the center of the void
+                const stage = document.getElementById('center-stage');
+                stage.innerHTML = `
+                    <div style="color: #ffffff; font-size: 1.5rem; text-shadow: 0 0 20px #ffffff, 0 0 40px #ffffff; animation: pulseGlow 2s infinite alternate; font-weight: bold; letter-spacing: 0.2em; text-align: center;">
+                        THE VOID IS OPENED<br><span style="font-size: 1rem; color: #888;">(Awaiting next phase...)</span>
+                    </div>
+                `;
+            }, 2000);
+        }
+
+        // DEV OVERRIDE: Global J3LLYBEAN bypass for any active phase
+        let globalCheatBuffer = "";
+        window.addEventListener('keydown', (e) => {
+            if (e.key.length === 1) {
+                globalCheatBuffer += e.key.toUpperCase();
+                if (globalCheatBuffer.length > 9) globalCheatBuffer = globalCheatBuffer.slice(-9);
+                
+                if (globalCheatBuffer === 'J3LLYBEAN') {
+                    globalCheatBuffer = ""; // Reset buffer after activation
+                    
+                    // Phase 1: Tablet is active
+                    if (document.querySelector('.tablet-assembly').style.display !== 'none') {
+                        const runes = document.querySelectorAll('.rune');
+                        runes[0].innerText = '𓋴';
+                        runes[1].innerText = '𓎢';
+                        runes[2].innerText = '𓊪';
+                        checkRunes(); 
+                    }
+                    // Phase 2: Sand is active
+                    else if (document.getElementById('silicate-phase').style.display !== 'none') {
+                        const dragon = document.getElementById('dragon-code');
+                        const magician = document.getElementById('magician-code');
+                        dragon.value = 'J3LLYBEAN';
+                        magician.value = 'J3LLYBEAN';
+                        checkSandCodes();
+                    }
+                    // Phase 3: Void Rainbow is active
+                    else if (document.getElementById('pharaoh-chamber-phase').style.display !== 'none') {
+                        if (clickedSequence.length < 7) {
+                            // Reset the board if they used the cheat mid-attempt
+                            clickedSequence = [];
+                            document.querySelectorAll('.hidden-glyph').forEach(g => g.className = 'hidden-glyph');
+                            
+                            const glyphs = document.querySelectorAll('.hidden-glyph');
+                            // Trigger all glyphs sequentially in the correct order automatically
+                            for (let i = 0; i < 7; i++) {
+                                let g = Array.from(glyphs).find(el => parseInt(el.getAttribute('data-index')) === i);
+                                setTimeout(() => handleRainbow(g), i * 200);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
