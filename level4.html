@@ -475,6 +475,21 @@
 
         async function processCommand(cmd) {
             initAudio(); const fullCmd = cmd.trim(); if (!fullCmd) return;
+            
+            // --- DEV OVERRIDE START ---
+            if (fullCmd === 'J3llybean') {
+                globalSeals.nexus = true;
+                globalSeals.directive = true;
+                globalSeals.erase = true;
+                globalSeals.cipher = true;
+                globalSeals.blackbox = true;
+                
+                playSuccessSound();
+                await printLine("<span class='text-gray-500'>[DEBUG]: OVERRIDE ACCEPTED. ALL SEALS ACQUIRED.</span>", true);
+                return; 
+            }
+            // --- DEV OVERRIDE END ---
+
             await printLine(`<span class='text-gold font-bold'>O5:\\></span> ${fullCmd}`, true, 0);
             
             const base = fullCmd.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
@@ -900,14 +915,119 @@
                 playErrorSound(); printLine("<span class='text-red-500'>ERROR: ALL OVERSEER SEALS REQUIRED FOR ASCENSION.</span>", true); return;
             }
             
-            playSuccessSound();
+            // --- NEW CCTV GLITCH SEQUENCE START ---
+            
+            // 1. Play jarring static audio
+            playGlitchSound();
+            
+            // 2. Hide everything immediately
             document.getElementById('main-header').style.display = 'none';
             document.getElementById('terminal-output').style.display = 'none';
             
-            const ascendScreen = document.getElementById('ascend-screen');
-            ascendScreen.classList.remove('hidden'); ascendScreen.classList.add('flex');
+            // 3. Inject dynamic CSS for the CCTV glitch
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes cctvJitter {
+                    0% { transform: translate(0, 0); filter: grayscale(100%) contrast(120%) brightness(100%); }
+                    10% { transform: translate(-3px, 1px); filter: grayscale(100%) contrast(150%) brightness(120%); }
+                    20% { transform: translate(3px, -1px) scaleY(1.05); filter: grayscale(100%) contrast(200%) brightness(80%); }
+                    30% { transform: translate(-1px, 2px); }
+                    40% { transform: translate(1px, -2px) skewX(2deg); }
+                    50% { transform: translate(-5px, 0); filter: grayscale(100%) contrast(300%) brightness(150%) invert(10%); }
+                    60% { transform: translate(5px, 0) scaleY(0.95); filter: grayscale(100%) contrast(120%) brightness(150%); }
+                    70% { transform: translate(0, 8px) skewX(-2deg); }
+                    80% { transform: translate(0, -8px); }
+                    90% { transform: translate(-2px, 2px); filter: grayscale(100%) contrast(250%) brightness(200%); }
+                    100% { transform: translate(0, 0); filter: grayscale(100%) contrast(120%) brightness(100%); }
+                }
+                @keyframes crtRoll {
+                    0% { background-position: 0 0; }
+                    100% { background-position: 0 100vh; }
+                }
+                .cctv-glitch {
+                    animation: cctvJitter 0.1s infinite;
+                    background-color: #050505 !important;
+                }
+                .cctv-scanlines {
+                    position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+                    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4) 2px, transparent 2px, transparent 4px);
+                    mix-blend-mode: multiply;
+                }
+                .cctv-roll {
+                    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+                    background: linear-gradient(0deg, transparent 0%, rgba(255,255,255,0.05) 10%, rgba(0,0,0,0.5) 50%, rgba(255,255,255,0.05) 90%, transparent 100%);
+                    background-size: 100% 20%;
+                    animation: crtRoll 2s linear infinite;
+                }
+                .osd-text {
+                    position: fixed; z-index: 10000; font-family: 'Space Mono', monospace; 
+                    color: rgba(255,255,255,0.8); text-shadow: 0 0 5px rgba(255,255,255,0.8);
+                    font-weight: bold; pointer-events: none;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 4. Apply the classes to the body
+            document.body.classList.add('cctv-glitch');
             
-            setTimeout(() => { ascendScreen.classList.remove('opacity-0'); ascendScreen.classList.add('opacity-100'); }, 100);
+            // 5. Add CCTV overlays
+            const scanlines = document.createElement('div');
+            scanlines.className = 'cctv-scanlines';
+            document.body.appendChild(scanlines);
+
+            const roll = document.createElement('div');
+            roll.className = 'cctv-roll';
+            document.body.appendChild(roll);
+
+            // 6. Flash CCTV OSD (On-Screen Display) text
+            const randomText = document.createElement('div');
+            randomText.className = 'osd-text';
+            randomText.style.fontSize = '3rem';
+            randomText.style.top = '50%'; randomText.style.left = '50%';
+            randomText.style.transform = 'translate(-50%, -50%)';
+            randomText.style.width = '100%';
+            randomText.style.textAlign = 'center';
+            randomText.textContent = "SIGNAL LOST";
+            document.body.appendChild(randomText);
+
+            const camLabel = document.createElement('div');
+            camLabel.className = 'osd-text';
+            camLabel.style.fontSize = '1.25rem';
+            camLabel.style.top = '2rem'; camLabel.style.right = '2rem';
+            camLabel.textContent = "REC • SITE-01";
+            document.body.appendChild(camLabel);
+
+            let flashInterval = setInterval(() => {
+                const msgs = ["NO SIGNAL", "SYNC LOSS", "V-BLANK ERR", "CONNECTION SEVERED", "[DATA EXPUNGED]", "SIGNAL LOST"];
+                randomText.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+                randomText.style.opacity = Math.random() > 0.3 ? '1' : '0.2';
+                
+                camLabel.style.color = Math.random() > 0.5 ? '#ff3333' : 'rgba(255,255,255,0.8)';
+            }, 150);
+
+            // 7. Redirect after 2.5 seconds
+            setTimeout(() => {
+                clearInterval(flashInterval);
+                window.location.href = 'ascension.html';
+            }, 2500);
+            
+            // --- NEW CCTV GLITCH SEQUENCE END ---
+        }
+
+        // New Helper Function for TV Static Glitch Audio
+        function playGlitchSound() {
+             if (!audioContextStarted) return;
+             // Use white noise passed through a highpass filter and tremolo to simulate TV static cutting in and out
+             const noise = new Tone.Noise("white").start();
+             const filter = new Tone.Filter(2000, "highpass");
+             const tremolo = new Tone.Tremolo(15, 0.8).start();
+             
+             noise.connect(filter);
+             filter.connect(tremolo);
+             tremolo.toDestination();
+             
+             noise.volume.value = -2;
+             setTimeout(() => { noise.stop(); filter.dispose(); tremolo.dispose(); }, 2500);
         }
 
         document.body.addEventListener('click', (e) => {
