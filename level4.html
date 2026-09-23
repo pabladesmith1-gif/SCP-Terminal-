@@ -332,6 +332,14 @@
         <p class="o5-title text-black font-bold tracking-[0.5em] mt-16 text-xl">SECURE. CONTAIN. PROTECT.</p>
     </div>
 
+    <!-- Name Prompt Screen (White Void) -->
+    <div id="name-screen" class="hidden absolute inset-0 bg-white z-[10000] flex-col items-center justify-center p-8">
+        <div class="font-mono text-black text-xl sm:text-2xl flex flex-col items-center">
+            <div id="name-prompt-text" class="mb-8 min-h-[32px] tracking-widest font-bold"></div>
+            <input type="text" id="name-input" class="hidden bg-transparent border-b-2 border-black font-mono text-center text-xl outline-none uppercase w-64 pb-2" style="color: black !important; caret-color: black !important;" autocomplete="off" spellcheck="false">
+        </div>
+    </div>
+
     <!-- Main Terminal Interface -->
     <div class="terminal-header relative flex" style="display: none;" id="main-header">
         <div class="flex-1 z-10">
@@ -1005,16 +1013,86 @@
                 camLabel.style.color = Math.random() > 0.5 ? '#ff3333' : 'rgba(255,255,255,0.8)';
             }, 150);
 
-            // 7. Redirect after 2.5 seconds
+            // 7. Transition to White Screen after 2.5 seconds
             setTimeout(() => {
                 clearInterval(flashInterval);
-                window.location.href = 'ascension.html';
+                
+                // Remove glitch effects
+                document.body.classList.remove('cctv-glitch');
+                scanlines.remove(); 
+                roll.remove(); 
+                randomText.remove(); 
+                camLabel.remove();
+                
+                // Show the stark white screen
+                const nameScreen = document.getElementById('name-screen');
+                nameScreen.classList.remove('hidden');
+                nameScreen.classList.add('flex');
+                
+                // Begin typing prompt
+                typeNamePrompt();
             }, 2500);
-            
-            // --- NEW CCTV GLITCH SEQUENCE END ---
         }
 
-        // New Helper Function for TV Static Glitch Audio
+        // New Helper Functions for the White Screen
+        async function typeNamePrompt() {
+            const promptText = "What is your name?";
+            const container = document.getElementById('name-prompt-text');
+            const inputField = document.getElementById('name-input');
+            
+            // Deliberate, slow typing for eerie effect
+            for (let i = 0; i < promptText.length; i++) {
+                container.textContent += promptText[i];
+                if (audioContextStarted) typeSynth.triggerAttackRelease("C6", "64n", Tone.now());
+                await new Promise(r => setTimeout(r, 150)); 
+            }
+            
+            await new Promise(r => setTimeout(r, 500));
+            inputField.classList.remove('hidden');
+            inputField.focus();
+        }
+
+        document.getElementById('name-input').addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                const nameGiven = this.value.trim().toUpperCase();
+                if (!nameGiven) return;
+                
+                this.disabled = true;
+                this.classList.add('hidden');
+                const container = document.getElementById('name-prompt-text');
+                
+                // Clear the question
+                container.textContent = "";
+                await new Promise(r => setTimeout(r, 1000));
+                
+                let responseText = "";
+                if (nameGiven === "ZACH") {
+                    responseText = "H7E";
+                } else if (nameGiven === "ELLA") {
+                    responseText = "Y21";
+                } else if (nameGiven === "GABBY") {
+                    responseText = "A8V";
+                } else {
+                    responseText = "THANKS FOR PLAYING.";
+                }
+                
+                // Slowly type out the specific response
+                for (let i = 0; i < responseText.length; i++) {
+                    container.textContent += responseText[i];
+                    if (audioContextStarted) typeSynth.triggerAttackRelease("C6", "64n", Tone.now());
+                    await new Promise(r => setTimeout(r, 150)); 
+                }
+                
+                // Wait 7 seconds, then throw them into the Ascension OS
+                setTimeout(() => {
+                    window.location.href = 'ascension.html';
+                }, 7000);
+                
+            } else {
+                if (audioContextStarted) typeSynth.triggerAttackRelease("C6", "64n", Tone.now());
+            }
+        });
+
         function playGlitchSound() {
              if (!audioContextStarted) return;
              // Use white noise passed through a highpass filter and tremolo to simulate TV static cutting in and out
