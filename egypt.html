@@ -402,6 +402,25 @@
             opacity: 0;
         }
 
+        /* Archive presentation and responsive composition */
+        body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 70; opacity: .18; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.045) 4px 5px); }
+        #silicate-phase { background: #080907; overflow: hidden; }
+        #sand-canvas { width: 100%; height: 100%; display: block; }
+        .sand-writing-layer { width: min(94%, 900px); max-height: 100dvh; box-sizing: border-box; overflow: hidden; padding: clamp(.35rem, 2vh, 1.5rem); }
+        .door-backdrop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1; }
+        #door-svg { display: block; flex: none; width: min(90vw, 700px, calc(88dvh * 300 / 420)); height: auto; max-height: 88dvh; }
+        .sand-prompt { font-size: clamp(.72rem, min(2.5vw, 3vh), 1.4rem); line-height: 1.65; margin-bottom: clamp(.45rem, 4vh, 4rem); }
+        .sand-inputs-container { gap: clamp(1rem, 5vw, 4rem); }
+        .sand-input { width: min(38vw, 250px); font-size: clamp(1.1rem, min(5vw, 7vh), 3rem); border-bottom-width: 2px !important; }
+        .hidden-glyph { width: clamp(82px, 10vw, 124px); height: clamp(82px, 10vw, 124px); font-size: clamp(3.5rem, 6vw, 5.3rem); }
+        .sand-input:focus-visible { border-bottom-color: #33250d !important; box-shadow: 0 8px 12px -12px #000; }
+        #center-stage { padding: 1rem; overflow-y: auto; pointer-events: none; }
+        #center-stage > * { pointer-events: auto; }
+        #center-stage > div { max-width: 100%; }
+        .digital-break { padding: 1.5rem; }
+        .system-text { font-size: clamp(.9rem, 3vw, 1.5rem); }
+        @media (max-width: 520px) { .sand-writing-layer { padding: .35rem; } .sand-inputs-container { gap: .65rem; } .hidden-glyph { width: 78px; height: 78px; font-size: 3.5rem; } }
+        @media (max-height: 420px) { .sand-prompt { font-size: .68rem; line-height: 1.25; margin-bottom: .3rem; } .sand-input { font-size: 1rem; } #door-svg { max-height: 90dvh; } }
     </style>
 </head>
 <body>
@@ -464,11 +483,9 @@
     <!-- The Sand Phase (Hidden by default) -->
     <div id="silicate-phase">
         <canvas id="sand-canvas"></canvas>
-        <div id="sand-writing-layer" class="sand-writing-layer">
-            
             <!-- Double Door & Millennium Puzzle Silhouette Watermark -->
-            <div class="absolute inset-0 flex justify-center items-center pointer-events-none" style="z-index: -1;">
-                <svg id="door-svg" viewBox="0 0 300 420" style="width: 75vw; max-width: 700px; opacity: 0.15; filter: drop-shadow(-1px -2px 2px rgba(0,0,0,0.8)) drop-shadow(1px 1px 1px rgba(255,255,255,0.4)); transition: opacity 1.5s, filter 1.5s;">
+            <div class="door-backdrop">
+                <svg id="door-svg" viewBox="0 0 300 420" style="opacity: 0.15; filter: drop-shadow(-1px -2px 2px rgba(0,0,0,0.8)) drop-shadow(1px 1px 1px rgba(255,255,255,0.4)); transition: opacity 1.5s, filter 1.5s;">
                     <defs>
                         <!-- Perfect 50/50 split masks -->
                         <clipPath id="clip-left"><rect x="0" y="0" width="150" height="420" /></clipPath>
@@ -522,6 +539,8 @@
                 </svg>
             </div>
 
+        <div id="sand-writing-layer" class="sand-writing-layer">
+            
             <div class="sand-text sand-prompt" id="sand-log">
                 MAY THE <span class="dragon-hint">ANCIENT DRAGON OF DESTRUCTION</span><br>
                 AND THE <span class="magician-hint">MAGICIAN SERVANT OF THE PHARAOH</span><br>
@@ -714,125 +733,118 @@
         function initSandPhysics() {
             const canvas = document.getElementById('sand-canvas');
             const ctx = canvas.getContext('2d');
-            
+            let width = 0, height = 0, dunes = [], particles = [];
+            let finished = false;
+            const start = performance.now();
+            const duration = 3500;
+            const sandColors = ['#f7d684', '#d5a74a', '#a57c30', '#ead19a'];
+
             function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                const nextWidth = Math.max(1, Math.round(canvas.clientWidth));
+                const nextHeight = Math.max(1, Math.round(canvas.clientHeight));
+                if (nextWidth === width && nextHeight === height) return;
+                const oldDunes = dunes;
+                const oldWidth = width;
+                const oldHeight = height;
+                width = nextWidth;
+                height = nextHeight;
+                canvas.width = width;
+                canvas.height = height;
+                dunes = Array.from({ length: width + 1 }, (_, x) =>
+                    oldWidth ? oldDunes[Math.min(oldWidth, Math.floor(x * oldWidth / width))] * height / oldHeight : 0);
+                particles.forEach(p => {
+                    p.x *= width / (oldWidth || width);
+                    p.y *= height / (oldHeight || height);
+                });
+                if (finished) draw(1);
             }
             window.addEventListener('resize', resize);
             resize();
-            
-            let dunes = new Array(Math.ceil(window.innerWidth)).fill(0);
-            let particles = [];
-            let sandActive = true;
-            
-            const sandColors = ['#ffd700', '#ffb300', '#d4af37', '#e6a817', '#aa8620'];
-            
+
             if (audioInit) {
-                const sandNoise = new Tone.Noise("brown").start();
-                const sandFilter = new Tone.Filter(800, "bandpass").toDestination();
+                const sandNoise = new Tone.Noise('brown').start();
+                const sandFilter = new Tone.Filter(800, 'bandpass').toDestination();
                 sandNoise.connect(sandFilter);
-                sandNoise.volume.value = -10; 
-                
-                sandNoise.volume.rampTo(-Infinity, 4.0);
+                sandNoise.volume.value = -10;
+                sandNoise.volume.rampTo(-Infinity, 4);
                 setTimeout(() => { sandNoise.stop(); sandFilter.dispose(); }, 4500);
             }
-            
-            function loop() {
-                if (!sandActive && particles.length === 0) return; 
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Falling sand - Massive avalanche spawn rate
-                if (sandActive) {
-                    for(let i = 0; i < 200; i++) {
-                        particles.push({
-                            x: Math.random() * canvas.width,
-                            y: -(Math.random() * 100),
-                            vy: 15 + Math.random() * 10,
-                            c: sandColors[Math.floor(Math.random() * sandColors.length)]
-                        });
+
+            function draw(progress) {
+                ctx.clearRect(0, 0, width, height);
+                const fill = height * progress;
+                const gradient = ctx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, '#e2bf75');
+                gradient.addColorStop(.42, '#a7772e');
+                gradient.addColorStop(1, '#241809');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.moveTo(0, height);
+                for (let x = 0; x <= width; x += 3) {
+                    const top = Math.max(0, height - fill - dunes[x]);
+                    ctx.lineTo(x, top);
+                }
+                ctx.lineTo(width, height);
+                ctx.closePath();
+                ctx.fill();
+                if (progress < 1) {
+                    ctx.strokeStyle = 'rgba(255,225,145,.85)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    for (let x = 0; x <= width; x += 3) {
+                        const top = Math.max(0, height - fill - dunes[x]);
+                        if (x === 0) ctx.moveTo(x, top); else ctx.lineTo(x, top);
+                    }
+                    ctx.stroke();
+                }
+                for (const p of particles) {
+                    ctx.fillStyle = p.c;
+                    ctx.fillRect(p.x, p.y, p.size, p.length);
+                }
+            }
+
+            function loop(now) {
+                const progress = Math.min(1, (now - start) / duration);
+                if (progress < 1) {
+                    // Scale the stream to the available area without unbounded particle growth.
+                    const count = Math.min(320, Math.max(45, Math.round(width * height / 4500)));
+                    for (let i = 0; i < count; i++) {
+                        particles.push({ x: Math.random() * width, y: -Math.random() * height * .15,
+                            vy: 8 + Math.random() * 13, c: sandColors[Math.floor(Math.random() * sandColors.length)],
+                            size: 1 + Math.random() * 2, length: 5 + Math.random() * 11 });
                     }
                 }
-                
-                // Draw the solid sand fill with gradient depth
-                let highest = Math.max(...dunes);
-                let grad = ctx.createLinearGradient(0, canvas.height - (highest || 10), 0, canvas.height);
-                grad.addColorStop(0, '#d4af37'); // Rich gold at the surface
-                grad.addColorStop(0.3, '#8a651b'); // Mid shadow
-                grad.addColorStop(1, '#150f02'); // Deep abyss at the bottom
-                
-                ctx.fillStyle = grad; 
-                ctx.beginPath();
-                ctx.moveTo(0, canvas.height);
-                for(let x = 0; x < dunes.length; x++) {
-                    ctx.lineTo(x, canvas.height - dunes[x]);
-                }
-                ctx.lineTo(canvas.width, canvas.height);
-                ctx.fill();
-                
-                // Draw the top surface stroke / rim highlight
-                ctx.strokeStyle = '#ffe55c';
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                for(let x = 0; x < dunes.length; x++) {
-                    if (x === 0) ctx.moveTo(x, canvas.height - dunes[x]);
-                    else ctx.lineTo(x, canvas.height - dunes[x]);
-                }
-                ctx.stroke();
-                
-                // Process falling particles
-                for(let i = particles.length - 1; i >= 0; i--) {
-                    let p = particles[i];
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
                     p.y += p.vy;
-                    
-                    // Draw particles as multi-toned fast falling streaks
-                    ctx.fillStyle = p.c;
-                    ctx.fillRect(p.x, p.y, 2.5, 12); 
-                    
-                    let colX = Math.floor(p.x);
-                    if (colX >= 0 && colX < dunes.length) {
-                        // True collision physics
-                        if (p.y >= canvas.height - dunes[colX]) {
-                            dunes[colX] += 35; // Sand piles up rapidly
-                            
-                            // Organic dune smoothing
-                            let spread = 50;
-                            if (colX > 0 && dunes[colX] - dunes[colX-1] > spread) { 
-                                dunes[colX] -= 25; dunes[colX-1] += 25; 
-                            }
-                            if (colX < dunes.length - 1 && dunes[colX] - dunes[colX+1] > spread) { 
-                                dunes[colX] -= 25; dunes[colX+1] += 25; 
-                            }
-                            
-                            if (dunes[colX] > canvas.height + 100) dunes[colX] = canvas.height + 100;
-                            particles.splice(i, 1);
+                    const col = Math.min(width, Math.max(0, Math.floor(p.x)));
+                    if (p.y >= height - height * progress - dunes[col] || p.y > height) {
+                        const radius = 9;
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const index = col + dx;
+                            if (index >= 0 && index <= width) dunes[index] = Math.min(height * .12,
+                                dunes[index] + .12 * (1 - Math.abs(dx) / (radius + 1)));
                         }
-                    } else {
                         particles.splice(i, 1);
                     }
                 }
-                requestAnimationFrame(loop);
+                draw(progress);
+                if (progress < 1 || particles.length) requestAnimationFrame(loop);
+                else { finished = true; draw(1); }
             }
-            loop();
-            
-            // Allow sand to fill for ~3 seconds before UI fades in
+            requestAnimationFrame(loop);
+
             setTimeout(() => {
-                const ui = document.getElementById('sand-writing-layer');
-                ui.style.opacity = '1';
-                
+                document.getElementById('sand-writing-layer').style.opacity = '1';
                 if (audioInit) {
-                    const rumble = new Tone.Noise("brown").start();
+                    const rumble = new Tone.Noise('brown').start();
                     const rumbleEnv = new Tone.AmplitudeEnvelope({ attack: 1, decay: 2, sustain: 0, release: 0 }).toDestination();
                     rumble.connect(rumbleEnv);
                     rumbleEnv.triggerAttack();
                     setTimeout(() => rumble.stop(), 3000);
                 }
-
                 setTimeout(() => document.getElementById('dragon-code').focus(), 1500);
-                
-            }, 3000); 
-            
-            setTimeout(() => { sandActive = false; }, 3500);
+            }, 3000);
         }
 
         function checkSandCodes() {
