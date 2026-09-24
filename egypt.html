@@ -136,6 +136,15 @@
             font-weight: 600;
         }
 
+        .tablet-hint {
+            max-width: 90%;
+            font-size: clamp(.62rem, 1.5vw, .82rem);
+            line-height: 1.55;
+            letter-spacing: .12em;
+            opacity: .66;
+            font-style: italic;
+        }
+
         .rune-slots {
             display: flex;
             gap: 2.5rem;
@@ -471,6 +480,7 @@
                 <div class="lore-text engraved">
                     The hand of Atem<br>extends beyond death itself.
                 </div>
+                <div class="tablet-hint engraved">Before the number, the keepers left three marks.<br>Let the oldest tongue name them.</div>
                 <div class="rune-slots">
                     <div class="rune" onclick="cycleRune(this, 0)">𓁹</div>
                     <div class="rune" onclick="cycleRune(this, 1)">𓆣</div>
