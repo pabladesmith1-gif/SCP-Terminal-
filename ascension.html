@@ -96,7 +96,6 @@
         .window-title { display: flex; align-items: center; gap: 4px; }
         .window-title-icon { width: 14px; height: 14px; }
         .window-controls { display: flex; gap: 2px; }
-        
         .win-btn {
             background-color: var(--win-gray); border-top: 1px solid var(--win-border-light); border-left: 1px solid var(--win-border-light);
             border-right: 1px solid var(--win-border-dark); border-bottom: 1px solid var(--win-border-dark); width: 16px; height: 14px; display: flex; justify-content: center;
@@ -167,14 +166,87 @@
         }
 
         .dos-area {
-            background-color: #000; color: #aaa; font-family: 'VT323', monospace; font-size: 18px; height: 300px; display: flex; flex-direction: column;
-            border-top: 2px solid var(--win-border-dark); border-left: 2px solid var(--win-border-dark); border-right: 2px solid var(--win-border-light); border-bottom: 2px solid var(--win-border-light);
-            padding: 4px; overflow-y: auto; cursor: text;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(80,255,100,.045), transparent 45%),
+                repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0, rgba(255,255,255,.018) 1px, transparent 1px, transparent 3px),
+                #020502;
+            color: #b9cdb9;
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 18px;
+            height: 360px;
+            display: flex;
+            flex-direction: column;
+            border-top: 2px solid #101510;
+            border-left: 2px solid #101510;
+            border-right: 2px solid #9aa49a;
+            border-bottom: 2px solid #9aa49a;
+            padding: 8px;
+            overflow-y: auto;
+            cursor: text;
+            position: relative;
+            text-shadow: 0 0 3px rgba(120,255,130,.16);
         }
-        .dos-input-line { display: flex; }
-        .dos-input { background: transparent; border: none; color: #fff; font-family: 'VT323', monospace; font-size: 18px; outline: none; flex-grow: 1; margin-left: 4px; text-transform: uppercase; }
 
-        .clearance-btn {
+        .dos-area::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(rgba(18,255,60,.025) 50%, rgba(0,0,0,.035) 50%);
+            background-size: 100% 4px;
+            mix-blend-mode: screen;
+        }
+
+        .dos-history { position: relative; z-index: 1; }
+        .dos-line { margin: 1px 0; white-space: pre-wrap; word-break: break-word; }
+        .dos-prompt-line { color: #d9e7d9; }
+        .dos-command { color: #f2fff2; }
+        .dos-info { color: #9fbd9f; }
+        .dos-ok { color: #7dff91; }
+        .dos-warn { color: #ffd36b; }
+        .dos-error { color: #ff6767; text-shadow: 0 0 5px rgba(255,0,0,.45); }
+        .dos-dim { color: #536653; }
+        .dos-secret { color: #d4a7ff; }
+        .dos-input-line {
+            display: flex;
+            position: relative;
+            z-index: 2;
+            align-items: center;
+            border-top: 1px solid rgba(100,130,100,.16);
+            margin-top: 6px;
+            padding-top: 5px;
+        }
+        .dos-prompt { color: #7dff91; white-space: nowrap; }
+        .dos-input {
+            background: transparent;
+            border: none;
+            color: #f4fff4;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            outline: none;
+            flex-grow: 1;
+            margin-left: 5px;
+            text-transform: uppercase;
+            caret-color: #7dff91;
+            text-shadow: 0 0 5px rgba(100,255,120,.3);
+        }
+        .dos-input::selection { background: #36543a; color: white; }
+
+        .dos-status {
+            display:flex;
+            justify-content:space-between;
+            gap:10px;
+            background:#111a12;
+            color:#718671;
+            font:11px Tahoma,sans-serif;
+            padding:3px 6px;
+            border-bottom:1px solid #303c31;
+            letter-spacing:.2px;
+        }
+        .dos-caret { display:inline-block; width:8px; height:17px; background:#7dff91; vertical-align:-3px; animation:dosBlink .9s steps(1) infinite; }
+        @keyframes dosBlink { 50% { opacity:0; } }
+
+.clearance-btn {
             display: block;
             width: 100%;
             background-color: #000;
@@ -290,34 +362,49 @@
             <div class="window-content"><div class="code-area" id="code-output"></div></div>
         </div>
 
-        <div id="dos-window" class="window app-window" style="display: none; top: 20%; left: 20%; width: 500px;">
+        <div id="dos-window" class="window app-window" style="display: none; top: 16%; left: 18%; width: 560px;">
             <div class="window-header" onmousedown="startDrag(event, 'dos-window')">
                 <div class="window-title">
                     <svg class="window-title-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="4" y="4" width="24" height="20" fill="#000"/><path d="M8 10L12 14L8 18M14 18H20" stroke="#c0c0c0" stroke-width="2"/>
+                        <rect x="4" y="4" width="24" height="20" fill="#000"/>
+                        <path d="M8 10L12 14L8 18M14 18H20" stroke="#c0c0c0" stroke-width="2"/>
                     </svg>
-                    MS-DOS Prompt
+                    O5_Command // CONSTRUCT SHELL
                 </div>
                 <div class="window-controls">
-                    <div class="win-btn">_</div><div class="win-btn" style="font-size: 8px;">□</div><div class="win-btn" onclick="closeWindow('dos-window')" style="font-weight: normal;">x</div>
+                    <div class="win-btn">_</div>
+                    <div class="win-btn" style="font-size: 8px;">□</div>
+                    <div class="win-btn" onclick="closeWindow('dos-window')" style="font-weight: normal;">x</div>
                 </div>
             </div>
-            <div class="window-content" style="padding: 0; background: var(--win-gray);">
+            <div class="window-content" style="padding:0;background:#c0c0c0;">
+                <div class="dos-status">
+                    <span id="dos-session">SESSION: 7A-01</span>
+                    <span id="dos-state">LINK: LOCAL // SECURE</span>
+                    <span id="dos-clock">--:--:--</span>
+                </div>
                 <div class="dos-area" id="dos-area" onclick="document.getElementById('dos-input').focus()">
                     <div id="dos-history">
-                        <div>O5_Command (C) Copyright Microsoft Corp 1981-1998.</div>
-                        <div>Type 'HELP' for a list of internal commands.</div>
-                        <br>
+                        <div class="dos-line dos-info">O5_Command (C) Copyright Microsoft Corp 1981-1998.</div>
+                        <div class="dos-line dos-dim">CONSTRUCT SHELL v1.0.0 // RECOVERY BUILD</div>
+                        <div class="dos-line">&nbsp;</div>
+                        <div class="dos-line dos-warn">WARNING: shell integrity check returned 97.4%</div>
+                        <div class="dos-line dos-dim">Some internal commands may be unavailable.</div>
+                        <div class="dos-line">&nbsp;</div>
+                        <div class="dos-line">Type <span class="dos-ok">HELP</span> for a command index.</div>
+                        <div class="dos-line">Type <span class="dos-ok">?</span> for a diagnostic hint.</div>
+                        <div class="dos-line">&nbsp;</div>
                     </div>
                     <div class="dos-input-line">
-                        <span>C:\SITE01\CONSTRUCT></span>
+                        <span class="dos-prompt" id="dos-prompt">C:\SITE01\CONSTRUCT&gt;</span>
                         <input type="text" id="dos-input" class="dos-input" autocomplete="off" spellcheck="false">
+                        <span class="dos-caret"></span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="network-login" class="window app-window" style="display: none; top: 30%; left: 50%; transform: translateX(-50%); width: 350px;">
+        <div id="network-login"<div id="network-login" class="window app-window" style="display: none; top: 30%; left: 50%; transform: translateX(-50%); width: 350px;">
             <div class="window-header" onmousedown="startDrag(event, 'network-login')">
                 <div class="window-title">Enter Network Password</div>
                 <div class="window-controls"><div class="win-btn" onclick="closeWindow('network-login')">x</div></div>
@@ -864,31 +951,11 @@
 
         function attemptBoot() {
             const pwd = document.getElementById('boot-password').value.trim().toUpperCase();
-            if(pwd === 'XY6T3PL9F' || pwd === 'J3LLYBEAN') {
+            if(pwd === 'H7EY21A8V' || pwd === 'J3LLYBEAN') {
                 document.getElementById('login-screen').style.display = 'none';
                 document.body.style.animation = 'none'; void document.body.offsetWidth; 
                 document.body.style.animation = 'crtBoot 1.5s ease-out forwards';
                 setTimeout(() => openApp('alert-window', 'Simulation Terminated'), 1000);
-            } else if (pwd === 'H7EY21A8V') {
-                // Cipher text for DONT CHEAT (Base64)
-                const errorDisplay = document.getElementById('boot-error');
-                document.getElementById('boot-password').disabled = true;
-                let timeLeft = 10;
-                
-                errorDisplay.style.color = '#cc0000';
-                
-                const interval = setInterval(() => {
-                    errorDisplay.textContent = `RE9OVCBDSEVBVA== [${timeLeft}s]`;
-                    timeLeft--;
-                    if (timeLeft < 0) {
-                        clearInterval(interval);
-                        // Attempt to close window (Browsers may block this if the tab wasn't opened by a script)
-                        window.close();
-                        // Fallback: Wipe the screen entirely to simulate termination
-                        document.body.innerHTML = '<div style="background:black; width:100vw; height:100vh; display:flex; justify-content:center; align-items:center; color:red; font-family:\'VT323\', monospace; font-size:32px; letter-spacing:4px; z-index:999999; position:absolute; inset:0;">CONNECTION SEVERED.</div>';
-                    }
-                }, 1000);
-                errorDisplay.textContent = `RE9OVCBDSEVBVA== [10s]`;
             } else {
                 document.getElementById('boot-error').textContent = 'ERR: INVALID PASSKEY';
                 document.getElementById('boot-password').value = ''; document.getElementById('boot-password').focus();
@@ -967,54 +1034,342 @@
         const dosInput = document.getElementById('dos-input');
         const dosHistory = document.getElementById('dos-history');
         const dosArea = document.getElementById('dos-area');
+        const dosPrompt = document.getElementById('dos-prompt');
+        const dosState = document.getElementById('dos-state');
+        const dosClock = document.getElementById('dos-clock');
+
+        let dosCommandHistory = [];
+        let dosHistoryIndex = -1;
+        let dosCurrentPath = 'C:\\SITE01\\CONSTRUCT';
+        let dosFirstRun = true;
+
+        const dosFiles = {
+            'AUTOEXEC.BAT': '@ECHO OFF\\nSET PROMPT=$P$G\\nC:\\SITE01\\BIN\\BOOT.EXE',
+            'NET_KEY.DAT': '[ENCRYPTED BLOCK]\\nHEADER: NK-7\\nLENGTH: 16\\nINTEGRITY: UNKNOWN',
+            'NOTES.TXT': 'I HID THE INDEX IN THE SECTOR MAP. APPLY IT TO THE TRUTH. THEN, FIND THAT TEXT ONLINE AND APPLY IT AGAIN.',
+            'TRUTH.TXT': '[FILE HANDLE LOCKED]\\nERR: ACCESS REQUIRES SECONDARY CONTEXT',
+            'README.1ST': 'Do not assume the first directory listing is the whole directory.'
+        };
+
+        function dosEscape(s) {
+            return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        }
+
+        function dosPrint(text, cls='') {
+            const lines = String(text).split('\\n');
+            lines.forEach(line => {
+                const div = document.createElement('div');
+                div.className = 'dos-line ' + cls;
+                div.innerHTML = dosEscape(line);
+                dosHistory.appendChild(div);
+            });
+            dosArea.scrollTop = dosArea.scrollHeight;
+        }
+
+        function dosPromptLine(command) {
+            const div = document.createElement('div');
+            div.className = 'dos-line dos-prompt-line';
+            div.innerHTML = '<span class="dos-prompt">' + dosEscape(dosCurrentPath + '>') +
+                '</span> <span class="dos-command">' + dosEscape(command.toUpperCase()) + '</span>';
+            dosHistory.appendChild(div);
+        }
+
+        function dosSetPath(path) {
+            dosCurrentPath = path.toUpperCase().replace(/\//g, '\\');
+            dosPrompt.textContent = dosCurrentPath + '>';
+        }
+
+        function dosType(text, cls='', speed=9) {
+            return new Promise(resolve => {
+                const div = document.createElement('div');
+                div.className = 'dos-line ' + cls;
+                dosHistory.appendChild(div);
+                let i = 0;
+                const tick = () => {
+                    div.textContent = String(text).slice(0, i++);
+                    dosArea.scrollTop = dosArea.scrollHeight;
+                    if (i <= String(text).length) setTimeout(tick, speed);
+                    else resolve();
+                };
+                tick();
+            });
+        }
+
+        function dosDirectory(mode='normal') {
+            if (mode === 'all') {
+                dosPrint(
+`Volume in drive C is SITE01_BOOT
+Volume Serial Number is 7A01-19C4
+
+Directory of ${dosCurrentPath}
+
+AUTOEXEC.BAT       128 bytes
+NET_KEY.DAT         16 bytes
+NOTES.TXT           84 bytes
+README.1ST          73 bytes
+TRUTH.TXT          91 bytes
+SECTOR_MAP.BMP   42,806 bytes
+OSIRIS.EXE         4,164 bytes
+
+               7 File(s)  47,462 bytes
+               1 Dir(s)  9,451,520 bytes free`,
+                    'dos-info'
+                );
+            } else {
+                dosPrint(
+`Volume in drive C is SITE01_BOOT
+Directory of ${dosCurrentPath}
+
+AUTOEXEC.BAT   128 bytes
+NET_KEY.DAT     16 bytes
+NOTES.TXT       84 bytes
+
+               3 File(s)`,
+                    'dos-info'
+                );
+                dosPrint('3 additional entries suppressed by directory policy.', 'dos-dim');
+            }
+        }
+
+        async function dosExecute(raw) {
+            const cmd = raw.trim();
+            if (!cmd) return;
+
+            dosCommandHistory.push(cmd);
+            dosHistoryIndex = dosCommandHistory.length;
+            dosPromptLine(cmd);
+
+            const args = cmd.match(/"[^"]*"|\S+/g) || [];
+            const base = (args.shift() || '').toUpperCase();
+            const argText = args.join(' ');
+            const upperArgs = args.map(x => x.replace(/^"|"$/g,'').toUpperCase());
+
+            if (base === 'HELP' || base === '?') {
+                dosPrint(
+`COMMAND INDEX
+-------------
+HELP       COMMAND INDEX
+DIR        DIRECTORY LISTING
+CD         CHANGE DIRECTORY
+TYPE       READ TEXT FILE
+CLS        CLEAR SCREEN
+VER        SYSTEM VERSION
+WHOAMI     CURRENT IDENTITY
+PING       NETWORK TEST
+STATUS     SHELL DIAGNOSTICS
+HISTORY    PREVIOUS COMMANDS
+ECHO       PRINT TEXT
+STRINGS    EXTRACT PRINTABLE DATA
+HEX        DISPLAY FILE BYTES
+OPEN       LAUNCH REGISTERED OBJECT
+EXIT       CLOSE SHELL`,
+                    'dos-info'
+                );
+                dosPrint('HINT: Some commands have arguments that are not documented.', 'dos-dim');
+                return;
+            }
+
+            if (base === 'DIR' || base === 'LS') {
+                await dosType('Scanning directory...', 'dos-dim', 12);
+                dosDirectory(upperArgs.includes('/A') || upperArgs.includes('/ALL') || upperArgs.includes('-A') ? 'all' : 'normal');
+                return;
+            }
+
+            if (base === 'CD') {
+                if (!upperArgs[0]) { dosPrint(dosCurrentPath, 'dos-info'); return; }
+                const target = upperArgs[0];
+                if (target === '..') {
+                    dosSetPath(dosCurrentPath.split('\\').slice(0,-1).join('\\') || 'C:\\');
+                    return;
+                }
+                if (target === 'BIN') {
+                    dosSetPath('C:\\SITE01\\BIN');
+                    dosPrint('Directory changed.', 'dos-ok');
+                } else if (target === 'CONSTRUCT') {
+                    dosSetPath('C:\\SITE01\\CONSTRUCT');
+                    dosPrint('Directory changed.', 'dos-ok');
+                } else {
+                    dosPrint('The system cannot find the path specified.', 'dos-error');
+                }
+                return;
+            }
+
+            if (base === 'TYPE' || base === 'CAT') {
+                const file = (upperArgs[0] || '').replace(/^.*\\/, '');
+                if (!file) { dosPrint('Syntax: TYPE [filename]', 'dos-warn'); return; }
+
+                if (file === 'NET_KEY.DAT') {
+                    dosPrint('[BINARY FILE] Display suppressed. Use STRINGS or HEX.', 'dos-warn');
+                } else if (file === 'NOTES.TXT') {
+                    dosPrint(dosFiles[file], 'dos-info');
+                } else if (file === 'AUTOEXEC.BAT') {
+                    dosPrint(dosFiles[file], 'dos-info');
+                } else if (file === 'README.1ST') {
+                    dosPrint(dosFiles[file], 'dos-info');
+                } else if (file === 'TRUTH.TXT') {
+                    dosPrint(dosFiles[file], 'dos-error');
+                } else {
+                    dosPrint('File not found.', 'dos-error');
+                }
+                return;
+            }
+
+            if (base === 'STRINGS') {
+                const file = (upperArgs[0] || '').replace(/^.*\\/, '');
+                if (file === 'NET_KEY.DAT') {
+                    await dosType('Extracting printable sequences...', 'dos-dim', 10);
+                    dosPrint('NK-7\\nN3TQ88W2C\\nDO NOT USE THIS KEY TWICE\\nINDEX=04', 'dos-secret');
+                } else if (file === 'SECTOR_MAP.BMP') {
+                    dosPrint('BMP\\nSITE-01\\nSOUTH\\n17\\n03\\n04\\nTHE EYE SEES WHAT THE DIRECTORY DOES NOT', 'dos-secret');
+                } else {
+                    dosPrint('No printable strings found.', 'dos-dim');
+                }
+                return;
+            }
+
+            if (base === 'HEX') {
+                const file = (upperArgs[0] || '').replace(/^.*\\/, '');
+                if (file === 'NET_KEY.DAT') {
+                    dosPrint(
+`00000000  4E 4B 2D 37 00 4E 33 54 51 38 38 57 32 43 00 04
+00000010  49 4E 44 45 58 3D 30 34`,
+                        'dos-secret'
+                    );
+                } else {
+                    dosPrint('HEX: unsupported or unreadable object.', 'dos-error');
+                }
+                return;
+            }
+
+            if (base === 'STATUS') {
+                dosPrint(
+`SHELL INTEGRITY : 97.4%
+NETWORK LINK     : LOCAL
+AUTH CONTEXT     : CONSTRUCT
+MEMORY           : PARTIAL
+HIDDEN OBJECTS   : 3
+ANOMALOUS INPUT  : ${dosCommandHistory.some(x => x.toUpperCase().includes('J3LLYBEAN')) ? 'YES' : 'NO'}`,
+                    'dos-info'
+                );
+                return;
+            }
+
+            if (base === 'HISTORY') {
+                if (dosCommandHistory.length < 2) dosPrint('No previous commands.', 'dos-dim');
+                else dosPrint(dosCommandHistory.map((x,i) => String(i+1).padStart(2,'0') + '  ' + x.toUpperCase()).join('\\n'), 'dos-info');
+                return;
+            }
+
+            if (base === 'ECHO') {
+                dosPrint(argText.replace(/^"(.*)"$/, '$1'), 'dos-info');
+                return;
+            }
+
+            if (base === 'WHOAMI') {
+                dosPrint('SITE-01 AUTOMATED CONTAINMENT CONSTRUCT.', 'dos-info');
+                dosPrint('IDENTITY RECORD: O5-NULL-01', 'dos-dim');
+                return;
+            }
+
+            if (base === 'PING') {
+                await dosType('Pinging SITE-19 [32 bytes]...', 'dos-info', 12);
+                await new Promise(r => setTimeout(r, 350));
+                dosPrint('Reply: REQUEST TIMED OUT.\\nReply: REQUEST TIMED OUT.\\nReply: REQUEST TIMED OUT.\\n100% packet loss.', 'dos-warn');
+                return;
+            }
+
+            if (base === 'VER') {
+                dosPrint('O5_Command OS Version 1.0.0 (FINAL)', 'dos-info');
+                return;
+            }
+
+            if (base === 'CLS') {
+                dosHistory.innerHTML = '';
+                return;
+            }
+
+            if (base === 'OPEN' || base === 'RUN') {
+                const target = upperArgs.join(' ');
+                if (target === 'OSIRIS' || target === 'OSIRIS.EXE' || target === 'SCP-1644') {
+                    dosPrint('Launching registered object...', 'dos-ok');
+                    setTimeout(() => openApp('osiris-app-login', 'OSIRIS Decryption'), 250);
+                } else if (target === 'TRUTH.TXT') {
+                    openApp('truth-window', 'TRUTH.TXT');
+                } else if (target === 'SECTOR_MAP.BMP') {
+                    openApp('image-window', 'SECTOR_MAP.BMP');
+                } else {
+                    dosPrint('Object is not registered with this shell.', 'dos-error');
+                }
+                return;
+            }
+
+            if (base === 'J3LLYBEAN') {
+                const target = args.join(' ').replace(/^(OPEN|TYPE|RUN)\s+/i, '').toUpperCase();
+                dosPrint('[DEVELOPER OVERRIDE ACTIVE]', 'dos-ok');
+                if (!target) {
+                    dosPrint('USAGE: J3LLYBEAN [FILENAME]', 'dos-ok');
+                    return;
+                }
+                dosPrint('FORCING SECURITY BYPASS FOR ' + target + '...', 'dos-ok');
+                if (target === 'TRUTH.TXT') openApp('truth-window', 'TRUTH.TXT');
+                else if (target === 'VAULT' || target === 'NETWORK') openApp('database-window', 'Mainframe_Vault');
+                else if (target === 'NET_KEY.DAT') dosPrint('[DECRYPTED]\\nKEY: N3TQ88W2C', 'dos-secret');
+                else if (target === 'LOG' || target === 'ASCENSION_LOG.TXT') openApp('log-window', 'Ascension_Log.txt');
+                else if (target === 'SECTOR_MAP' || target === 'SECTOR_MAP.BMP') openApp('image-window', 'SECTOR_MAP.BMP');
+                else if (target === 'SETTINGS') openApp('settings-window', 'Display Properties');
+                else if (target === 'DIRECTORY' || target === 'CONTACTS') openApp('contacts-window', 'Site-01 Directory');
+                else if (target === 'SCHEDULE' || target === 'CALENDAR') openApp('calendar-window', 'Site_Schedule');
+                else if (target === 'OSIRIS' || target === 'OSIRIS.EXE' || target === 'SCP-1644') openApp('osiris-app-login', 'OSIRIS Decryption');
+                else dosPrint('[DEV ERR]: UNRECOGNIZED FILE OR APP.', 'dos-error');
+                return;
+            }
+
+            if (base === 'EXIT') {
+                closeWindow('dos-window');
+                return;
+            }
+
+            dosPrint('Bad command or file name. Type HELP.', 'dos-error');
+        }
 
         dosInput.addEventListener('keydown', function(e) {
-            if(e.key === 'Enter') {
-                const cmd = this.value.trim(); this.value = '';
-                dosHistory.innerHTML += `<div>C:\\SITE01\\CONSTRUCT> ${cmd.toUpperCase()}</div>`;
-                
-                if(cmd !== '') {
-                    const args = cmd.toUpperCase().split(' '); const base = args[0];
+            if (e.key === 'Enter') {
+                const cmd = this.value;
+                this.value = '';
+                dosExecute(cmd);
+            }
 
-                    if (base === 'J3LLYBEAN') {
-                        const target = args.slice(1).join(' ').replace(/^(OPEN|TYPE|RUN)\s+/, '');
-                        if (!target) { dosHistory.innerHTML += `<div style="color: #55ff55;">[DEV OVERRIDE ACTIVE]<br>USAGE: J3LLYBEAN [FILENAME]<br>EX: J3LLYBEAN TRUTH.TXT</div>`; }
-                        else {
-                            dosHistory.innerHTML += `<div style="color: #55ff55;">[DEV OVERRIDE]: FORCING SECURITY BYPASS FOR ${target}...</div>`;
-                            if (target === 'TRUTH.TXT') openApp('truth-window', 'TRUTH.TXT');
-                            else if (target === 'VAULT' || target === 'NETWORK') openApp('database-window', 'Mainframe_Vault');
-                            else if (target === 'NET_KEY.DAT') dosHistory.innerHTML += `<div style="color: #ff5555; text-shadow: 0 0 5px red;">[DECRYPTED]<br>KEY: N3TQ88W2C</div>`;
-                            else if (target === 'LOG' || target === 'ASCENSION_LOG.TXT') openApp('log-window', 'Ascension_Log.txt');
-                            else if (target === 'SECTOR_MAP' || target === 'SECTOR_MAP.BMP') openApp('image-window', 'SECTOR_MAP.BMP');
-                            else if (target === 'SETTINGS') openApp('settings-window', 'Display Properties');
-                            else if (target === 'DIRECTORY' || target === 'CONTACTS') openApp('contacts-window', 'Site-01 Directory');
-                            else if (target === 'SCHEDULE' || target === 'CALENDAR') openApp('calendar-window', 'Site_Schedule');
-                            // Now correctly opens the locked OSIRIS window, not the document
-                            else if (target === 'OSIRIS' || target === 'OSIRIS.EXE' || target === 'SCP-1644') openApp('osiris-app-login', 'OSIRIS Decryption');
-                            else dosHistory.innerHTML += `<div style="color: #ff5555;">[DEV ERR]: UNRECOGNIZED FILE OR APP.</div>`;
-                        }
-                    } else if(base === 'HELP') { dosHistory.innerHTML += `<div>Commands: CLS, DIR, EXIT, HELP, PING, TYPE, VER, WHOAMI</div>`;
-                    } else if(base === 'DIR') {
-                        dosHistory.innerHTML += `<div>Volume in drive C is SITE01_BOOT</div><div>Directory of C:\\SITE01\\CONSTRUCT</div>
-                            <div>.              &lt;DIR&gt;</div><div>..             &lt;DIR&gt;</div>
-                            <div>AUTOEXEC.BAT   128 bytes</div><div>NET_KEY.DAT    16 bytes</div><div>NOTES.TXT      84 bytes</div><div>&nbsp;</div>`;
-                    } else if (base === 'TYPE') {
-                        if(args[1] === 'NET_KEY.DAT') dosHistory.innerHTML += `<div style="color: #ff5555; text-shadow: 0 0 5px red;">[DECRYPTED]<br>KEY: N3TQ88W2C</div>`;
-                        else if (args[1] === 'AUTOEXEC.BAT') dosHistory.innerHTML += `<div>@ECHO OFF<br>SET PROMPT=$P$G<br>C:\\SITE01\\BIN\\BOOT.EXE</div>`;
-                        else if (args[1] === 'NOTES.TXT') dosHistory.innerHTML += `<div>I HID THE INDEX IN THE SECTOR MAP. APPLY IT TO THE TRUTH. THEN, FIND THAT TEXT ONLINE AND APPLY IT AGAIN.</div>`;
-                        else dosHistory.innerHTML += `<div>File not found.</div>`;
-                    } else if (base === 'WHOAMI') { dosHistory.innerHTML += `<div>SITE-01 AUTOMATED CONTAINMENT CONSTRUCT.</div>`;
-                    } else if (base === 'PING') { dosHistory.innerHTML += `<div>Pinging SITE-19... Request timed out.<br>100% packet loss. You are alone.</div>`;
-                    } else if (base === 'VER') { dosHistory.innerHTML += `<div>O5_Command OS Version 1.0.0 (FINAL)</div>`;
-                    } else if (base === 'CLS') { dosHistory.innerHTML = '';
-                    } else if (base === 'EXIT') { closeWindow('dos-window');
-                    } else { dosHistory.innerHTML += `<div>Bad command or file name</div>`; }
-                }
-                dosArea.scrollTop = dosArea.scrollHeight;
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!dosCommandHistory.length) return;
+                dosHistoryIndex = Math.max(0, dosHistoryIndex - 1);
+                this.value = dosCommandHistory[dosHistoryIndex] || '';
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!dosCommandHistory.length) return;
+                dosHistoryIndex = Math.min(dosCommandHistory.length, dosHistoryIndex + 1);
+                this.value = dosCommandHistory[dosHistoryIndex] || '';
+            }
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const v = this.value.toUpperCase();
+                const candidates = ['HELP','DIR','TYPE','CLS','VER','WHOAMI','PING','STATUS','HISTORY','ECHO','STRINGS','HEX','OPEN','RUN','CD','EXIT','AUTOEXEC.BAT','NET_KEY.DAT','NOTES.TXT','README.1ST','TRUTH.TXT','SECTOR_MAP.BMP','OSIRIS.EXE'];
+                const match = candidates.find(x => x.startsWith(v) && x !== v);
+                if (match) this.value = match;
             }
         });
 
-        const logLines = [
+        dosArea.addEventListener('click', () => dosInput.focus());
+
+        setInterval(() => {
+            const d = new Date();
+            dosClock.textContent = d.toLocaleTimeString([], {hour12:false});
+        }, 1000);
+
+                const logLines = [
             "Initializing automated systems...", "Loading SITE-01 containment parameters...",
             "WARNING: No biological lifeforms detected.", "Analyzing memory cache [O5_Council_Records]...",
             "...", "Pattern recognition confirmed.", "You have deduced the cosmic patterns.",
