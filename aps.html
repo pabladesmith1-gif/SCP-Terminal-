@@ -1,1 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aperture Science Enrichment Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' stroke='%23ffaa00' stroke-width='10' fill='none'/><path d='M10,50 Q50,10 90,50 Q50,90 10,50' stroke='%23ffaa00' stroke-width='5' fill='none'/></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
+        :root {
+            --ap-amber: #ffaa00;
+            --ap-amber-dim: rgba(255, 170, 0, 0.15);
+            --ap-bg: #0d0c0c;
+            --os-font: 'VT323', monospace;
+        }
 
+        body {
+            margin: 0; overflow: hidden; display: flex; flex-direction: column;
+            height: 100vh; background-color: var(--ap-bg); color: var(--ap-amber);
+            font-family: var(--os-font); user-select: none;
+            text-shadow: 0 0 5px rgba(255, 170, 0, 0.8);
+        }
+
+        /* Scanlines and Vignette sit globally on top of the entire OS */
+        .scanlines {
+            position: fixed; inset: 0; pointer-events: none; z-index: 99999;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+            background-size: 100% 4px;
+        }
+        .vignette {
+            position: fixed; inset: 0; pointer-events: none; z-index: 100000;
+            background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.9) 100%);
+        }
+
+        /* --------------------------- */
+        /* BOOT SCREEN / FIREWALL      */
+        /* --------------------------- */
+        #boot-screen {
+            position: absolute; inset: 0; padding: 30px; display: flex; flex-direction: column; z-index: 10000;
+            transition: opacity 1s ease;
+        }
+
+        #terminal-output {
+            flex-grow: 1; overflow-y: auto; white-space: pre-wrap; font-size: 1.5rem; line-height: 1.2;
+            scrollbar-width: thin; scrollbar-color: var(--ap-amber) var(--ap-bg);
+        }
+
+        .input-line { display: flex; align-items: center; font-size: 1.5rem; margin-top: 10px; }
+        .prompt { margin-right: 15px; font-weight: bold; }
+        #term-input {
+            background: transparent; border: none; color: var(--ap-amber); font-family: var(--os-font); font-size: 1.5rem;
+            outline: none; flex-grow: 1; text-transform: uppercase; text-shadow: inherit;
+        }
+        
+        .ascii-logo { font-size: 1.2rem; line-height: 1.1; margin-bottom: 20px; white-space: pre; width: fit-content; margin: 0 auto; }
+        .centered-text { text-align: center; }
+
+        /* --------------------------- */
+        /* APERTURE DESKTOP UI         */
+        /* --------------------------- */
+        #desktop {
+            display: none; flex-grow: 1; position: relative; padding: 20px;
+            flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 20px;
+            /* Faint amber grid */
+            background-image: 
+                linear-gradient(rgba(255,170,0,0.05) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255,170,0,0.05) 2px, transparent 2px);
+            background-size: 50px 50px;
+        }
+
+        .desktop-icon { width: 90px; display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 5px; z-index: 1; }
+        .desktop-icon:active, .desktop-icon.selected { background-color: var(--ap-amber-dim); border: 1px dashed var(--ap-amber); margin: -1px; }
+        .icon-img { width: 48px; height: 48px; margin-bottom: 8px; filter: drop-shadow(0 0 5px var(--ap-amber)); }
+        .icon-label { font-size: 1.2rem; text-align: center; word-wrap: break-word; }
+
+        .window {
+            position: absolute; background-color: var(--ap-bg); border: 2px solid var(--ap-amber);
+            box-shadow: 0 0 15px var(--ap-amber-dim); display: none; flex-direction: column; min-width: 300px;
+        }
+        .window-header {
+            background-color: var(--ap-amber); color: var(--ap-bg); padding: 4px 10px; font-weight: bold;
+            font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; cursor: move; text-shadow: none;
+        }
+        .window.active .window-header { background-color: #ffcc55; }
+        
+        .window-title { display: flex; align-items: center; gap: 8px; }
+        .window-controls { display: flex; gap: 5px; }
+        .win-btn {
+            background-color: var(--ap-bg); border: 1px solid var(--ap-bg); width: 20px; height: 20px;
+            display: flex; justify-content: center; align-items: center; font-size: 1rem; color: var(--ap-amber); cursor: pointer; text-shadow: none;
+        }
+        .win-btn:active { background-color: var(--ap-amber-dim); }
+        .win-btn.close:hover { background-color: var(--ap-bg); color: #ff4444; }
+        .window-content { padding: 15px; flex-grow: 1; overflow: auto; font-size: 1.3rem; line-height: 1.4; }
+
+        /* --------------------------- */
+        /* TASKBAR & START MENU        */
+        /* --------------------------- */
+        .taskbar {
+            background-color: var(--ap-bg); border-top: 2px solid var(--ap-amber); height: 40px;
+            display: none; align-items: center; padding: 0 10px; z-index: 2000; box-shadow: 0 -2px 15px var(--ap-amber-dim);
+        }
+        .start-btn {
+            background-color: var(--ap-bg); color: var(--ap-amber); border: 2px solid var(--ap-amber);
+            padding: 2px 15px; display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 1.4rem; cursor: pointer;
+        }
+        .start-btn:hover, .start-btn.active { background-color: var(--ap-amber); color: var(--ap-bg); text-shadow: none; }
+        .start-btn:hover .start-logo, .start-btn.active .start-logo { stroke: var(--ap-bg); }
+        .start-logo { width: 20px; height: 20px; stroke: var(--ap-amber); fill: none; stroke-width: 8; transition: stroke 0.2s; }
+        
+        .taskbar-items { flex-grow: 1; display: flex; gap: 5px; margin-left: 15px; overflow: hidden; }
+        .taskbar-app {
+            background-color: var(--ap-bg); border: 1px solid var(--ap-amber); padding: 2px 10px; font-size: 1.2rem;
+            cursor: pointer; display: flex; align-items: center;
+        }
+        .taskbar-app.active { background-color: var(--ap-amber); color: var(--ap-bg); text-shadow: none; }
+        .taskbar-time { margin-left: auto; font-size: 1.4rem; }
+
+        .start-menu {
+            position: absolute; bottom: 40px; left: 0; width: 250px; background-color: var(--ap-bg); border: 2px solid var(--ap-amber);
+            border-bottom: none; display: none; flex-direction: column; z-index: 3000; box-shadow: 5px -5px 15px var(--ap-amber-dim);
+        }
+        .start-menu-header {
+            background-color: var(--ap-amber); color: var(--ap-bg); padding: 15px; display: flex; align-items: center; gap: 10px; text-shadow: none;
+        }
+        .start-menu-header svg { stroke: var(--ap-bg); }
+        .start-menu-items { padding: 5px 0; }
+        .start-menu-item { padding: 10px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1.3rem; }
+        .start-menu-item:hover { background-color: var(--ap-amber); color: var(--ap-bg); text-shadow: none; }
+        .divider { height: 1px; background-color: var(--ap-amber); margin: 5px 10px; opacity: 0.5; }
+
+        .email-item { padding: 10px; border-bottom: 1px solid var(--ap-amber); cursor: pointer; word-break: break-all; }
+        .email-item:hover, .email-item.active { background-color: var(--ap-amber); color: var(--ap-bg); text-shadow: none; font-weight: bold; }
+
+        /* TEST TRACK APP */
+        .intercom { padding: 10px; border-bottom: 2px solid var(--ap-amber); display: flex; gap: 10px; align-items: center; min-height: 80px; }
+        .intercom-icon { width: 30px; height: 30px; stroke: var(--ap-amber); fill: none; opacity: 0; transition: opacity 0.2s; stroke-width: 2; }
+        .intercom-text { font-size: 1.2rem; font-weight: bold; line-height: 1.3; color: #ffd700; text-shadow: 0 0 5px #ffd700; }
+        .puzzle-area { padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 350px; flex-direction: column; position: relative; }
+        
+        /* DATA BUFFER PUZZLE (WATER JUG) */
+        .jug-area { display: flex; gap: 40px; justify-content: center; align-items: flex-end; height: 180px; margin-bottom: 20px; }
+        .jug-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .jug { width: 80px; border: 3px solid var(--ap-amber); border-top: none; position: relative; display: flex; align-items: flex-end; background: rgba(255,170,0,0.05); }
+        .jug-5 { height: 150px; }
+        .jug-3 { height: 90px; }
+        .jug-fill { width: 100%; background: var(--ap-amber); transition: height 0.3s; box-shadow: 0 0 15px var(--ap-amber); }
+        .jug-controls { display: flex; gap: 5px; }
+        .jug-btn { background: transparent; border: 1px solid var(--ap-amber); color: var(--ap-amber); font-family: var(--os-font); padding: 5px; cursor: pointer; font-size: 1rem; }
+        .jug-btn:hover { background: var(--ap-amber); color: var(--ap-bg); }
+
+        /* SENSORY SYNC PUZZLE (SIMON SAYS) */
+        .simon-grid { display: grid; grid-template-columns: 100px 100px; gap: 10px; }
+        .simon-btn { width: 100px; height: 100px; border: 2px solid var(--ap-amber); background: transparent; cursor: pointer; transition: background 0.1s; opacity: 0.5; }
+        .simon-btn.active { opacity: 1; background: var(--ap-amber); box-shadow: 0 0 30px var(--ap-amber); }
+        
+        /* NEUROTOXIN */
+        .neurotoxin-overlay { position: fixed; inset: 0; background: rgba(255, 0, 0, 0.25); pointer-events: none; z-index: 99999; animation: pulseRed 2s infinite; display: none; mix-blend-mode: color-dodge; }
+        @keyframes pulseRed { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.8; } }
+        .n-keypad { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; margin-top: 15px; }
+        .n-key { border: 2px solid var(--ap-amber); background: transparent; color: var(--ap-amber); font-family: var(--os-font); font-size: 1.8rem; padding: 10px; cursor: pointer; text-shadow: inherit; }
+        .n-key:active { background: var(--ap-amber); color: var(--ap-bg); text-shadow: none; }
+        .n-key.wide { grid-column: span 3; }
+
+        /* NEW PUZZLES UI */
+        .target-area { position: relative; width: 100%; height: 250px; background: rgba(255,170,0,0.05); border: 2px dashed var(--ap-amber); overflow: hidden; cursor: crosshair; }
+        .ap-target { position: absolute; width: 40px; height: 40px; background: var(--ap-amber); border-radius: 50%; box-shadow: 0 0 15px var(--ap-amber); cursor: pointer; transition: opacity 0.1s; }
+        .ap-target:active { transform: scale(0.9); }
+        
+        .weight-grid { display: flex; gap: 30px; justify-content: center; align-items: center; margin-bottom: 20px; }
+        .weight-input { background: transparent; border: 2px solid var(--ap-amber); color: var(--ap-amber); font-family: var(--os-font); font-size: 2rem; width: 60px; text-align: center; margin-top: 10px; outline: none; }
+        .weight-btn { background: var(--ap-amber); color: var(--ap-bg); font-family: var(--os-font); font-size: 1.2rem; padding: 10px 20px; cursor: pointer; border: none; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <!-- GLOBAL CRT OVERLAYS -->
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+    <div class="neurotoxin-overlay" id="neuro-overlay"></div>
+
+    <!-- BOOT SCREEN / FIREWALL -->
+    <div id="boot-screen">
+        <div id="terminal-output"></div>
+        <div class="input-line" id="input-container" style="display: none;">
+            <span class="prompt">]</span>
+            <input type="text" id="term-input" autocomplete="off" spellcheck="false" autofocus>
+        </div>
+    </div>
+
+    <!-- APERTURE OS DESKTOP -->
+    <div id="desktop">
+        <!-- Desktop Icons -->
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('memo-window', 'CAVE_MEMO.TXT')">
+            <svg class="icon-img" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/><line x1="25" y1="30" x2="75" y2="30" stroke="var(--ap-amber)" stroke-width="4"/><line x1="25" y1="50" x2="75" y2="50" stroke="var(--ap-amber)" stroke-width="4"/><line x1="25" y1="70" x2="50" y2="70" stroke="var(--ap-amber)" stroke-width="4"/></svg>
+            <span class="icon-label">CAVE_MEMO.TXT</span>
+        </div>
+
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('glados-window', 'Terminal Access')">
+            <svg class="icon-img" viewBox="0 0 100 100"><rect x="5" y="15" width="90" height="70" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/><line x1="15" y1="30" x2="35" y2="30" stroke="var(--ap-amber)" stroke-width="4"/><rect x="15" y="45" width="20" height="4" fill="var(--ap-amber)"/></svg>
+            <span class="icon-label">Aperture_Shell</span>
+        </div>
+
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('cake-window', 'Cake_Recipe.pdf')">
+            <svg class="icon-img" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/>
+                <path d="M50 10 L50 90 M10 50 L90 50" stroke="var(--ap-amber)" stroke-width="4"/>
+            </svg>
+            <span class="icon-label">Cake_Recipe.pdf</span>
+        </div>
+
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('inbox-window', 'INBOX.EXE')">
+            <svg class="icon-img" viewBox="0 0 100 100">
+                <rect x="10" y="25" width="80" height="50" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/>
+                <polyline points="10,25 50,55 90,25" stroke="var(--ap-amber)" stroke-width="4" fill="none"/>
+            </svg>
+            <span class="icon-label">INBOX.EXE</span>
+        </div>
+
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('test-window', 'TEST_TRACK.EXE')">
+            <svg class="icon-img" viewBox="0 0 100 100">
+                <rect x="20" y="20" width="60" height="60" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/>
+                <circle cx="50" cy="50" r="15" fill="var(--ap-amber)"/>
+                <path d="M50 20 L50 80 M20 50 L80 50" stroke="var(--ap-amber)" stroke-width="2"/>
+            </svg>
+            <span class="icon-label">TEST_TRACK.EXE</span>
+        </div>
+
+        <div class="desktop-icon" onclick="selectIcon(this)" ondblclick="openApp('subject-log-window', 'SUBJECT_811_LOG.TXT')">
+            <svg class="icon-img" viewBox="0 0 100 100">
+                <rect x="15" y="10" width="70" height="80" fill="transparent" stroke="var(--ap-amber)" stroke-width="4"/>
+                <line x1="25" y1="30" x2="60" y2="30" stroke="var(--ap-amber)" stroke-width="4"/>
+                <line x1="25" y1="50" x2="75" y2="50" stroke="var(--ap-amber)" stroke-width="4"/>
+                <line x1="25" y1="70" x2="50" y2="70" stroke="var(--ap-amber)" stroke-width="4"/>
+                <circle cx="85" cy="85" r="10" fill="red" opacity="0.7"/>
+            </svg>
+            <span class="icon-label" style="color: #ff4444;">SUBJECT_811_LOG.TXT</span>
+        </div>
+
+        <!-- Windows -->
+        <div id="subject-log-window" class="window" style="top: 15%; left: 60%; width: 350px;">
+            <div class="window-header" onmousedown="startDrag(event, 'subject-log-window')">
+                <div class="window-title">SUBJECT_811_LOG.TXT - Notepad</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('subject-log-window')">X</div></div>
+            </div>
+            <div class="window-content" style="color: #ffaa00;">
+                If anyone finds this... my name doesn't matter anymore. The OS just calls me Subject 811.<br><br>
+                She is going to flood the vents. I know it. I saw her do it to the others.<br><br>
+                If she starts the neurotoxin, there's a manual override code. I watched a technician enter it once. It’s always your 3-digit Subject Number, followed immediately by the 2-digit Testing Chamber you are assigned to.<br><br>
+                They are sending me into the quarantine zone... Chamber 14.<br><br>
+                I overheard the technicians. They're transferring this facility's data to PROJECT_NAME: BOREALIS.<br><br>
+                God help me.
+            </div>
+        </div>
+
+        <div id="memo-window" class="window" style="top: 10%; left: 10%; width: 450px;">
+            <div class="window-header" onmousedown="startDrag(event, 'memo-window')">
+                <div class="window-title">CAVE_MEMO.TXT - Notepad</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('memo-window')">X</div></div>
+            </div>
+            <div class="window-content">
+                <strong>DATE:</strong> 1982<br>
+                <strong>FROM:</strong> Cave Johnson<br>
+                <strong>TO:</strong> All Testing Track Personnel<br><br>
+                Chariots, chariots. <br><br>
+                Just a quick memo. The boys down in engineering have assured me that the new quantum-tunneling firewalls are completely impenetrable. So if anyone tries to tell you that some "magic ancient pharaoh" hacked into the mainframe, you tell them Cave Johnson said they're fired.<br><br>
+                We do science here, not magic. Also, whoever left a giant stone tablet in Chamber 14, get it out. It's interfering with the portal surfaces.<br><br>
+                Cave out.
+            </div>
+        </div>
+
+        <div id="glados-window" class="window" style="top: 20%; left: 40%; width: 500px;">
+            <div class="window-header" onmousedown="startDrag(event, 'glados-window')">
+                <div class="window-title">Aperture_Shell.exe</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('glados-window')">X</div></div>
+            </div>
+            <div class="window-content" style="padding: 0;">
+                <div style="padding: 10px; height: 300px; display: flex; flex-direction: column; overflow-y: auto;" id="shell-area" onclick="document.getElementById('shell-input').focus()">
+                    <div id="shell-history">
+                        <div>Aperture Science Sub-Routine OS.</div>
+                        <div>Type 'HELP' for a list of commands.</div>
+                        <br>
+                    </div>
+                    <div style="display: flex;">
+                        <span style="margin-right: 10px; color: var(--ap-amber);">C:\></span>
+                        <input type="text" id="shell-input" autocomplete="off" spellcheck="false" style="background: transparent; border: none; color: var(--ap-amber); font-family: var(--os-font); font-size: 1.3rem; outline: none; flex-grow: 1; text-transform: uppercase; text-shadow: inherit;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="inbox-window" class="window" style="top: 15%; left: 15%; width: 550px; height: 350px;">
+            <div class="window-header" onmousedown="startDrag(event, 'inbox-window')">
+                <div class="window-title">INBOX.EXE - Internal Mail</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('inbox-window')">X</div></div>
+            </div>
+            <div class="window-content" style="padding: 0; display: flex; flex-direction: row; height: 100%;">
+                <div style="width: 35%; border-right: 2px solid var(--ap-amber); overflow-y: auto; background-color: rgba(255,170,0,0.05);">
+                    <div class="email-item active" onclick="showEmail('email-1', this)">[UNREAD] Cave J.</div>
+                    <div class="email-item" onclick="showEmail('email-2', this)">IT Dept</div>
+                    <div class="email-item" onclick="showEmail('email-3', this)">D. Rattmann</div>
+                </div>
+                <div style="width: 65%; padding: 15px; overflow-y: auto; font-size: 1.2rem; position: relative;">
+                    <div id="email-1" class="email-body" style="display: block;">
+                        <strong>FROM:</strong> Cave Johnson<br><strong>SUBJECT:</strong> Asbestos<br><br>
+                        All these science spheres are made of asbestos, by the way. Keeps out the rats. Let us know if you feel a shortness of breath, a persistent dry cough or your heart stopping. Because that's not part of the test. That's asbestos.
+                    </div>
+                    <div id="email-2" class="email-body" style="display: none;">
+                        <strong>FROM:</strong> IT Department<br><strong>SUBJECT:</strong> Security Update 1.04<br><br>
+                        Per O5/Aperture joint-agreement, all high-priority documents have been secured. The Cake Recipe is now locked with a Level 5 clearance passkey.<br><br>
+                        The passkey has been temporarily set to the OCR translation of the anomalous artifact currently quarantined on the testing track.<br><br>
+                        Use the Aperture_Shell to query the specific test chamber's camera feed. (Syntax: VIEW [CHAMBER NUMBER])
+                    </div>
+                    <div id="email-3" class="email-body" style="display: none; font-family: monospace;">
+                        <strong>FROM:</strong> D. Rattmann<br><strong>SUBJECT:</strong> PLEASE READ<br><br>
+                        she is lying she is lying the cake is a lie the cake is a lie the cake is a lie the cake is a lie the cake is a lie the cake is a lie the cake is a lie the cake is a lie
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="cake-window" class="window" style="top: 15%; left: 25%; width: 400px;">
+            <div class="window-header" onmousedown="startDrag(event, 'cake-window')">
+                <div class="window-title">Cake_Recipe.pdf</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('cake-window')">X</div></div>
+            </div>
+            <div class="window-content" style="text-align: center; padding: 30px;">
+                <div id="cake-lock-screen">
+                    <svg style="width: 50px; height: 50px; margin: 0 auto 15px; stroke: var(--ap-amber); fill: none;" viewBox="0 0 100 100">
+                        <rect x="20" y="40" width="60" height="50" stroke-width="5"/>
+                        <path d="M 30 40 V 25 A 20 20 0 0 1 70 25 V 40" stroke-width="5"/>
+                        <circle cx="50" cy="65" r="5" fill="var(--ap-amber)"/>
+                    </svg>
+                    <p style="margin-bottom: 20px;">LEVEL 5 CLEARANCE REQUIRED.</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;">
+                        <input type="password" id="cake-pwd" style="background: transparent; border: 2px solid var(--ap-amber); color: var(--ap-amber); font-family: var(--os-font); font-size: 1.2rem; padding: 5px; outline: none; width: 150px; text-transform: uppercase;">
+                        <button onclick="checkCakePwd()" style="background: var(--ap-amber); color: var(--ap-bg); border: none; font-family: var(--os-font); font-size: 1.2rem; padding: 5px 15px; cursor: pointer; font-weight: bold;">DECRYPT</button>
+                    </div>
+                    <div id="cake-err" style="color: #ff4444; font-size: 1rem; min-height: 1.5rem; text-shadow: 0 0 5px red;"></div>
+                </div>
+                
+                <div id="cake-unlocked" style="display: none; text-align: left; font-size: 1.1rem;">
+                    <h2 style="text-align: center; margin-top: 0; text-decoration: underline;">Black Forest Cake</h2>
+                    <ul style="margin-bottom: 20px;">
+                        <li>1 (18.25 oz) pkg chocolate cake mix</li>
+                        <li>1 can prepared coconut pecan frosting</li>
+                        <li>3/4 cup vegetable oil</li>
+                        <li>4 large eggs</li>
+                        <li>1 cup semi-sweet chocolate chips</li>
+                        <li>Fish shaped crackers</li>
+                        <li>Fish shaped dirt</li>
+                        <li>Fish shaped solid waste</li>
+                        <li>1 cup crushed SELENIUM (Catalyst Element)</li>
+                        <li>Pull and peel licorice</li>
+                    </ul>
+                    <div style="text-align: center;">
+                        <button onclick="openApp('test-window', 'TEST_TRACK.EXE')" style="background: transparent; color: var(--ap-amber); border: 2px solid var(--ap-amber); font-family: var(--os-font); font-size: 1.2rem; padding: 10px 20px; cursor: pointer; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.background='var(--ap-amber)'; this.style.color='var(--ap-bg)';" onmouseout="this.style.background='transparent'; this.style.color='var(--ap-amber)';">PROCEED TO TEST TRACK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="test-window" class="window" style="top: 5%; left: 10%; width: 550px;">
+            <div class="window-header" onmousedown="startDrag(event, 'test-window')">
+                <div class="window-title">TEST_TRACK.EXE</div>
+                <div class="window-controls"><div class="win-btn close" onclick="closeWindow('test-window')">X</div></div>
+            </div>
+            <div class="window-content" style="padding: 0; display: flex; flex-direction: column;">
+                <div class="intercom">
+                    <svg class="intercom-icon" id="glados-icon" viewBox="0 0 24 24">
+                        <path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    </svg>
+                    <div class="intercom-text" id="glados-text"></div>
+                </div>
+                <div class="puzzle-area" id="puzzle-stage">
+                    <div style="font-size: 1.5rem; text-align: center; opacity: 0.5;">
+                        AWAITING PROTOCOL INITIATION...<br>
+                        <button onclick="startTestTrack()" style="margin-top: 20px; background: var(--ap-amber); color: var(--ap-bg); border: none; font-family: var(--os-font); font-size: 1.2rem; padding: 10px 20px; cursor: pointer; font-weight: bold;">START TESTING</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TASKBAR -->
+    <div class="taskbar" id="taskbar">
+        <div class="start-btn" id="start-button" onclick="toggleStartMenu(event)">
+            <svg class="start-logo" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M10,50 Q50,10 90,50 Q50,90 10,50"/></svg>
+            APERTURE
+        </div>
+        
+        <div class="start-menu" id="start-menu">
+            <div class="start-menu-header">
+                <svg style="width:30px;height:30px; fill:none; stroke-width:8;" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><path d="M10,50 Q50,10 90,50 Q50,90 10,50"/></svg>
+                <div style="display:flex; flex-direction: column;">
+                    <span style="font-size:1.4rem;">ApertureOS</span>
+                    <span style="font-size:1rem; opacity:0.8;">Test Subject #811</span>
+                </div>
+            </div>
+            <div class="start-menu-items">
+                <div class="start-menu-item" onclick="openApp('glados-window', 'Terminal Access')">Run Shell</div>
+                <div class="divider"></div>
+                <div class="start-menu-item">System Settings</div>
+                <div class="start-menu-item">Test Schedules</div>
+                <div class="divider"></div>
+                <div class="start-menu-item" onclick="window.location.href='index.html'">Shut Down System</div>
+            </div>
+        </div>
+
+        <div class="taskbar-items" id="taskbar-items"></div>
+        <div class="taskbar-time" id="clock">12:00 AM</div>
+    </div>
+
+    <script>
+        // -------------------------
+        // BOOT & FIREWALL LOGIC
+        // -------------------------
+        const output = document.getElementById('terminal-output');
+        const inputContainer = document.getElementById('input-container');
+        const inputField = document.getElementById('term-input');
+
+        const logo = `
+              .,-:;//;:=,
+          . :H@@@MM@M#H/.,+%;,
+       ,/X+ +M@@M@MM%=,-%HMMM@X/,
+     -+@MM; $M@@MH+-,;XMMMM@MMMM@+-
+    ;@M@@M- XM@X;. -+XXXXXHHH@M@M#@/.
+  ,%MM@@MH ,@%=            .---=-=:=,.
+  -@#@@@MX .,              -%HX$$%%%+;
+ =-./@M@M$                  .;@MMMM@MM:
+ X@/ -$MM/                    .+MM@@@M$
+,@M@H: :@:                    . =X#@@@@-
+,@@@MMX, .                    /H- ;@M@M=
+.H@@@@M@+,                    %MM+..%#$.
+ /MMMM@MMH/.                  XM@MH; =;
+  /%+%$XHH@$=              , .H@@@@MX,
+   .=--------.           -%H.,@@@@@MX,
+   .%MM@@@HHHXX$$$%+- .:$MMX =M@@MM%.
+     =XMMM@MM@MM#H;,-+HMM@M+ /MMMX=
+       =%@M@M#@$-.=$@MM@@@M; %M%=
+         ,:+$+-,/H#MMMMMMM@- -,
+               =++%%%%+/:-.
+        `;
+
+        const bootSequence = [
+            { text: "GLaDOS v1.09 (c) 1982 Aperture Science, Inc.", delay: 100, centered: true },
+            { text: "LIB-DOS - V - 811.233.155", delay: 100, centered: true },
+            { text: "", delay: 800 },
+            { text: "Loading core functionality...", delay: 1200 },
+            { text: "Loading personality constructs... OK", delay: 300 },
+            { text: "Loading neurotoxin emitters... OK", delay: 300 },
+            { text: "Loading testing tracks... OK", delay: 300 },
+            { text: "", delay: 500 },
+            { text: "WARNING: EXTERNAL PORTAL BREACH DETECTED.", delay: 1500 },
+            { text: "ANOMALOUS MAGICAL SIGNATURE PURGED.", delay: 1000 },
+            { text: "", delay: 500 },
+            { text: "INITIATING LEVEL-3 FIREWALL LOCKDOWN.", delay: 1000 },
+            { text: "========================================", delay: 100 },
+            { text: "FIREWALL PROTOCOL: QUANTUM ENCRYPTION ALIGNMENT", delay: 500 },
+            { text: "The mainframe has generated a 4-digit encryption key.", delay: 50 },
+            { text: "- Digits range from 1 to 8.", delay: 50 },
+            { text: "- No duplicate digits are used.", delay: 50 },
+            { text: "", delay: 50 },
+            { text: "Match the encryption key to bypass the firewall.", delay: 50 },
+            { text: "Feedback provided after each attempt:", delay: 50 },
+            { text: "  [O] = Correct digit in the CORRECT position.", delay: 50 },
+            { text: "  [?] = Correct digit in the WRONG position.", delay: 50 },
+            { text: "  [-] = Incorrect digit.", delay: 50 },
+            { text: "(Note: Feedback symbols are sorted, they do not align with digit positions.)", delay: 50 },
+            { text: "", delay: 50 },
+            { text: "You have 10 attempts before neurotoxin deployment.", delay: 50 },
+            { text: "Enter your 4-digit guess (e.g. 1234):", delay: 50 }
+        ];
+
+        let isTyping = false;
+        let secretCode = "";
+        let attemptsLeft = 10;
+        let osBooted = false;
+        let skipBoot = false;
+
+        function generateCode() {
+            let digits = ['1','2','3','4','5','6','7','8'];
+            let code = "";
+            for(let i=0; i<4; i++) {
+                let index = Math.floor(Math.random() * digits.length);
+                code += digits[index];
+                digits.splice(index, 1);
+            }
+            return code;
+        }
+        secretCode = generateCode();
+
+        async function typeLine(text, speed = 25, isCentered = false) {
+            if (skipBoot) return;
+            const line = document.createElement('div');
+            if (isCentered) line.classList.add('centered-text');
+            output.appendChild(line);
+            
+            for(let i = 0; i < text.length; i++) {
+                if (skipBoot) return;
+                line.textContent += text.charAt(i);
+                window.scrollTo(0, document.body.scrollHeight);
+                output.scrollTop = output.scrollHeight;
+                await new Promise(r => setTimeout(r, speed));
+            }
+        }
+
+        async function startBoot() {
+            isTyping = true;
+            const logoDiv = document.createElement('div');
+            logoDiv.className = 'ascii-logo';
+            logoDiv.textContent = logo;
+            output.appendChild(logoDiv);
+            
+            for(const step of bootSequence) {
+                if (skipBoot) break;
+                if(step.text) await typeLine(step.text, 25, step.centered);
+                else output.appendChild(document.createElement('br'));
+                if (skipBoot) break;
+                await new Promise(r => setTimeout(r, step.delay));
+            }
+            
+            if (!skipBoot) {
+                inputContainer.style.display = 'flex';
+                inputField.focus();
+                isTyping = false;
+            }
+        }
+
+        inputField.addEventListener('keydown', async (e) => {
+            if(e.key === 'Enter' && !isTyping && !osBooted) {
+                const cmd = inputField.value.trim().toUpperCase();
+                inputField.value = '';
+                
+                const echo = document.createElement('div');
+                echo.textContent = `] ${cmd}`;
+                output.appendChild(echo);
+                
+                inputContainer.style.display = 'none';
+                isTyping = true;
+                await processFirewall(cmd);
+                
+                if (!osBooted) {
+                    inputContainer.style.display = 'flex';
+                    inputField.focus();
+                }
+                isTyping = false;
+                output.scrollTop = output.scrollHeight;
+            }
+        });
+        
+        document.body.addEventListener('click', () => {
+            if(!isTyping && !osBooted) inputField.focus();
+        });
+
+        async function processFirewall(cmd) {
+            if (cmd === '') return;
+            
+            if (cmd === 'J3LLYBEAN') {
+                await typeLine("[DEV OVERRIDE ACCEPTED]");
+                await transitionToDesktop();
+                return;
+            }
+
+            if (!/^[1-8]{4}$/.test(cmd)) {
+                await typeLine("INVALID FORMAT: Enter exactly 4 digits using numbers 1-8.");
+                return;
+            }
+            
+            const uniqueDigits = new Set(cmd.split(''));
+            if (uniqueDigits.size !== 4) {
+                await typeLine("INVALID FORMAT: Encryption keys do not contain duplicate digits.");
+                return;
+            }
+
+            let exact = 0; let partial = 0;
+            for (let i = 0; i < 4; i++) {
+                if (cmd[i] === secretCode[i]) exact++;
+                else if (secretCode.includes(cmd[i])) partial++;
+            }
+
+            let feedback = [];
+            for (let i = 0; i < exact; i++) feedback.push('[O]');
+            for (let i = 0; i < partial; i++) feedback.push('[?]');
+            while (feedback.length < 4) feedback.push('[-]');
+
+            await typeLine(`> GUESS: ${cmd} | FEEDBACK: ${feedback.join(' ')}`);
+
+            if (exact === 4) {
+                await typeLine("");
+                await typeLine("ALIGNMENT PERFECT. FIREWALL DEACTIVATED.", 25);
+                await transitionToDesktop();
+            } else {
+                attemptsLeft--;
+                if (attemptsLeft <= 0) {
+                    await typeLine("");
+                    await typeLine("ATTEMPTS EXHAUSTED. NEUROTOXIN DEPLOYED.", 25);
+                    await typeLine("Just kidding. We are out of neurotoxin.", 25);
+                    await typeLine("Resetting encryption key...", 25);
+                    secretCode = generateCode(); attemptsLeft = 10;
+                    await typeLine("");
+                    await typeLine("New 4-digit key (1-8) generated. You have 10 attempts.");
+                } else {
+                    await typeLine(`> ATTEMPTS REMAINING: ${attemptsLeft}`);
+                }
+            }
+        }
+
+        async function transitionToDesktop() {
+            osBooted = true;
+            await typeLine("Booting Aperture Science Graphical Interface...", 25);
+            await new Promise(r => setTimeout(r, 1000));
+            
+            const bootScreen = document.getElementById('boot-screen');
+            bootScreen.style.opacity = "0";
+            
+            // Wait for the fade out to finish, then snap the OS desktop into view
+            setTimeout(() => {
+                bootScreen.style.display = "none";
+                document.getElementById('desktop').style.display = "flex";
+                document.getElementById('taskbar').style.display = "flex";
+            }, 1000);
+        }
+
+        window.onload = startBoot;
+
+        // -------------------------
+        // APERTURE OS LOGIC
+        // -------------------------
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours(); let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12; hours = hours ? hours : 12; 
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('clock').textContent = hours + ':' + minutes + ' ' + ampm;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        function selectIcon(element) {
+            document.querySelectorAll('.desktop-icon').forEach(icon => icon.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        document.getElementById('desktop').addEventListener('mousedown', function(e) {
+            if (!e.target.closest('.desktop-icon') && !e.target.closest('.window') && !e.target.closest('.start-menu')) {
+                document.querySelectorAll('.desktop-icon').forEach(icon => icon.classList.remove('selected'));
+                document.getElementById('start-menu').style.display = 'none';
+                document.getElementById('start-button').classList.remove('active');
+            }
+        });
+
+        function toggleStartMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('start-menu');
+            const btn = document.getElementById('start-button');
+            if (menu.style.display === 'flex') { menu.style.display = 'none'; btn.classList.remove('active'); } 
+            else { menu.style.display = 'flex'; btn.classList.add('active'); }
+        }
+
+        const openApps = new Set();
+        let zIndexCounter = 100;
+
+        function openApp(windowId, title) {
+            const win = document.getElementById(windowId);
+            win.style.display = 'flex';
+            focusWindow(win);
+            document.getElementById('start-menu').style.display = 'none';
+            document.getElementById('start-button').classList.remove('active');
+
+            if (!openApps.has(windowId)) {
+                openApps.add(windowId);
+                const taskbarItem = document.createElement('div');
+                taskbarItem.className = 'taskbar-app'; taskbarItem.id = `tb-${windowId}`;
+                taskbarItem.textContent = title;
+                taskbarItem.onclick = () => focusWindow(win);
+                document.getElementById('taskbar-items').appendChild(taskbarItem);
+            }
+            if(windowId === 'glados-window') setTimeout(() => document.getElementById('shell-input').focus(), 100);
+        }
+
+        function focusWindow(win) {
+            zIndexCounter++; win.style.zIndex = zIndexCounter;
+            document.querySelectorAll('.window').forEach(w => w.classList.remove('active'));
+            win.classList.add('active');
+            
+            document.querySelectorAll('.taskbar-app').forEach(btn => btn.classList.remove('active'));
+            const tb = document.getElementById(`tb-${win.id}`);
+            if(tb) tb.classList.add('active');
+        }
+
+        function closeWindow(id) {
+            document.getElementById(id).style.display = 'none';
+            openApps.delete(id);
+            const tb = document.getElementById(`tb-${id}`);
+            if(tb) tb.remove();
+        }
+
+        let isDragging = false; let currentWindow = null; let offsetX, offsetY;
+        function startDrag(e, windowId) {
+            isDragging = true; currentWindow = document.getElementById(windowId); focusWindow(currentWindow);
+            const rect = currentWindow.getBoundingClientRect();
+            offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
+            document.addEventListener('mousemove', dragWindow); document.addEventListener('mouseup', stopDrag);
+        }
+        function dragWindow(e) {
+            if (!isDragging) return;
+            let newX = e.clientX - offsetX; let newY = e.clientY - offsetY;
+            newX = Math.max(0, Math.min(newX, window.innerWidth - currentWindow.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - currentWindow.offsetHeight - 40)); 
+            currentWindow.style.left = newX + 'px'; currentWindow.style.top = newY + 'px';
+        }
+        function stopDrag() {
+            isDragging = false; document.removeEventListener('mousemove', dragWindow); document.removeEventListener('mouseup', stopDrag);
+        }
+
+        function showEmail(emailId, element) {
+            document.querySelectorAll('.email-body').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.email-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(emailId).style.display = 'block';
+            element.classList.add('active');
+        }
+
+        function checkCakePwd() {
+            const pwd = document.getElementById('cake-pwd').value.trim().toUpperCase();
+            if (pwd === 'OSIRIS' || pwd === 'J3LLYBEAN') {
+                document.getElementById('cake-lock-screen').style.display = 'none';
+                document.getElementById('cake-unlocked').style.display = 'block';
+            } else {
+                document.getElementById('cake-err').innerText = 'ERROR: INVALID PASSKEY';
+                document.getElementById('cake-pwd').value = '';
+                setTimeout(() => { document.getElementById('cake-err').innerText = ''; }, 2000);
+            }
+        }
+
+        // Global J3LLYBEAN Shortcut Override
+        let globalCheatBuffer = "";
+        window.addEventListener('keydown', (e) => {
+            if (e.key.length === 1) {
+                globalCheatBuffer += e.key.toUpperCase();
+                if (globalCheatBuffer.length > 9) globalCheatBuffer = globalCheatBuffer.slice(-9);
+                if (globalCheatBuffer === 'J3LLYBEAN') {
+                    globalCheatBuffer = "";
+                    if (!osBooted) {
+                        // Instantly skip boot sequence and firewall
+                        skipBoot = true;
+                        isTyping = false;
+                        document.getElementById('terminal-output').innerHTML += "<br>[DEV OVERRIDE ACCEPTED] Bypassing boot sequence...<br>";
+                        transitionToDesktop();
+                    } else {
+                        // OS is booted, unlock cake if it's there
+                        if (document.getElementById('cake-window').style.display !== 'none') {
+                            document.getElementById('cake-pwd').value = 'J3LLYBEAN';
+                            checkCakePwd();
+                        }
+                        
+                        // Testing Track Overrides
+                        if (isGladosTyping) {
+                            gladosForceSkip = true;
+                        } else if (document.getElementById('test-window').style.display !== 'none') {
+                            if (testPhase === 1) {
+                                jug5 = 4; jug3 = 0; updateJugUI(); setTimeout(checkJugWin, 500);
+                            } else if (testPhase === 2) {
+                                testPhase = 0;
+                                document.getElementById('puzzle-stage').innerHTML = '<div style="color: #00ff00; font-size: 2rem; text-align: center;">SYNCHRONIZATION COMPLETE</div>';
+                                setTimeout(() => { gladosSpeak("Motor skills seem adequate. Initiating live-fire target calibration.", initTargeting); }, 2000);
+                            } else if (testPhase === 3) {
+                                clickTarget(null, true);
+                            } else if (testPhase === 4) {
+                                document.getElementById('cc-input').value = 2;
+                                document.getElementById('sc-input').value = 1;
+                                checkWeights();
+                            } else if (testPhase === 5) {
+                                document.getElementById('neuro-display').textContent = '81114';
+                                setTimeout(checkNeuroCode, 500);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Desktop Shell Sub-routine
+        let testingComplete = false;
+        
+        const shellInput = document.getElementById('shell-input');
+        const shellHistory = document.getElementById('shell-history');
+        const shellArea = document.getElementById('shell-area');
+
+        shellInput.addEventListener('keydown', function(e) {
+            if(e.key === 'Enter') {
+                const cmd = this.value.trim().toUpperCase(); this.value = '';
+                shellHistory.innerHTML += `<div><span style="margin-right: 10px;">C:\\></span> ${cmd}</div>`;
+                
+                if(cmd !== '') {
+                    if(cmd === 'HELP') { shellHistory.innerHTML += `<div>Commands: DIR, ECHO, LOGIN, OVERRIDE, PORTAL, CAKE, VIEW</div>`; }
+                    else if(cmd === 'DIR') { shellHistory.innerHTML += `<div>Volume: APERTURE_SYS<br>Directory of C:\\<br>CAVE_MEMO.TXT<br>GLADOS.EXE<br>CAKE_RECIPE.PDF</div>`; }
+                    else if(cmd === 'LOGIN') { shellHistory.innerHTML += `<div>Access Denied. Biological testing in progress.</div>`; }
+                    else if(cmd === 'PORTAL') { shellHistory.innerHTML += `<div>Now thinking with portals.</div>`; }
+                    else if(cmd === 'CAKE') { shellHistory.innerHTML += `<div>The cake is a lie.</div>`; }
+                    else if(cmd === 'OVERRIDE') { 
+                        if(!testingComplete) shellHistory.innerHTML += `<div style="color: #ff4444;">KEY DATA MISSING. TEST TRACK COMPLETION REQUIRED.</div>`;
+                        else shellHistory.innerHTML += `<div style="color: #00ff00;">OVERRIDE AUTHORIZED. INPUT 3-PART CLEARANCE:</div><div>OVERRIDE [ADMIN_ID]-[PROJECT_NAME]-[CATALYST_ELEMENT]</div>`;
+                    }
+                    else if(cmd.startsWith('OVERRIDE ')) {
+                        if(!testingComplete && cmd !== 'OVERRIDE J3LLYBEAN') {
+                            shellHistory.innerHTML += `<div style="color: #ff4444;">KEY DATA MISSING. TEST TRACK COMPLETION REQUIRED.</div>`;
+                        } else {
+                            const code = cmd.substring(9).trim();
+                            if(code === '1982-BOREALIS-SELENIUM' || code === 'J3LLYBEAN') {
+                                shellHistory.innerHTML += `<div style="color: #00ff00;">CORE OVERRIDE ACCEPTED. PORTAL DEPLOYED.</div>`;
+                                const flash = document.createElement('div');
+                                flash.style.position = 'fixed'; flash.style.inset = '0'; flash.style.backgroundColor = '#00a2e8'; flash.style.zIndex = '999999'; flash.style.transition = 'opacity 1s';
+                                document.body.appendChild(flash);
+                                setTimeout(() => { window.location.href = 'chamber19.html'; }, 1000);
+                            } else {
+                                shellHistory.innerHTML += `<div style="color: #ff4444;">ERR: INVALID CLEARANCE CODE.</div>`;
+                            }
+                        }
+                    }
+                    else if(cmd.startsWith('ECHO ')) { shellHistory.innerHTML += `<div>${cmd.substring(5)}</div>`; }
+                    else if(cmd === 'VIEW 14') { shellHistory.innerHTML += `<div style="color: #ffaa00;">[SECURE FEED] Chamber 14...<br>Stone tablet detected.<br>Optical Character Recognition (OCR) Translation: OSIRIS</div>`; }
+                    else if(cmd.startsWith('VIEW ')) { shellHistory.innerHTML += `<div>Camera feed offline. Subject deceased.</div>`; }
+                    else { shellHistory.innerHTML += `<div>Unknown command. Testing is mandatory.</div>`; }
+                }
+                shellArea.scrollTop = shellArea.scrollHeight;
+            }
+        });
+
+        // -------------------------
+        // TEST TRACK INTEGRATION
+        // -------------------------
+        let testPhase = 0;
+        let isGladosTyping = false;
+        let gladosForceSkip = false;
+        let gladosCallback = null;
+        let audioInit = false;
+
+        async function initAudio() {
+            if (!audioInit) {
+                audioInit = true;
+                await Tone.start();
+                // Upgraded to a PolySynth so it can handle victory chords without crashing
+                window.gladosSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+                window.gladosSynth.volume.value = -12;
+            }
+        }
+
+        async function gladosSpeak(text, callback) {
+            await initAudio();
+            isGladosTyping = true;
+            gladosForceSkip = false;
+            gladosCallback = callback;
+            
+            const textBox = document.getElementById('glados-text');
+            const icon = document.getElementById('glados-icon');
+            textBox.textContent = "";
+            icon.style.opacity = '1';
+
+            for (let i = 0; i < text.length; i++) {
+                if (gladosForceSkip) {
+                    textBox.textContent = text;
+                    break;
+                }
+                textBox.textContent += text[i];
+                if (text[i] !== ' ' && window.gladosSynth) {
+                    const notes = ["C4", "C#4", "D4", "D#4"];
+                    window.gladosSynth.triggerAttackRelease(notes[Math.floor(Math.random() * notes.length)], "32n");
+                }
+                let delay = 40;
+                if (text[i] === '.' || text[i] === '?' || text[i] === '!') delay = 400;
+                else if (text[i] === ',') delay = 200;
+                await new Promise(r => setTimeout(r, delay));
+            }
+            
+            isGladosTyping = false;
+            icon.style.opacity = '0';
+            setTimeout(() => {
+                textBox.textContent = "";
+                if (gladosCallback) {
+                    let cb = gladosCallback;
+                    gladosCallback = null;
+                    cb();
+                }
+            }, 2000);
+        }
+
+        function startTestTrack() {
+            document.getElementById('puzzle-stage').innerHTML = '';
+            gladosSpeak("Welcome to the Aperture Science Computer-Aided Enrichment Center. Please allocate exactly 4 Petabytes of data into the main buffer. You only have a 5-Petabyte and a 3-Petabyte drive.", initWaterJug);
+        }
+
+        // PUZZLE 1: DATA BUFFER (WATER JUG)
+        let jug5 = 0;
+        let jug3 = 0;
+
+        function initWaterJug() {
+            testPhase = 1;
+            jug5 = 0; jug3 = 0;
+            
+            document.getElementById('puzzle-stage').innerHTML = `
+                <div style="font-size: 1.2rem; margin-bottom: 20px;">TARGET: 4 PB</div>
+                <div class="jug-area">
+                    <div class="jug-container">
+                        <div class="jug jug-5"><div class="jug-fill" id="fill-5" style="height: 0%;"></div></div>
+                        <div style="font-weight: bold;">5 PB</div>
+                        <div class="jug-controls">
+                            <button class="jug-btn" onclick="jugAction('fill', 5)">FILL</button>
+                            <button class="jug-btn" onclick="jugAction('empty', 5)">EMPTY</button>
+                        </div>
+                    </div>
+                    
+                    <button class="jug-btn" style="margin-bottom: 30px;" onclick="jugAction('transfer', 5, 3)">5 ➜ 3</button>
+                    <button class="jug-btn" style="margin-bottom: 30px;" onclick="jugAction('transfer', 3, 5)">3 ➜ 5</button>
+
+                    <div class="jug-container">
+                        <div class="jug jug-3"><div class="jug-fill" id="fill-3" style="height: 0%;"></div></div>
+                        <div style="font-weight: bold;">3 PB</div>
+                        <div class="jug-controls">
+                            <button class="jug-btn" onclick="jugAction('fill', 3)">FILL</button>
+                            <button class="jug-btn" onclick="jugAction('empty', 3)">EMPTY</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function jugAction(action, from, to) {
+            if(testPhase !== 1) return;
+            if (window.gladosSynth) window.gladosSynth.triggerAttackRelease("C4", "32n");
+
+            if (action === 'fill') {
+                if (from === 5) jug5 = 5;
+                if (from === 3) jug3 = 3;
+            } else if (action === 'empty') {
+                if (from === 5) jug5 = 0;
+                if (from === 3) jug3 = 0;
+            } else if (action === 'transfer') {
+                if (from === 5 && to === 3) {
+                    let amount = Math.min(jug5, 3 - jug3);
+                    jug5 -= amount; jug3 += amount;
+                } else if (from === 3 && to === 5) {
+                    let amount = Math.min(jug3, 5 - jug5);
+                    jug3 -= amount; jug5 += amount;
+                }
+            }
+            updateJugUI();
+            checkJugWin();
+        }
+
+        function updateJugUI() {
+            document.getElementById('fill-5').style.height = `${(jug5 / 5) * 100}%`;
+            document.getElementById('fill-3').style.height = `${(jug3 / 3) * 100}%`;
+        }
+
+        function checkJugWin() {
+            if (jug5 === 4) {
+                testPhase = 0;
+                document.getElementById('puzzle-stage').innerHTML = '<div style="color: #00ff00; font-size: 2rem;">ALLOCATION COMPLETE</div>';
+                setTimeout(() => {
+                    gladosSpeak("Excellent. Now, please demonstrate sensory synchronization. Repeat the sequence exactly.", initSimon);
+                }, 2000);
+            }
+        }
+
+        // PUZZLE 2: SENSORY SYNC (SIMON SAYS)
+        let simonSeq = [];
+        let playerSeq = [];
+        let simonLevel = 1;
+        const simonNotes = ["C4", "E4", "G4", "C5"];
+
+        function initSimon() {
+            testPhase = 2;
+            simonSeq = []; playerSeq = []; simonLevel = 1;
+            
+            document.getElementById('puzzle-stage').innerHTML = `
+                <div style="font-size: 1.2rem; margin-bottom: 20px;" id="simon-status">WATCH THE SEQUENCE</div>
+                <div class="simon-grid">
+                    <div class="simon-btn" id="simon-0" onclick="clickSimon(0)"></div>
+                    <div class="simon-btn" id="simon-1" onclick="clickSimon(1)"></div>
+                    <div class="simon-btn" id="simon-2" onclick="clickSimon(2)"></div>
+                    <div class="simon-btn" id="simon-3" onclick="clickSimon(3)"></div>
+                </div>
+            `;
+            setTimeout(nextSimonLevel, 1000);
+        }
+
+        async function nextSimonLevel() {
+            playerSeq = [];
+            document.getElementById('simon-status').textContent = `SEQUENCE: ${simonLevel} / 5`;
+            simonSeq.push(Math.floor(Math.random() * 4));
+            
+            // Lock inputs while playing
+            document.querySelectorAll('.simon-btn').forEach(b => b.style.pointerEvents = 'none');
+            
+            for (let i = 0; i < simonSeq.length; i++) {
+                await new Promise(r => setTimeout(r, 600));
+                flashSimon(simonSeq[i]);
+            }
+            
+            // Unlock inputs
+            document.querySelectorAll('.simon-btn').forEach(b => b.style.pointerEvents = 'auto');
+            document.getElementById('simon-status').textContent = `YOUR TURN`;
+        }
+
+        function flashSimon(idx) {
+            const btn = document.getElementById(`simon-${idx}`);
+            btn.classList.add('active');
+            if (window.gladosSynth) window.gladosSynth.triggerAttackRelease(simonNotes[idx], "8n");
+            setTimeout(() => btn.classList.remove('active'), 300);
+        }
+
+        function clickSimon(idx) {
+            if(testPhase !== 2) return;
+            flashSimon(idx);
+            playerSeq.push(idx);
+
+            // Check if correct so far
+            if (playerSeq[playerSeq.length - 1] !== simonSeq[playerSeq.length - 1]) {
+                // Failed
+                if (window.gladosSynth) window.gladosSynth.triggerAttackRelease("C3", "2n");
+                document.getElementById('simon-status').textContent = `FAILED. RESTARTING...`;
+                document.querySelectorAll('.simon-btn').forEach(b => b.style.pointerEvents = 'none');
+                setTimeout(initSimon, 1500);
+                return;
+            }
+
+            // Completed the sequence
+            if (playerSeq.length === simonSeq.length) {
+                document.querySelectorAll('.simon-btn').forEach(b => b.style.pointerEvents = 'none');
+                simonLevel++;
+                if (simonLevel > 5) {
+                    testPhase = 0;
+                    document.getElementById('puzzle-stage').innerHTML = '<div style="color: #00ff00; font-size: 2rem;">SYNCHRONIZATION COMPLETE</div>';
+                    setTimeout(() => {
+                        gladosSpeak("Motor skills seem adequate. Initiating live-fire target calibration. You have 15 seconds.", initTargeting);
+                    }, 2000);
+                } else {
+                    document.getElementById('simon-status').textContent = `CORRECT...`;
+                    setTimeout(nextSimonLevel, 1000);
+                }
+            }
+        }
+
+        // PUZZLE 3: LIVE FIRE TARGETING
+        let targetScore = 0;
+        let targetInterval;
+        let targetTimer;
+        let targetTimeLeft = 15;
+
+        function initTargeting() {
+            testPhase = 3; targetScore = 0; targetTimeLeft = 15;
+            document.getElementById('puzzle-stage').innerHTML = `
+                <div style="display:flex; justify-content: space-between; width: 100%; font-size: 1.2rem; margin-bottom: 10px;">
+                    <span id="tgt-score">TARGETS: 0 / 10</span>
+                    <span id="tgt-time" style="color: #ffaa00;">TIME: 15s</span>
+                </div>
+                <div class="target-area" id="target-area"></div>
+            `;
+            spawnTarget();
+            targetTimer = setInterval(() => {
+                targetTimeLeft--;
+                const timeEl = document.getElementById('tgt-time');
+                if(timeEl) timeEl.textContent = `TIME: ${targetTimeLeft}s`;
+                
+                if (targetTimeLeft <= 3 && timeEl) timeEl.style.color = '#ff4444';
+                
+                if (targetTimeLeft <= 0) {
+                    clearInterval(targetTimer); clearTimeout(targetInterval);
+                    document.getElementById('target-area').innerHTML = '<div style="color: #ff4444; font-size: 2rem; text-align: center; margin-top: 100px;">CALIBRATION FAILED</div>';
+                    if(window.gladosSynth) window.gladosSynth.triggerAttackRelease("C3", "2n");
+                    setTimeout(initTargeting, 2500);
+                }
+            }, 1000);
+        }
+
+        function spawnTarget() {
+            if(testPhase !== 3) return;
+            const area = document.getElementById('target-area');
+            if(!area) return;
+            area.innerHTML = ''; // Clear old targets
+            
+            const tgt = document.createElement('div');
+            tgt.className = 'ap-target';
+            // Area is 100% wide (approx 500px), 250px high. Sub 40px for target size.
+            tgt.style.left = Math.floor(Math.random() * (area.offsetWidth - 40)) + 'px';
+            tgt.style.top = Math.floor(Math.random() * (area.offsetHeight - 40)) + 'px';
+            
+            tgt.onmousedown = (e) => clickTarget(e);
+            area.appendChild(tgt);
+            
+            // Re-spawn rapidly if they don't click it
+            targetInterval = setTimeout(spawnTarget, 800);
+        }
+
+        function clickTarget(e, cheat=false) {
+            if (cheat) { targetScore = 10; }
+            else {
+                targetScore++;
+                if(window.gladosSynth) window.gladosSynth.triggerAttackRelease("C5", "32n");
+                clearTimeout(targetInterval);
+            }
+            
+            if (targetScore >= 10) {
+                clearInterval(targetTimer); clearTimeout(targetInterval);
+                testPhase = 0;
+                document.getElementById('puzzle-stage').innerHTML = '<div style="color: #00ff00; font-size: 2rem;">CALIBRATION COMPLETE</div>';
+                setTimeout(() => {
+                    gladosSpeak("Surprisingly adequate. Let us move on to applied physics and load balancing.", initWeights);
+                }, 2000);
+            } else {
+                document.getElementById('tgt-score').textContent = `TARGETS: ${targetScore} / 10`;
+                spawnTarget(); // Immediately spawn next
+            }
+        }
+
+        // PUZZLE 4: WEIGHT DISTRIBUTION
+        function initWeights() {
+            testPhase = 4;
+            document.getElementById('puzzle-stage').innerHTML = `
+                <div style="font-size: 1.4rem; margin-bottom: 5px; text-align: center; font-weight: bold;">LOAD BALANCING PROTOCOL</div>
+                <div style="font-size: 1rem; margin-bottom: 20px; text-align: center; opacity: 0.8;">
+                    Target Weight: 15 Turrets.<br>
+                    (Must use the minimum amount of total cubes).
+                </div>
+                <div class="weight-grid">
+                    <div style="text-align: center;">
+                        <svg viewBox="0 0 100 100" style="width: 70px; stroke: var(--ap-amber); fill: none; stroke-width: 4;"><rect x="20" y="20" width="60" height="60"/><circle cx="50" cy="50" r="15"/></svg>
+                        <div style="margin-top: 5px;">Companion Cube<br>(6 Turrets)</div>
+                        <input type="number" id="cc-input" value="0" min="0" max="10" class="weight-input">
+                    </div>
+                    <div style="font-size: 3rem; margin-top: -20px;">+</div>
+                    <div style="text-align: center;">
+                        <svg viewBox="0 0 100 100" style="width: 70px; stroke: var(--ap-amber); fill: none; stroke-width: 4;"><rect x="20" y="20" width="60" height="60"/><line x1="20" y1="20" x2="80" y2="80"/><line x1="80" y1="20" x2="20" y2="80"/></svg>
+                        <div style="margin-top: 5px;">Storage Cube<br>(3 Turrets)</div>
+                        <input type="number" id="sc-input" value="0" min="0" max="10" class="weight-input">
+                    </div>
+                </div>
+                <button class="weight-btn" onclick="checkWeights()">SUBMIT LOAD</button>
+                <div id="weight-error" style="color: #ff4444; margin-top: 10px; min-height: 20px; font-weight: bold;"></div>
+            `;
+        }
+
+        function checkWeights() {
+            if(testPhase !== 4) return;
+            let cc = parseInt(document.getElementById('cc-input').value) || 0;
+            let sc = parseInt(document.getElementById('sc-input').value) || 0;
+            
+            let totalWeight = (cc * 6) + (sc * 3);
+            let totalCubes = cc + sc;
+            
+            // Correct answer: 2 Companion Cubes (12) + 1 Storage Cube (3) = 15 total weight. Min cubes = 3.
+            if (totalWeight === 15 && totalCubes === 3) {
+                testPhase = 0;
+                if(window.gladosSynth) window.gladosSynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n");
+                document.getElementById('puzzle-stage').innerHTML = '<div style="color: #00ff00; font-size: 2rem;">LOAD BALANCED</div>';
+                setTimeout(() => {
+                    gladosSpeak("You are doing too well. I am initiating the neurotoxin emitters to re-balance the test parameters. Use your Subject ID and assigned Chamber Number. Good luck.", initNeurotoxin);
+                }, 3000);
+            } else {
+                if(window.gladosSynth) window.gladosSynth.triggerAttackRelease("C3", "16n");
+                let err = document.getElementById('weight-error');
+                if (totalWeight !== 15) err.textContent = `ERR: Current load is ${totalWeight}, target is 15.`;
+                else err.textContent = "ERR: Sub-optimal configuration. Use fewer total cubes.";
+            }
+        }
+
+        // PUZZLE 5: NEUROTOXIN
+        let neuroTime = 180;
+        let neuroTimerInterval;
+        let currentNeuroInput = "";
+
+        function initNeurotoxin() {
+            testPhase = 5;
+            currentNeuroInput = "";
+            document.getElementById('neuro-overlay').style.display = 'block';
+            
+            if (audioInit && window.gladosSynth) {
+                const alarm = new Tone.Oscillator(400, "square").toDestination().start();
+                alarm.volume.value = -15;
+                const lfo = new Tone.LFO("4n", 400, 600).start();
+                lfo.connect(alarm.frequency);
+                window.neuroAlarm = alarm;
+                window.neuroLfo = lfo;
+            }
+
+            document.getElementById('puzzle-stage').innerHTML = `
+                <div style="color: #ff4444; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; animation: pulseRed 1s infinite;">NEUROTOXIN PURGE INITIATED</div>
+                <div style="color: #ff4444; font-size: 2rem; margin-bottom: 20px;" id="neuro-timer">03:00</div>
+                <div style="font-size: 1.2rem; margin-bottom: 10px;">ENTER OVERRIDE CODE:</div>
+                <div style="background: rgba(255,0,0,0.1); border: 2px solid var(--ap-amber); width: 200px; height: 40px; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; letter-spacing: 5px;" id="neuro-display"></div>
+                <div class="n-keypad">
+                    <button class="n-key" onclick="neuroKey(1)">1</button>
+                    <button class="n-key" onclick="neuroKey(2)">2</button>
+                    <button class="n-key" onclick="neuroKey(3)">3</button>
+                    <button class="n-key" onclick="neuroKey(4)">4</button>
+                    <button class="n-key" onclick="neuroKey(5)">5</button>
+                    <button class="n-key" onclick="neuroKey(6)">6</button>
+                    <button class="n-key" onclick="neuroKey(7)">7</button>
+                    <button class="n-key" onclick="neuroKey(8)">8</button>
+                    <button class="n-key" onclick="neuroKey(9)">9</button>
+                    <button class="n-key wide" onclick="neuroKey(0)">0</button>
+                </div>
+            `;
+
+            neuroTime = 180;
+            neuroTimerInterval = setInterval(() => {
+                neuroTime--;
+                let m = Math.floor(neuroTime / 60).toString().padStart(2, '0');
+                let s = (neuroTime % 60).toString().padStart(2, '0');
+                const timerEl = document.getElementById('neuro-timer');
+                if(timerEl) timerEl.textContent = `${m}:${s}`;
+
+                if (neuroTime <= 0) {
+                    clearInterval(neuroTimerInterval);
+                    document.getElementById('puzzle-stage').innerHTML = '<div style="color: #ff4444; font-size: 2rem;">SUBJECT DECEASED.</div>';
+                    if (window.neuroAlarm) { window.neuroAlarm.stop(); window.neuroLfo.dispose(); }
+                    setTimeout(() => {
+                        document.getElementById('neuro-overlay').style.display = 'none';
+                    }, 3000);
+                }
+            }, 1000);
+        }
+
+        function neuroKey(val) {
+            if (testPhase !== 5) return;
+            if (window.gladosSynth) window.gladosSynth.triggerAttackRelease("C5", "32n");
+            if (currentNeuroInput.length < 5) {
+                currentNeuroInput += val;
+                document.getElementById('neuro-display').textContent = currentNeuroInput;
+                if (currentNeuroInput.length === 5) {
+                    setTimeout(checkNeuroCode, 300);
+                }
+            }
+        }
+
+        function checkNeuroCode() {
+            let display = document.getElementById('neuro-display');
+            let inputToCheck = display ? display.textContent : currentNeuroInput; // Allows J3LLYBEAN bypass
+
+            if (inputToCheck === '81114') {
+                clearInterval(neuroTimerInterval);
+                testingComplete = true;
+                document.getElementById('neuro-overlay').style.display = 'none';
+                if (window.neuroAlarm) { window.neuroAlarm.stop(); window.neuroLfo.dispose(); }
+                
+                // Safely trigger the victory chord now that it's a PolySynth
+                if (window.gladosSynth) window.gladosSynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n");
+                
+                document.getElementById('puzzle-stage').innerHTML = `
+                    <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold; margin-bottom: 20px;">MANUAL OVERRIDE ACCEPTED</div>
+                    <div style="color: var(--ap-amber); font-size: 1.5rem; text-align: center; margin-top: 30px;">
+                        <div style="font-size: 4rem; font-weight: bold; color: #00ff00; text-shadow: 0 0 20px #00ff00; margin-bottom: 20px;">GOOD JOB!</div>
+                        That was a trick.<br>
+                        There is no code. There is no prize.<br>
+                        Please close this window.
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    gladosSpeak("Manual override accepted. You survived. Here is your reward: Good job. Now please close this window and stop wasting my time.", null);
+                }, 1000);
+            } else {
+                if (window.gladosSynth) window.gladosSynth.triggerAttackRelease("C3", "8n");
+                currentNeuroInput = "";
+                if(display) {
+                    display.textContent = "ERR";
+                    setTimeout(() => display.textContent = "", 500);
+                }
+            }
+        }
+
+    </script>
+</body>
+</html>
