@@ -462,7 +462,7 @@
             { text: "========================================", delay: 100 },
             { text: "FIREWALL PROTOCOL: QUANTUM ENCRYPTION ALIGNMENT", delay: 500 },
             { text: "The mainframe has generated a 4-digit encryption key.", delay: 50 },
-            { text: "- Digits range from 1 to 6.", delay: 50 },
+            { text: "- Digits range from 1 to 5.", delay: 50 },
             { text: "- No duplicate digits are used.", delay: 50 },
             { text: "", delay: 50 },
             { text: "Match the encryption key to bypass the firewall.", delay: 50 },
@@ -483,7 +483,7 @@
         let skipBoot = false;
 
         function generateCode() {
-            let digits = ['1','2','3','4','5','6'];
+            let digits = ['1','2','3','4','5'];
             let code = "";
             for(let i=0; i<4; i++) {
                 let index = Math.floor(Math.random() * digits.length);
@@ -566,8 +566,8 @@
                 return;
             }
 
-            if (!/^[1-6]{4}$/.test(cmd)) {
-                await typeLine("INVALID FORMAT: Enter exactly 4 digits using numbers 1-6.");
+            if (!/^[1-5]{4}$/.test(cmd)) {
+                await typeLine("INVALID FORMAT: Enter exactly 4 digits using numbers 1-5.");
                 return;
             }
             
@@ -610,7 +610,7 @@
                     await typeLine("Resetting encryption key...", 25);
                     secretCode = generateCode(); attemptsLeft = 10;
                     await typeLine("");
-                    await typeLine("New 4-digit key (1-6) generated. Please try to use your brain this time. You have 10 attempts.");
+                    await typeLine("New 4-digit key (1-5) generated. Please try to use your brain this time. You have 10 attempts.");
                 } else {
                     await typeLine(`> ATTEMPTS REMAINING: ${attemptsLeft}`);
                 }
