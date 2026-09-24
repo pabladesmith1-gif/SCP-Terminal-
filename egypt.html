@@ -1209,6 +1209,7 @@
                 if (globalCheatBuffer.length > 9) globalCheatBuffer = globalCheatBuffer.slice(-9);
                 
                 if (globalCheatBuffer === 'J3LLYBEAN') {
+                    e.preventDefault();
                     globalCheatBuffer = ""; // Reset buffer after activation
                     
                     // Phase 1: Tablet is active
@@ -1227,18 +1228,6 @@
                         magician.value = 'J3LLYBEAN';
                         checkSandCodes();
                     }
-                    // Phase 3: Void Rainbow is active (and Shadow Game hasn't spawned yet)
-                    else if (document.getElementById('pharaoh-chamber-phase').style.display !== 'none' && !document.getElementById('shadow-code')) {
-                        if (clickedSequence.length < 7) {
-                            clickedSequence = [];
-                            document.querySelectorAll('.hidden-glyph').forEach(g => g.className = 'hidden-glyph');
-                            const glyphs = document.querySelectorAll('.hidden-glyph');
-                            for (let i = 0; i < 7; i++) {
-                                let g = Array.from(glyphs).find(el => parseInt(el.getAttribute('data-index')) === i);
-                                setTimeout(() => handleRainbow(g), i * 200);
-                            }
-                        }
-                    }
                     // Phase 4: Shadow Game Input is visible
                     else if (document.getElementById('shadow-code') && !document.getElementById('shadow-code').readOnly) {
                         document.getElementById('shadow-code').value = 'J3LLYBEAN';
@@ -1252,6 +1241,19 @@
                             checkExodiaLimb(input);
                         });
                     }
+                    // Phase 3: Void Rainbow is active
+                    else if (document.getElementById('pharaoh-chamber-phase').style.display !== 'none' && document.querySelectorAll('.hidden-glyph').length === 7) {
+                        if (clickedSequence.length < 7) {
+                            clickedSequence = [];
+                            document.querySelectorAll('.hidden-glyph').forEach(g => g.className = 'hidden-glyph');
+                            const glyphs = document.querySelectorAll('.hidden-glyph');
+                            for (let i = 0; i < 7; i++) {
+                                let g = Array.from(glyphs).find(el => parseInt(el.getAttribute('data-index')) === i);
+                                setTimeout(() => handleRainbow(g), i * 200);
+                            }
+                        }
+                    }
+
                 }
             }
         });
