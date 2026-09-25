@@ -1,1 +1,2334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCP Foundation - Secure Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Base typography for the classic feel */
+        body {
+            font-family: 'Tahoma', 'Segoe UI', Arial, sans-serif;
+            background-color: #121212; /* Dark, secure facility background */
+            overflow: hidden; /* Prevent scrolling on desktop */
+            margin: 0;
+            user-select: none; /* Prevent text selection for a more native feel */
+        }
 
+        /* SCP Background Watermark */
+        .desktop-bg-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.1;
+            filter: invert(1);
+            pointer-events: none;
+            width: 400px;
+            height: 400px;
+            z-index: 0;
+        }
+
+        /* Classic 3D Borders */
+        .win-border-outset {
+            box-shadow: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+            background-color: #c0c0c0;
+        }
+
+        .win-border-inset {
+            box-shadow: inset -1px -1px #fff, inset 1px 1px #000, inset -2px -2px #dfdfdf, inset 2px 2px #808080;
+            background-color: #fff;
+        }
+
+        .win-button {
+            box-shadow: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+            background-color: #c0c0c0;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        .win-button:active, .win-button.active {
+            box-shadow: inset -1px -1px #fff, inset 1px 1px #000, inset -2px -2px #dfdfdf, inset 2px 2px #808080;
+            padding: 3px 5px 1px 7px;
+        }
+
+        /* SCP Theme Title bar gradient */
+        .title-bar {
+            background: linear-gradient(to right, #6b0000, #1a0000);
+            color: white;
+            font-weight: bold;
+            padding: 2px 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: default;
+        }
+
+        .title-bar.inactive {
+            background: #808080;
+            color: #c0c0c0;
+        }
+
+        /* Window Control Buttons */
+        .title-bar-button {
+            width: 16px;
+            height: 14px;
+            background-color: #c0c0c0;
+            box-shadow: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: black;
+            cursor: pointer;
+            margin-left: 2px;
+        }
+        
+        .title-bar-button:active {
+            box-shadow: inset -1px -1px #fff, inset 1px 1px #000, inset -2px -2px #dfdfdf, inset 2px 2px #808080;
+            padding-top: 1px;
+            padding-left: 1px;
+        }
+
+        /* Desktop Icons */
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+            margin: 10px;
+            cursor: pointer;
+            padding: 2px;
+            z-index: 10;
+        }
+
+        .desktop-icon-text {
+            color: white;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 4px;
+            padding: 1px 3px;
+        }
+
+        .desktop-icon:active .desktop-icon-text, .desktop-icon.selected .desktop-icon-text {
+            background-color: #6b0000;
+            border: 1px dotted yellow;
+        }
+        
+        /* Start Menu styles */
+        .start-menu-banner {
+            background: linear-gradient(to top, #6b0000, #1a0000);
+            color: white;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            padding: 4px;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .start-menu-item {
+            padding: 6px 16px 6px 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .start-menu-item:hover {
+            background-color: #6b0000;
+            color: white;
+        }
+        
+        /* Scrollbars */
+        textarea::-webkit-scrollbar {
+            width: 16px;
+            background: #dfdfdf;
+            border-left: 1px solid #fff;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background-color: #c0c0c0;
+            box-shadow: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+        }
+        textarea::-webkit-scrollbar-button {
+            background-color: #c0c0c0;
+            height: 16px;
+            box-shadow: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+        }
+        
+        .terminal-text {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000;
+            color: #00ff00;
+        }
+
+        /* Boot Screen */
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: black;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 9999;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.8s ease-in-out;
+            font-size: 14px;
+        }
+
+        /* Aperture Intercept Styles */
+        @keyframes crt-flicker {
+            0% { opacity: 0.96; }
+            5% { opacity: 0.88; }
+            10% { opacity: 0.98; }
+            15% { opacity: 1; }
+            100% { opacity: 1; }
+        }
+        #aperture-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #0a0a0a;
+            color: #ffb000;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 10000;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            animation: crt-flicker 0.15s infinite;
+            transition: opacity 0.8s;
+        }
+        #qte-container { 
+            display: none; 
+            position: absolute; 
+            bottom: 40px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            flex-direction: column; 
+            align-items: center; 
+            width: 90%; 
+            max-width: 600px; 
+            z-index: 50; 
+            background: rgba(0,0,0,0.85); 
+            padding: 1.25rem; 
+            border-radius: 0.75rem; 
+            border: 1px solid rgba(255, 176, 0, 0.4); 
+            backdrop-filter: blur(4px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+
+        /* Background Code Wall */
+        #code-wall {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 10;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+        }
+        .code-token {
+            color: #ffb000;
+            opacity: 1;
+            margin-right: 8px;
+            margin-bottom: 4px;
+            display: inline-block;
+            font-size: 14px;
+            transition: opacity 0.3s;
+            user-select: none;
+        }
+
+        /* Glitch Nodes */
+        .glitch-active {
+            cursor: crosshair;
+            opacity: 1 !important;
+            z-index: 100;
+            position: relative;
+        }
+
+        @keyframes glitch-1 { 0%, 100% { opacity: 1; transform: translate(0); } 50% { opacity: 0.7; transform: translate(-1px, 1px); } }
+        @keyframes glitch-2 { 0%, 100% { transform: skew(0deg); } 20% { transform: skew(-5deg); text-shadow: 2px 0 red; } 40% { transform: skew(5deg); text-shadow: -2px 0 cyan; } }
+        @keyframes glitch-3 { 0%, 100% { transform: translate(0) skew(0); } 25% { transform: translate(-2px, 1px) skew(10deg); text-shadow: 3px 0 red, -3px 0 blue; } }
+        @keyframes glitch-4 { 0%, 100% { transform: scale(1); text-shadow: 0 0 5px red; } 50% { transform: scale(1.15) skew(-10deg); text-shadow: 4px 0 red, -4px 0 cyan; } }
+
+        .glitch-level-1 { animation: glitch-1 0.4s infinite; color: #ffb000; }
+        .glitch-level-2 { animation: glitch-2 0.3s infinite; color: #ff8800; }
+        .glitch-level-3 { animation: glitch-3 0.2s infinite; color: #ff4400; }
+        .glitch-level-4 { animation: glitch-4 0.15s infinite; color: #ff0000; background: rgba(255,0,0,0.25); }
+        .glitch-level-5 { animation: glitch-4 0.05s infinite; color: #ffffff; background: rgba(255,0,0,0.6); }
+
+        @keyframes pop {
+            0% { transform: scale(1); color: #00ff00; }
+            50% { transform: scale(2.2); color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+            100% { transform: scale(1); color: #ffb000; } 
+        }
+        .popped { animation: pop 0.35s forwards; pointer-events: none; }
+
+        @keyframes explode {
+            0% { transform: scale(1); color: red; }
+            50% { transform: scale(2.5) rotate(15deg); color: white; background: red; text-shadow: 0 0 20px red;}
+            100% { transform: scale(1); color: #ffb000; } 
+        }
+        .exploded { animation: explode 0.5s forwards; pointer-events: none; }
+
+        /* CRT Overlay */
+        .crt-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            z-index: 9998;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* Conduit rotation transition */
+        .circuit-tile-svg {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        /* OLD_DATA Corruption & Glitch FX */
+        @keyframes intense-glitch {
+            0% { transform: translate(0); filter: hue-rotate(0deg) contrast(1); }
+            10% { transform: translate(-8px, 4px) skewX(8deg); filter: invert(0.8) hue-rotate(90deg); }
+            20% { transform: translate(6px, -6px) skewY(-6deg); filter: contrast(3) saturate(3); }
+            30% { transform: translate(-10px, -4px); filter: invert(1); }
+            40% { transform: translate(8px, 6px) skewX(-12deg); filter: hue-rotate(180deg); }
+            50% { transform: scale(1.05) translate(4px, -2px); filter: contrast(4) brightness(1.5); }
+            60% { transform: translate(-6px, 8px) skewY(10deg); filter: invert(0.5); }
+            70% { transform: translate(10px, -8px); filter: hue-rotate(270deg); }
+            80% { transform: translate(-4px, 4px) scale(0.98); filter: invert(1) contrast(2); }
+            90% { transform: translate(6px, -2px) skewX(4deg); filter: contrast(5); }
+            100% { transform: translate(0); filter: hue-rotate(360deg); }
+        }
+
+        .screen-corrupted {
+            animation: intense-glitch 0.08s infinite !important;
+            pointer-events: none;
+        }
+
+        /* OLD_DATA Boot Transition Screen */
+        #olddata-boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #030303;
+            color: #ef4444;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 99999;
+            padding: 30px;
+            box-sizing: border-box;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col relative" id="desktop">
+
+    <!-- CRT Overlay Layer -->
+    <div id="crt-layer" class="crt-overlay pointer-events-none"></div>
+
+    <!-- Aperture Intercept Screen -->
+    <div id="aperture-screen">
+        <div id="code-wall"></div>
+        <div id="aperture-text" class="text-xl md:text-2xl font-bold tracking-wider z-20 max-w-2xl px-4"></div>
+        <div id="qte-container">
+            <div id="qte-instructions" class="text-xs font-bold font-mono mb-2 text-amber-400 tracking-wider">CLICK CORRUPTED CODE NODES TO PURGE</div>
+            <div class="w-full bg-slate-900 border border-amber-500/50 h-4 rounded-full overflow-hidden p-0.5">
+                <div id="tug-of-war-progress" class="bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 h-full rounded-full transition-all duration-150" style="width: 50%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Old Data Boot Transition Screen -->
+    <div id="olddata-boot-screen">
+        <div class="text-xs text-red-600 mb-2 border-b border-red-900 pb-1 font-bold tracking-widest flex justify-between">
+            <span>[CRITICAL KERNEL CORRUPTION // CABIN PROTOCOL]</span>
+            <span class="animate-pulse">SECTOR_0x40 INJECTED</span>
+        </div>
+        <div id="olddata-boot-output" class="flex flex-col space-y-1 text-sm font-bold leading-relaxed text-red-400"></div>
+        <div id="olddata-redirect-link" class="mt-6 hidden">
+            <a href="cabin.html" class="px-4 py-2 bg-red-950 border border-red-500 text-red-200 text-xs font-mono rounded hover:bg-red-900 transition-colors inline-block cursor-pointer">
+                [ Manual Override: Click here to proceed to cabin.html ]
+            </a>
+        </div>
+    </div>
+
+    <!-- Boot Screen -->
+    <div id="boot-screen" style="display: none;">
+        <div id="boot-output" class="flex flex-col space-y-1"></div>
+    </div>
+
+    <!-- SCP Watermark -->
+    <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/SCP_Foundation_%28emblem%29.svg" alt="SCP Foundation Logo" class="desktop-bg-logo">
+
+    <div class="flex-1 relative w-full h-full p-2 flex flex-col items-start content-start flex-wrap z-0" id="desktop-area">
+        
+        <!-- SCiPnet Node Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('terminal')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="2" y="4" width="28" height="20" fill="#c0c0c0" stroke="black"/>
+                <rect x="4" y="6" width="24" height="14" fill="#111" stroke="black"/>
+                <text x="16" y="16" font-family="Courier" font-size="10" fill="#0f0" text-anchor="middle" font-weight="bold">SCiPnet</text>
+                <rect x="12" y="24" width="8" height="2" fill="#c0c0c0" stroke="black"/>
+                <rect x="8" y="26" width="16" height="2" fill="#c0c0c0" stroke="black"/>
+                <circle cx="25" cy="21" r="1.5" fill="red" />
+            </svg>
+            <span class="desktop-icon-text">SCiPnet Node</span>
+        </div>
+
+        <!-- Incident Log Icon (Notepad) -->
+        <div class="desktop-icon" ondblclick="openWindow('notepad')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="6" y="2" width="20" height="28" fill="#ffffe0" stroke="black"/>
+                <rect x="6" y="2" width="20" height="6" fill="#6b0000" stroke="black"/>
+                <text x="16" y="16" font-family="Arial" font-size="5" fill="red" font-weight="bold" text-anchor="middle" transform="rotate(-30 16 16)">CLASSIFIED</text>
+                <line x1="10" y1="20" x2="22" y2="20" stroke="black" stroke-width="1.5"/>
+                <line x1="10" y1="24" x2="18" y2="24" stroke="black" stroke-width="1.5"/>
+            </svg>
+            <span class="desktop-icon-text">Incident Log</span>
+        </div>
+
+        <!-- Secure Inbox Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('inbox')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="4" y="8" width="24" height="16" fill="#fff" stroke="black"/>
+                <polyline points="4,8 16,16 28,8" fill="none" stroke="black" stroke-width="1.5"/>
+                <rect x="12" y="13" width="8" height="5" fill="#c0c0c0" stroke="black" stroke-width="1"/>
+                <text x="16" y="17" font-family="Arial" font-size="4" fill="red" font-weight="bold" text-anchor="middle">O5</text>
+            </svg>
+            <span class="desktop-icon-text">Secure Inbox</span>
+        </div>
+        
+        <!-- Quarantine Folder Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('quarantine')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <path d="M2,8 L10,8 L14,12 L30,12 L30,26 L2,26 Z" fill="#ffcc00" stroke="black" stroke-width="1"/>
+                <path d="M2,12 L30,12" stroke="black" stroke-width="1"/>
+                <circle cx="16" cy="18" r="4" fill="black"/>
+                <circle cx="16" cy="18" r="3" fill="#ffcc00"/>
+                <path d="M16,15 L18,17 L14,17 Z" fill="black"/>
+                <path d="M16,21 L18,19 L14,19 Z" fill="black"/>
+            </svg>
+            <span class="desktop-icon-text">Quarantine</span>
+        </div>
+
+        <!-- Recycle Bin Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('trash')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="7" y="5" width="18" height="3" fill="#808080" stroke="black" stroke-width="1"/>
+                <rect x="12" y="3" width="8" height="2" fill="#808080" stroke="black" stroke-width="1"/>
+                <polygon points="9,8 23,8 21,28 11,28" fill="#e0e0e0" stroke="black" stroke-width="1"/>
+                <line x1="13" y1="11" x2="13" y2="25" stroke="#444" stroke-width="1"/>
+                <line x1="16" y1="11" x2="16" y2="25" stroke="#444" stroke-width="1"/>
+                <line x1="19" y1="11" x2="19" y2="25" stroke="#444" stroke-width="1"/>
+            </svg>
+            <span class="desktop-icon-text">Recycle Bin</span>
+        </div>
+
+        <!-- Calculator Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('calc')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="5" y="3" width="22" height="26" fill="#c0c0c0" stroke="black" stroke-width="1.5" rx="1"/>
+                <rect x="8" y="6" width="16" height="5" fill="#a4b494" stroke="black" stroke-width="1"/>
+                <text x="22" y="10.5" font-family="monospace" font-size="4" fill="#000" text-anchor="end" font-weight="bold">1998</text>
+                <rect x="8" y="14" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="12.5" y="14" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="17" y="14" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="21" y="14" width="3" height="2.5" fill="#6b0000" stroke="black" stroke-width="0.5"/>
+                <rect x="8" y="18" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="12.5" y="18" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="17" y="18" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="21" y="18" width="3" height="2.5" fill="#000080" stroke="black" stroke-width="0.5"/>
+                <rect x="8" y="22" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="12.5" y="22" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="17" y="22" width="3" height="2.5" fill="#fff" stroke="black" stroke-width="0.5"/>
+                <rect x="21" y="22" width="3" height="2.5" fill="#000080" stroke="black" stroke-width="0.5"/>
+            </svg>
+            <span class="desktop-icon-text">Calculator</span>
+        </div>
+
+        <!-- Containment Lockbox (Safe.exe) Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('safe')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="4" y="4" width="24" height="24" fill="#3a3a3a" stroke="black" stroke-width="1.5" rx="2"/>
+                <rect x="7" y="7" width="18" height="18" fill="#505050" stroke="#222" stroke-width="1"/>
+                <circle cx="16" cy="16" r="6" fill="#c0c0c0" stroke="#111" stroke-width="1.5"/>
+                <circle cx="16" cy="16" r="2.5" fill="#111"/>
+                <line x1="16" y1="10" x2="16" y2="12" stroke="red" stroke-width="1.5"/>
+                <line x1="10" y1="16" x2="12" y2="16" stroke="black" stroke-width="1"/>
+                <line x1="20" y1="16" x2="22" y2="16" stroke="black" stroke-width="1"/>
+                <circle cx="9" cy="9" r="1" fill="#c0c0c0"/>
+                <circle cx="23" cy="9" r="1" fill="#c0c0c0"/>
+                <circle cx="9" cy="23" r="1" fill="#c0c0c0"/>
+                <circle cx="23" cy="23" r="1" fill="#c0c0c0"/>
+            </svg>
+            <span class="desktop-icon-text">Lockbox.exe</span>
+        </div>
+
+        <!-- Circuit Bypass (Power Grid Relay) Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('circuit')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="3" y="3" width="26" height="26" fill="#0f172a" stroke="#334155" stroke-width="1.5" rx="2"/>
+                <line x1="4" y1="10" x2="14" y2="10" stroke="#10b981" stroke-width="2"/>
+                <line x1="14" y1="10" x2="14" y2="22" stroke="#10b981" stroke-width="2"/>
+                <line x1="14" y1="22" x2="28" y2="22" stroke="#10b981" stroke-width="2"/>
+                <circle cx="14" cy="10" r="2.5" fill="#34d399"/>
+                <circle cx="14" cy="22" r="2.5" fill="#34d399"/>
+                <rect x="22" y="7" width="5" height="5" fill="#eab308" rx="1"/>
+            </svg>
+            <span class="desktop-icon-text">Circuit.exe</span>
+        </div>
+
+        <!-- Floppy Sector Extractor (Powered by Circuit Relay) Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('floppy')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <rect x="4" y="3" width="24" height="26" fill="#1e293b" stroke="#000" stroke-width="1.5" rx="1"/>
+                <rect x="8" y="3" width="16" height="11" fill="#e2e8f0" stroke="#000" stroke-width="1"/>
+                <rect x="11" y="5" width="4" height="7" fill="#0284c7"/>
+                <rect x="8" y="19" width="16" height="9" fill="#059669" stroke="#000" stroke-width="1" rx="1"/>
+                <circle cx="16" cy="23.5" r="2.5" fill="#10b981"/>
+            </svg>
+            <span class="desktop-icon-text">FloppyDump.exe</span>
+        </div>
+
+        <!-- Locked OLD_DATA Folder Icon -->
+        <div class="desktop-icon" ondblclick="openWindow('olddata')">
+            <svg viewBox="0 0 32 32" width="32" height="32">
+                <path d="M2,8 L10,8 L14,12 L30,12 L30,26 L2,26 Z" fill="#7f1d1d" stroke="#dc2626" stroke-width="1.5"/>
+                <path d="M2,12 L30,12" stroke="#dc2626" stroke-width="1"/>
+                <!-- Padlock -->
+                <rect x="12" y="17" width="8" height="7" fill="#f59e0b" stroke="#000" stroke-width="1" rx="1"/>
+                <path d="M14,17 L14,14 A2,2 0 0,1 18,14 L18,17" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+                <circle cx="16" cy="20" r="1" fill="#000"/>
+            </svg>
+            <span class="desktop-icon-text text-red-300 font-bold">OLD_DATA</span>
+        </div>
+    </div>
+
+    <!-- SCiPnet Terminal Window -->
+    <div id="terminal-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 8%; left: 16%; width: 560px; max-width: 95vw; height: 380px;" data-title="SCiPnet Terminal v3.1">
+        <div class="title-bar cursor-move" id="terminal-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs">SCiPnet Terminal - Site-19 Uplink</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('terminal')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('terminal')">X</div>
+            </div>
+        </div>
+        <div class="flex-1 p-2 bg-black flex flex-col font-mono text-xs overflow-hidden" id="terminal-content">
+            <div class="text-[#00ff00] mb-2 leading-relaxed">
+                SCP FOUNDATION SCiPnet NETWORK [NODE SITE-19]<br>
+                CLASSIFIED ARCHIVES - AUTHORIZED ACCESS ONLY<br>
+                TYPE 'HELP' FOR AVAILABLE COMMANDS.
+            </div>
+            <div id="cmd-history" class="text-[#00ff00] space-y-1 overflow-y-auto flex-1 mb-2"></div>
+            <div class="flex items-center text-[#00ff00]">
+                <span>C:\SCIPNET&gt;&nbsp;</span>
+                <input type="text" id="cmd-input" class="bg-black text-[#00ff00] outline-none flex-1 font-mono text-xs" autocomplete="off" spellcheck="false" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incident Log Window (Notepad) -->
+    <div id="notepad-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 10%; left: 20%; width: 450px; height: 320px;" data-title="SecurePad - Incident 096-1-A">
+        <div class="title-bar cursor-move" id="notepad-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs">SecurePad - INCIDENT_LOG_096.TXT</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('notepad')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('notepad')">X</div>
+            </div>
+        </div>
+        <!-- Menu Bar -->
+        <div class="flex text-xs py-0.5 px-1 space-x-3 bg-[#c0c0c0] border-b border-gray-400 select-none">
+            <span class="hover:bg-blue-800 hover:text-white px-1 cursor-pointer text-black"><u>F</u>ile</span>
+            <span class="hover:bg-blue-800 hover:text-white px-1 cursor-pointer text-black"><u>E</u>dit</span>
+            <span class="hover:bg-blue-800 hover:text-white px-1 cursor-pointer text-black"><u>S</u>earch</span>
+            <span class="hover:bg-blue-800 hover:text-white px-1 cursor-pointer text-black"><u>H</u>elp</span>
+        </div>
+        <!-- Notepad Content Area -->
+        <div class="flex-1 p-1 bg-[#c0c0c0] flex flex-col h-full">
+            <textarea id="notepad-content" class="win-border-inset w-full h-full p-2 text-xs font-mono outline-none resize-none leading-relaxed text-black" spellcheck="false">INCIDENT REPORT: 096-1-A
+CLEARANCE LEVEL: 4 (RESTRICTED)
+DOCUMENT DISPATCH SITE-19
+
+Containment breach occurred during scheduled cross-testing with an anomalous 3.5" floppy disk retrieved from an off-grid hunting cabin.
+
+Special Operative Note:
+Dr. Jack reported psychological distress originating from an internal minigame entity called "The Stoat". Entity reportedly communicates through audio distortion and system registry alterations.
+
+Directives:
+1. Do not place the disk into any networked drive without sandbox clearance.
+2. Terminal emergency unlock codes are restricted to senior site personnel.
+3. If the terminal displays "OLD_DATA", immediately sever all ethernet and modem lines.</textarea>
+        </div>
+        <div class="bg-[#c0c0c0] px-2 py-0.5 text-[10px] text-gray-700 border-t border-gray-300">
+            Lines: 15 | Col: 1 | ANSI | Foundation Archive
+        </div>
+    </div>
+
+    <!-- Secure Inbox Window -->
+    <div id="inbox-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 14%; left: 24%; width: 560px; max-width: 95vw; height: 380px;" data-title="Foundation Secure Mail">
+        <div class="title-bar cursor-move" id="inbox-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs">Secure Inbox - [Clearance Level 4]</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('inbox')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('inbox')">X</div>
+            </div>
+        </div>
+        <!-- Menu -->
+        <div class="flex text-xs py-0.5 px-2 space-x-4 bg-[#c0c0c0] border-b border-gray-400">
+            <span class="hover:underline cursor-pointer text-black"><u>F</u>ile</span>
+            <span class="hover:underline cursor-pointer text-black"><u>M</u>essage</span>
+            <span class="hover:underline cursor-pointer text-black"><u>V</u>iew</span>
+        </div>
+        <div class="flex-1 p-1 bg-[#c0c0c0] flex flex-col space-y-1 overflow-hidden">
+            <div class="win-border-inset bg-white h-36 overflow-y-auto text-xs">
+                <table class="w-full border-collapse text-left">
+                    <thead class="bg-gray-200 sticky top-0 border-b border-gray-400 select-none">
+                        <tr>
+                            <th class="p-1 border-r border-gray-300 w-8">!</th>
+                            <th class="p-1 border-r border-gray-300 w-32">From</th>
+                            <th class="p-1 border-r border-gray-300">Subject</th>
+                            <th class="p-1 w-20">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr class="hover:bg-blue-100 cursor-pointer text-black" onclick="showEmail(1)">
+                            <td class="p-1 text-center text-red-600 font-bold">!</td>
+                            <td class="p-1 font-semibold truncate">Dir. Vance</td>
+                            <td class="p-1 truncate">RE: Anomalous Floppy Disk</td>
+                            <td class="p-1 text-gray-500">10/24/98</td>
+                        </tr>
+                        <tr class="hover:bg-blue-100 cursor-pointer text-black" onclick="showEmail(2)">
+                            <td class="p-1 text-center text-blue-600">●</td>
+                            <td class="p-1 font-semibold truncate">Dr. Jack</td>
+                            <td class="p-1 truncate">The Stoat Card</td>
+                            <td class="p-1 text-gray-500">10/25/98</td>
+                        </tr>
+                        <tr class="hover:bg-blue-100 cursor-pointer text-black bg-red-50" onclick="showEmail(3)">
+                            <td class="p-1 text-center text-red-600 font-bold">⚠</td>
+                            <td class="p-1 font-semibold text-red-800 truncate">SYSADMIN</td>
+                            <td class="p-1 text-red-800 font-bold truncate">AUTOMATED: OLD_DATA WARNING</td>
+                            <td class="p-1 text-gray-500">10/26/98</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="email-content" class="win-border-inset bg-white flex-1 p-3 overflow-y-auto text-xs font-sans text-black">
+                <div class="text-gray-400 italic text-center mt-6">Select a dispatch from the list above to view transmission.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quarantine Viewer Window -->
+    <div id="quarantine-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 18%; left: 30%; width: 440px; height: 380px;" data-title="Quarantine Chamber">
+        <div class="title-bar cursor-move" id="quarantine-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="inline-block w-2.5 h-2.5 bg-yellow-400 rounded-sm mr-1"></span>
+                <span class="text-xs font-bold text-yellow-300">QUARANTINE CHAMBER - SECTOR 7G</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('quarantine')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('quarantine')">X</div>
+            </div>
+        </div>
+        <div class="flex-1 p-2 bg-[#c0c0c0] flex flex-col space-y-2">
+            <div class="win-border-inset bg-black flex-1 relative flex flex-col items-center justify-center p-3 text-center overflow-hidden">
+                <div class="border-2 border-amber-600 p-3 bg-amber-950/40 rounded flex flex-col items-center max-w-[240px]">
+                    <div class="text-amber-400 font-mono text-xs tracking-wider mb-2 font-bold">[ANOMALOUS CARD ARTIFACT]</div>
+                    <!-- Stoat Card Graphic -->
+                    <div class="w-28 h-40 bg-[#7c4d28] border-2 border-[#d97706] rounded p-1 flex flex-col justify-between items-center text-[#fef08a] font-mono shadow-lg relative">
+                        <div class="w-full flex justify-between text-[11px] font-bold px-1 text-black">
+                            <span>1</span>
+                            <span>🩸1</span>
+                        </div>
+                        <div class="w-20 h-20 bg-[#29170a] border border-[#a16207] flex flex-col items-center justify-center rounded">
+                            <span class="text-2xl animate-pulse">🦦</span>
+                            <span class="text-[9px] text-amber-200 mt-1 tracking-widest font-bold">STOAT</span>
+                        </div>
+                        <div class="w-full flex justify-between text-[11px] font-bold px-1 text-black">
+                            <span>3</span>
+                            <span>🦴</span>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-red-400 font-mono mt-2 animate-pulse font-bold">"Total misplay..."</div>
+                </div>
+            </div>
+            <div class="bg-gray-200 p-2 win-border-inset text-[11px] font-mono text-gray-800">
+                CONTAINMENT STATUS: <span class="text-red-700 font-bold">DIGITAL HAZARD CONTAINED</span><br>
+                Entity responds to terminal override command: <span class="bg-yellow-200 px-1 font-bold">LESHEYS_CABIN</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Site Settings Window -->
+    <div id="settings-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 22%; left: 34%; width: 340px; height: 260px;" data-title="Site Settings">
+        <div class="title-bar cursor-move" id="settings-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs">Site Settings</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('settings')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('settings')">X</div>
+            </div>
+        </div>
+        <div class="p-3 bg-[#c0c0c0] flex flex-col space-y-3 text-xs text-black">
+            <div class="win-border-outset p-2 bg-[#d8d8d8]">
+                <div class="font-bold mb-1">Terminal Desk Theme:</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button class="win-button text-xs" onclick="setBG('#121212')">Facility Dark</button>
+                    <button class="win-button text-xs" onclick="setBG('#008080')">Classic Teal</button>
+                    <button class="win-button text-xs" onclick="setBG('#450a0a')">Red Alert</button>
+                    <button class="win-button text-xs" onclick="setBG('#27272a')">Steel Gray</button>
+                </div>
+            </div>
+            <div class="win-border-outset p-2 bg-[#d8d8d8] flex items-center justify-between">
+                <div>
+                    <div class="font-bold">CRT Scanline Display</div>
+                    <div class="text-[10px] text-gray-600">Simulate cathode ray monitor</div>
+                </div>
+                <input type="checkbox" id="crt-toggle" onchange="toggleCRT()" class="w-4 h-4 cursor-pointer">
+            </div>
+            <div class="flex justify-end pt-1">
+                <button class="win-button w-20 font-bold" onclick="closeWindow('settings')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recycle Bin Window -->
+    <div id="trash-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 24%; left: 32%; width: 440px; height: 320px;" data-title="Recycle Bin">
+        <div class="title-bar cursor-move" id="trash-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs">Recycle Bin</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('trash')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('trash')">X</div>
+            </div>
+        </div>
+        <div class="flex text-xs py-1 px-2 space-x-3 bg-[#c0c0c0] border-b border-gray-400">
+            <span class="cursor-pointer hover:underline text-black" onclick="alertTrashPolicy()"><u>E</u>mpty Recycle Bin</span>
+            <span class="cursor-pointer hover:underline text-black" onclick="openWindow('notepad')"><u>R</u>estore All</span>
+        </div>
+        <div class="flex-1 p-2 bg-white win-border-inset overflow-y-auto m-1 text-black font-sans text-xs">
+            <div class="grid grid-cols-3 gap-3 p-1">
+                <div class="flex flex-col items-center p-2 hover:bg-blue-100 cursor-pointer rounded border border-transparent hover:border-blue-400" ondblclick="inspectTrashFile('sticky')">
+                    <svg viewBox="0 0 32 32" width="32" height="32">
+                        <polygon points="4,2 24,2 28,6 28,30 4,30" fill="#ffff88" stroke="#888800" stroke-width="1"/>
+                        <line x1="8" y1="10" x2="22" y2="10" stroke="#bb9900" stroke-width="1.5"/>
+                        <line x1="8" y1="14" x2="20" y2="14" stroke="#bb9900" stroke-width="1.5"/>
+                        <line x1="8" y1="18" x2="16" y2="18" stroke="#bb9900" stroke-width="1.5"/>
+                    </svg>
+                    <span class="mt-1 text-center truncate w-full font-bold">jack_sticky.txt</span>
+                </div>
+                <div class="flex flex-col items-center p-2 hover:bg-blue-100 cursor-pointer rounded border border-transparent hover:border-blue-400" ondblclick="inspectTrashFile('map')">
+                    <svg viewBox="0 0 32 32" width="32" height="32">
+                        <rect x="4" y="4" width="24" height="24" fill="#eed9b3" stroke="#886633" stroke-width="1"/>
+                        <path d="M8,12 L14,8 L20,15 L24,11" stroke="#aa3300" stroke-width="1.5" fill="none"/>
+                        <text x="16" y="24" font-family="monospace" font-size="6" fill="#883300" font-weight="bold" text-anchor="middle">LESHY_MAP</text>
+                    </svg>
+                    <span class="mt-1 text-center truncate w-full">cabin_map.bmp</span>
+                </div>
+                <div class="flex flex-col items-center p-2 hover:bg-blue-100 cursor-pointer rounded border border-transparent hover:border-blue-400" ondblclick="inspectTrashFile('save')">
+                    <svg viewBox="0 0 32 32" width="32" height="32">
+                        <rect x="4" y="4" width="24" height="24" fill="#222" stroke="#00ff00" stroke-width="1"/>
+                        <text x="16" y="18" font-family="monospace" font-size="5" fill="#ff0000" font-weight="bold" text-anchor="middle">CORRUPT</text>
+                    </svg>
+                    <span class="mt-1 text-center truncate w-full">save0.gme</span>
+                </div>
+            </div>
+            <div id="trash-file-preview" class="mt-4 p-2 bg-yellow-50 border border-yellow-300 win-border-inset font-mono text-[11px] text-gray-800 hidden"></div>
+        </div>
+        <div class="bg-[#c0c0c0] px-2 py-0.5 text-[10px] text-gray-700 border-t border-gray-300">
+            3 object(s) (142 KB disk space)
+        </div>
+    </div>
+
+    <!-- Calculator Window -->
+    <div id="calc-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 20%; left: 45%; width: 240px; height: 310px;" data-title="Calculator">
+        <div class="title-bar cursor-move" id="calc-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs">Calculator</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('calc')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('calc')">X</div>
+            </div>
+        </div>
+        <div class="p-2 bg-[#c0c0c0] flex flex-col h-full justify-between">
+            <div class="win-border-inset bg-white p-2 text-right font-mono text-lg font-bold text-black overflow-hidden mb-2 tracking-wider" id="calc-display">
+                0
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 flex-1">
+                <button class="win-button font-bold text-xs text-red-700" onclick="calcAction('C')">C</button>
+                <button class="win-button font-bold text-xs" onclick="calcAction('CE')">CE</button>
+                <button class="win-button font-bold text-xs" onclick="calcAction('BK')">←</button>
+                <button class="win-button font-bold text-xs text-blue-900" onclick="calcAction('/')">/</button>
+
+                <button class="win-button font-bold text-xs" onclick="calcNum('7')">7</button>
+                <button class="win-button font-bold text-xs" onclick="calcNum('8')">8</button>
+                <button class="win-button font-bold text-xs" onclick="calcNum('9')">9</button>
+                <button class="win-button font-bold text-xs text-blue-900" onclick="calcAction('*')">*</button>
+
+                <button class="win-button font-bold text-xs" onclick="calcNum('4')">4</button>
+                <button class="win-button font-bold text-xs" onclick="calcNum('5')">5</button>
+                <button class="win-button font-bold text-xs" onclick="calcNum('6')">6</button>
+                <button class="win-button font-bold text-xs text-blue-900" onclick="calcAction('-')">-</button>
+
+                <button class="win-button font-bold text-xs" onclick="calcNum('1')">1</button>
+                <button class="win-button font-bold text-xs" onclick="calcNum('2')">2</button>
+                <button class="win-button font-bold text-xs" onclick="calcNum('3')">3</button>
+                <button class="win-button font-bold text-xs text-blue-900" onclick="calcAction('+')">+</button>
+
+                <button class="win-button font-bold text-xs col-span-2" onclick="calcNum('0')">0</button>
+                <button class="win-button font-bold text-xs" onclick="calcNum('.')">.</button>
+                <button class="win-button font-bold text-xs text-red-900 bg-[#dfdfdf]" onclick="calcAction('=')">=</button>
+            </div>
+            <div id="calc-status" class="mt-1 text-[10px] text-gray-700 text-center font-mono truncate">Ready.</div>
+        </div>
+    </div>
+
+    <!-- Containment Lockbox Window -->
+    <div id="safe-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 15%; left: 36%; width: 380px; height: 420px;" data-title="Secure Lockbox Model-7">
+        <div class="title-bar cursor-move" id="safe-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs font-bold text-amber-300">SITE-19 MECHANICAL SAFE [CABIN RECOVERY]</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('safe')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('safe')">X</div>
+            </div>
+        </div>
+        <div class="flex-1 p-3 bg-[#c0c0c0] flex flex-col space-y-2 select-none">
+            <div class="win-border-inset bg-[#2a2a2a] p-3 rounded flex flex-col items-center justify-between flex-1 relative overflow-hidden">
+                <div class="w-full flex justify-between items-center text-[10px] font-mono text-amber-500 border-b border-gray-700 pb-1">
+                    <span>SECURITY: 3-DIAL MECHANICAL</span>
+                    <span id="safe-status-pill" class="text-red-400 font-bold bg-red-950/80 px-2 py-0.5 rounded border border-red-800">LOCKED</span>
+                </div>
+
+                <!-- Tumbler Dials Container -->
+                <div id="safe-closed-view" class="flex flex-col items-center justify-center w-full my-auto space-y-4">
+                    <div class="text-gray-400 text-[11px] font-mono tracking-wider">SET COMBINATION TUMBLERS</div>
+                    <div class="flex items-center justify-center space-x-4">
+                        <!-- Tumbler 0 -->
+                        <div class="flex flex-col items-center">
+                            <button class="win-button text-xs py-0 px-2" onclick="changeSafeDigit(0, 1)">▲</button>
+                            <div id="safe-digit-0" onclick="changeSafeDigit(0, 1)" class="w-12 h-14 bg-black border-2 border-[#777] rounded flex items-center justify-center font-mono text-2xl font-bold text-amber-400 my-1 shadow-inner cursor-pointer hover:border-amber-500">0</div>
+                            <button class="win-button text-xs py-0 px-2" onclick="changeSafeDigit(0, -1)">▼</button>
+                        </div>
+                        <!-- Tumbler 1 -->
+                        <div class="flex flex-col items-center">
+                            <button class="win-button text-xs py-0 px-2" onclick="changeSafeDigit(1, 1)">▲</button>
+                            <div id="safe-digit-1" onclick="changeSafeDigit(1, 1)" class="w-12 h-14 bg-black border-2 border-[#777] rounded flex items-center justify-center font-mono text-2xl font-bold text-amber-400 my-1 shadow-inner cursor-pointer hover:border-amber-500">0</div>
+                            <button class="win-button text-xs py-0 px-2" onclick="changeSafeDigit(1, -1)">▼</button>
+                        </div>
+                        <!-- Tumbler 2 -->
+                        <div class="flex flex-col items-center">
+                            <button class="win-button text-xs py-0 px-2" onclick="changeSafeDigit(2, 1)">▲</button>
+                            <div id="safe-digit-2" onclick="changeSafeDigit(2, 1)" class="w-12 h-14 bg-black border-2 border-[#777] rounded flex items-center justify-center font-mono text-2xl font-bold text-amber-400 my-1 shadow-inner cursor-pointer hover:border-amber-500">0</div>
+                            <button class="win-button text-xs py-0 px-2" onclick="changeSafeDigit(2, -1)">▼</button>
+                        </div>
+                    </div>
+
+                    <button id="safe-wheel-btn" class="win-button px-5 py-2 font-mono text-xs font-bold text-black flex items-center space-x-2 mt-2 bg-gradient-to-r from-gray-300 via-gray-100 to-gray-300 shadow cursor-pointer" onclick="attemptOpenSafe()">
+                        <span>✇ TURN WHEEL & UNLATCH</span>
+                    </button>
+                    <div id="safe-hint-text" class="text-[10px] text-gray-500 font-mono text-center">Tumbler lock engaged.</div>
+                </div>
+
+                <!-- Unlocked Interior Compartment -->
+                <div id="safe-open-view" class="hidden flex-col items-center justify-center w-full my-auto space-y-3 p-3 bg-[#1b1b1b] border-2 border-emerald-600/50 rounded">
+                    <div class="text-green-400 font-mono text-xs font-bold tracking-widest animate-pulse">[VAULT MECHANISM UNSEALED]</div>
+                    <div class="text-[11px] text-gray-300 font-mono text-center">Found inside velvet lining:</div>
+                    
+                    <!-- Ceramic Fuse Component for Circuit -->
+                    <div class="w-56 bg-slate-900 border-2 border-amber-500 rounded p-2.5 flex flex-col items-center shadow-lg">
+                        <div class="text-[11px] font-mono text-amber-300 font-bold mb-1">⚡ RELAY FUSE [JUMPER-7G]</div>
+                        <div class="w-24 h-8 bg-gradient-to-r from-slate-400 via-amber-200 to-slate-400 rounded-full border-2 border-amber-600 flex items-center justify-around my-1 shadow-inner">
+                            <span class="text-[9px] font-mono font-bold text-black">250V</span>
+                            <span class="text-[9px] font-mono font-bold text-black">AUX</span>
+                        </div>
+                        <button class="win-button text-xs font-bold mt-2 text-emerald-950 bg-emerald-300 hover:bg-emerald-200 w-full cursor-pointer" onclick="insertFuseIntoCircuit()">
+                            ▶ Insert Fuse into Circuit.exe
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="text-[10px] text-gray-700 font-mono flex justify-between px-1">
+                <span>Model: Heavy Oak/Iron 1930s</span>
+                <span>Recovered from Cabin</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Power Grid Relay Bypass Window (Circuit.exe) -->
+    <div id="circuit-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 14%; left: 30%; width: 520px; height: 500px;" data-title="Foundation Circuit Bypass">
+        <div class="title-bar cursor-move" id="circuit-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs font-bold text-emerald-300">AUXILIARY POWER GRID RELAY BYPASS</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('circuit')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('circuit')">X</div>
+            </div>
+        </div>
+        <div class="flex-1 p-2.5 bg-[#c0c0c0] flex flex-col space-y-2 select-none">
+            <!-- Header Status Panel -->
+            <div class="win-border-inset bg-slate-950 p-2 text-xs font-mono text-slate-300 flex justify-between items-center">
+                <div>FUSE STATUS: <span id="circuit-fuse-status" class="text-red-400 font-bold bg-red-950/70 border border-red-800 px-1.5 py-0.5 rounded">MISSING</span></div>
+                <div>GRID CURRENT: <span id="circuit-power-status" class="text-amber-400 font-bold">OPEN LOOP</span></div>
+            </div>
+
+            <!-- Conduit Interactive Grid Area -->
+            <div class="win-border-inset bg-slate-900 p-3 rounded flex flex-col items-center justify-center flex-1 relative">
+                <!-- Circuit Input / Output Tags -->
+                <div class="w-full flex justify-between text-[11px] font-mono font-bold px-4 mb-1">
+                    <span class="text-emerald-400 animate-pulse">▼ [PWR IN]</span>
+                    <span id="circuit-out-label" class="text-gray-500">► [MAG-LOCK]</span>
+                </div>
+
+                <!-- 4x4 Grid Container -->
+                <div id="circuit-grid" class="grid grid-cols-4 gap-1.5 p-2 bg-slate-950 border-2 border-slate-700 rounded shadow-2xl">
+                    <!-- 16 Conduit Tiles Rendered Dynamically via JS -->
+                </div>
+
+                <div class="text-[10px] font-mono text-slate-400 mt-2 text-center">
+                    Click any conduit tile to rotate 90° clockwise. Route power from top-left into bottom-right.
+                </div>
+            </div>
+
+            <!-- Decrypted Log Status -->
+            <div id="circuit-log" class="win-border-inset bg-white p-2 text-xs font-mono text-gray-800 h-20 overflow-y-auto leading-relaxed">
+                <span class="text-gray-400 italic">[Awaiting auxiliary circuit lock bypass. Retrieve fuse from Lockbox to activate conduit junctions.]</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floppy Sector Extractor Window (Post-Circuit Puzzle) -->
+    <div id="floppy-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 16%; left: 33%; width: 480px; height: 460px;" data-title="Floppy Sector Extractor">
+        <div class="title-bar cursor-move" id="floppy-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs font-bold text-sky-300">SITE-19 MAGNETIC DISK DUMP // SECTOR 7G</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('floppy')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('floppy')">X</div>
+            </div>
+        </div>
+        <div class="flex-1 p-2.5 bg-[#c0c0c0] flex flex-col space-y-2 select-none">
+            <!-- Power Status Banner -->
+            <div class="win-border-inset bg-black p-2 text-xs font-mono flex justify-between items-center">
+                <span class="text-gray-400">HARDWARE DRIVE: <b class="text-amber-300">3.5" ANOMALOUS DISKETTE</b></span>
+                <span id="floppy-pwr-badge" class="text-red-400 font-bold bg-red-950/80 px-2 py-0.5 rounded border border-red-800">DRIVE INERT (NO POWER)</span>
+            </div>
+
+            <!-- Inactive State Notice -->
+            <div id="floppy-offline-view" class="win-border-inset bg-slate-900 flex-1 flex flex-col items-center justify-center p-4 text-center">
+                <div class="text-red-500 font-mono text-sm font-bold mb-2">⚠ ERROR: AUXILIARY VOLTAGE ABSENT</div>
+                <p class="text-xs text-slate-400 font-mono max-w-xs leading-relaxed">
+                    The disk reader spindle motor requires power from the auxiliary grid.<br>
+                    <span class="text-emerald-400">Complete the conduit bypass in Circuit.exe to energize this terminal.</span>
+                </p>
+            </div>
+
+            <!-- Active Hardware Alignment Console -->
+            <div id="floppy-online-view" class="win-border-inset bg-[#141b22] flex-1 hidden flex-col p-3 space-y-2 font-mono">
+                <div class="text-[11px] text-sky-300 flex justify-between border-b border-slate-700 pb-1">
+                    <span>TRACK FLUX PARITY ALIGNMENT</span>
+                    <span id="floppy-sync-status" class="text-amber-400 font-bold">DESYNC (0/4 MATCHED)</span>
+                </div>
+
+                <!-- 4 Track Channels -->
+                <div class="grid grid-cols-4 gap-2 flex-1 items-center py-1">
+                    <!-- Track 0: Blood -->
+                    <div class="bg-black/80 border border-slate-700 rounded p-2 flex flex-col items-center justify-between h-full">
+                        <span class="text-[10px] text-red-400 font-bold">🩸 BLOOD</span>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(0, 1)">▲</button>
+                        <div id="track-val-0" class="text-xl font-bold text-amber-400 my-1">0</div>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(0, -1)">▼</button>
+                        <span id="track-lock-0" class="text-[9px] text-slate-500 font-bold">LOCK: OFF</span>
+                    </div>
+
+                    <!-- Track 1: Bones -->
+                    <div class="bg-black/80 border border-slate-700 rounded p-2 flex flex-col items-center justify-between h-full">
+                        <span class="text-[10px] text-amber-200 font-bold">🦴 BONES</span>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(1, 1)">▲</button>
+                        <div id="track-val-1" class="text-xl font-bold text-amber-400 my-1">0</div>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(1, -1)">▼</button>
+                        <span id="track-lock-1" class="text-[9px] text-slate-500 font-bold">LOCK: OFF</span>
+                    </div>
+
+                    <!-- Track 2: Teeth -->
+                    <div class="bg-black/80 border border-slate-700 rounded p-2 flex flex-col items-center justify-between h-full">
+                        <span class="text-[10px] text-slate-200 font-bold">🦷 TEETH</span>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(2, 1)">▲</button>
+                        <div id="track-val-2" class="text-xl font-bold text-amber-400 my-1">0</div>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(2, -1)">▼</button>
+                        <span id="track-lock-2" class="text-[9px] text-slate-500 font-bold">LOCK: OFF</span>
+                    </div>
+
+                    <!-- Track 3: Souls -->
+                    <div class="bg-black/80 border border-slate-700 rounded p-2 flex flex-col items-center justify-between h-full">
+                        <span class="text-[10px] text-emerald-400 font-bold">👤 SOULS</span>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(3, 1)">▲</button>
+                        <div id="track-val-3" class="text-xl font-bold text-amber-400 my-1">0</div>
+                        <button class="win-button text-xs py-0 px-2 w-full" onclick="adjustTrack(3, -1)">▼</button>
+                        <span id="track-lock-3" class="text-[9px] text-slate-500 font-bold">LOCK: OFF</span>
+                    </div>
+                </div>
+
+                <!-- Alignment Status Box -->
+                <div id="floppy-extract-box" class="bg-black p-2 rounded border border-slate-700 text-xs">
+                    <div class="text-slate-400 text-[10px] mb-1">CABIN PROFILE: [STOAT COST: 1 🩸] | [STOAT HEALTH: 3 🦴] | [SCALE WEIGHT: 5 🦷] | [CLEARANCE: 4 👤]</div>
+                    <div id="floppy-result-text" class="text-amber-400 text-center font-bold tracking-wider">AWAITING 4-CHANNEL HARMONIC LOCK...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Locked OLD_DATA Folder Window -->
+    <div id="olddata-window" class="app-window win-border-outset absolute hidden flex flex-col z-10" style="top: 22%; left: 35%; width: 440px; height: 320px;" data-title="Directory: OLD_DATA">
+        <div class="title-bar cursor-move" id="olddata-title-bar">
+            <div class="flex items-center space-x-1">
+                <span class="text-xs font-bold text-red-300">C:\ROOT\CABIN_SECTOR\OLD_DATA</span>
+            </div>
+            <div class="flex">
+                <div class="title-bar-button" onclick="minimizeWindow('olddata')">_</div>
+                <div class="title-bar-button font-bold" onclick="closeWindow('olddata')">X</div>
+            </div>
+        </div>
+        <div class="flex-1 p-3 bg-[#c0c0c0] flex flex-col justify-between select-none">
+            <div class="win-border-inset bg-[#1a0000] border-2 border-red-800 p-3 rounded text-red-200 font-mono text-xs flex flex-col space-y-2">
+                <div class="text-sm font-bold text-red-500 border-b border-red-900 pb-1 flex items-center space-x-1">
+                    <span>⚠ RESTRICTED DOS DIRECTORY: OLD_DATA</span>
+                </div>
+                <p class="text-red-300 text-[11px] leading-relaxed">
+                    Access to this sector is strictly prohibited under Site-19 Class-A Bio-Digital Quarantine.<br>
+                    Binary contents contain an active digital conscience extracted from Leshy's cabin.
+                </p>
+                <div class="bg-black/80 p-2 rounded border border-red-700 flex flex-col space-y-1">
+                    <label class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">Enter Decryption Keycode to Execute Payload:</label>
+                    <input type="text" id="olddata-key-input" placeholder="DECRYPTION KEY..." class="bg-black border border-red-500 text-red-400 font-mono text-sm p-1.5 rounded outline-none uppercase focus:border-red-300" autocomplete="off" spellcheck="false">
+                </div>
+                <div id="olddata-status-msg" class="text-[10px] text-red-400 font-bold italic">Status: Drive encrypted. Passcode required.</div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+                <span class="text-[10px] text-gray-700 font-mono">Payload: INSCRYPTION_ACT_1.BIN</span>
+                <div class="flex space-x-2">
+                    <button class="win-button text-xs font-bold" onclick="closeWindow('olddata')">Cancel</button>
+                    <button class="win-button text-xs font-bold text-red-950 bg-red-400 hover:bg-red-300 px-3 cursor-pointer" onclick="verifyOldDataPasscode()">
+                        ▶ EXECUTE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div id="start-menu" class="hidden absolute bottom-[32px] left-0 win-border-outset flex z-50 shadow-lg" style="min-width: 220px;">
+        <div class="start-menu-banner flex items-end pb-2">
+            FOUNDATION OS
+        </div>
+        <div class="flex-1 py-1 bg-[#c0c0c0] text-sm flex flex-col justify-end">
+            <div class="start-menu-item flex space-x-2" onclick="openWindow('notepad'); toggleStartMenu();">
+                <svg viewBox="0 0 16 16" width="20" height="20">
+                    <rect x="3" y="1" width="10" height="14" fill="#ffffe0" stroke="black"/>
+                    <rect x="3" y="1" width="10" height="3" fill="#6b0000"/>
+                </svg>
+                <span><u>A</u>rchives</span>
+            </div>
+            <div class="start-menu-item flex space-x-2" onclick="openWindow('circuit'); toggleStartMenu();">
+                <svg viewBox="0 0 16 16" width="20" height="20">
+                    <rect x="2" y="2" width="12" height="12" fill="#0f172a" stroke="#334155"/>
+                    <line x1="2" y1="8" x2="14" y2="8" stroke="#10b981" stroke-width="2"/>
+                </svg>
+                <span><u>C</u>ircuit Bypass</span>
+            </div>
+            <div class="start-menu-item flex space-x-2" onclick="openWindow('settings'); toggleStartMenu();">
+                <svg viewBox="0 0 16 16" width="20" height="20">
+                    <circle cx="8" cy="8" r="6" fill="#c0c0c0" stroke="black"/>
+                    <circle cx="8" cy="8" r="2" fill="gray"/>
+                    <line x1="8" y1="2" x2="8" y2="4" stroke="black" stroke-width="1.5"/>
+                    <line x1="8" y1="12" x2="8" y2="14" stroke="black" stroke-width="1.5"/>
+                    <line x1="2" y1="8" x2="4" y2="8" stroke="black" stroke-width="1.5"/>
+                    <line x1="12" y1="8" x2="14" y2="8" stroke="black" stroke-width="1.5"/>
+                </svg>
+                <span><u>S</u>ite Settings</span>
+            </div>
+            <div class="border-t border-gray-400 border-b border-white my-1 mx-2"></div>
+            <div class="start-menu-item flex space-x-2 text-red-800 font-bold">
+                <svg viewBox="0 0 16 16" width="20" height="20">
+                    <circle cx="8" cy="8" r="7" fill="red" stroke="black"/>
+                    <circle cx="8" cy="8" r="4" fill="yellow" stroke="black"/>
+                    <polygon points="8,5 10,10 6,10" fill="black" />
+                </svg>
+                <span><u>L</u>ockdown Active</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="h-[32px] w-full win-border-outset flex items-center px-1 z-40 relative">
+        <button id="start-button" class="win-button flex items-center h-[24px] px-1 font-bold text-sm" onclick="toggleStartMenu(event)">
+            <svg width="16" height="16" viewBox="0 0 16 16" class="mr-1 mt-0.5">
+                <circle cx="8" cy="8" r="7" fill="black" />
+                <circle cx="8" cy="8" r="6" stroke="white" stroke-width="1" fill="none" />
+                <path d="M8 3 L9 6 L7 6 Z" fill="white"/>
+                <path d="M8 13 L9 10 L7 10 Z" fill="white"/>
+                <path d="M3 8 L6 7 L6 9 Z" fill="white"/>
+                <path d="M13 8 L10 7 L10 9 Z" fill="white"/>
+            </svg>
+            SYSTEM
+        </button>
+
+        <div class="h-6 border-l border-gray-400 border-r border-white mx-1"></div>
+
+        <div class="flex-1 flex space-x-1 items-center px-1 h-full" id="taskbar-apps">
+            <!-- Active taskbar buttons injected here -->
+        </div>
+
+        <div class="win-border-inset h-[24px] px-2 flex items-center space-x-2 text-xs">
+            <span class="text-red-600 font-bold tracking-tighter mr-1" title="Security Clearance">O5</span>
+            <svg viewBox="0 0 16 16" width="14" height="14">
+                <path d="M4,6 L4,10 L7,10 L11,14 L11,2 L7,6 Z" fill="gray" stroke="black"/>
+            </svg>
+            <span id="clock" class="mt-[1px]">12:00 PM</span>
+        </div>
+    </div>
+
+    <script>
+        // --- Clock Logic ---
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('clock').innerText = hours + ':' + minutes + ' ' + ampm;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Start Menu Logic ---
+        const startMenu = document.getElementById('start-menu');
+        const startButton = document.getElementById('start-button');
+
+        function toggleStartMenu(e) {
+            if(e) e.stopPropagation();
+            const isHidden = startMenu.classList.contains('hidden');
+            if (isHidden) {
+                startMenu.classList.remove('hidden');
+                startButton.classList.add('active');
+            } else {
+                startMenu.classList.add('hidden');
+                startButton.classList.remove('active');
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!startMenu.contains(e.target) && e.target !== startButton) {
+                startMenu.classList.add('hidden');
+                startButton.classList.remove('active');
+            }
+            if(!e.target.closest('.desktop-icon')) {
+                document.querySelectorAll('.desktop-icon').forEach(icon => {
+                    icon.classList.remove('selected');
+                });
+            }
+        });
+
+        document.querySelectorAll('.desktop-icon').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+                icon.classList.add('selected');
+            });
+        });
+
+        // --- Window Management ---
+        let zIndexCounter = 20;
+        const openApps = new Set();
+        
+        function openWindow(appId) {
+            const win = document.getElementById(appId + '-window');
+            if (!win) return;
+
+            if (!openApps.has(appId)) {
+                openApps.add(appId);
+                win.classList.remove('hidden');
+                
+                const title = win.getAttribute('data-title');
+                const tbApps = document.getElementById('taskbar-apps');
+                const btn = document.createElement('button');
+                btn.id = 'taskbar-btn-' + appId;
+                btn.className = 'win-button active h-[24px] text-xs px-2 flex items-center w-36 truncate mx-0.5';
+                btn.onclick = () => focusWindow(appId);
+                btn.innerHTML = `<span class="truncate">${title}</span>`;
+                tbApps.appendChild(btn);
+            }
+            
+            win.classList.remove('hidden');
+            focusWindow(appId);
+            
+            if(appId === 'terminal') {
+                setTimeout(() => document.getElementById('cmd-input').focus(), 100);
+            }
+        }
+
+        function closeWindow(appId) {
+            const win = document.getElementById(appId + '-window');
+            if (win) win.classList.add('hidden');
+            openApps.delete(appId);
+            const btn = document.getElementById('taskbar-btn-' + appId);
+            if (btn) btn.remove();
+        }
+
+        function minimizeWindow(appId) {
+            const win = document.getElementById(appId + '-window');
+            if (win) win.classList.add('hidden');
+            const btn = document.getElementById('taskbar-btn-' + appId);
+            if (btn) btn.classList.remove('active');
+        }
+
+        function focusWindow(appId) {
+            const win = document.getElementById(appId + '-window');
+            if (!win) return;
+            win.classList.remove('hidden');
+            zIndexCounter++;
+            win.style.zIndex = zIndexCounter;
+
+            document.querySelectorAll('.app-window .title-bar').forEach(tb => tb.classList.add('inactive'));
+            win.querySelector('.title-bar').classList.remove('inactive');
+
+            document.querySelectorAll('#taskbar-apps .win-button').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById('taskbar-btn-' + appId);
+            if (btn) btn.classList.add('active');
+        }
+
+        document.querySelectorAll('.app-window').forEach(win => {
+            win.addEventListener('mousedown', (e) => {
+                e.stopPropagation(); 
+                const appId = win.id.replace('-window', '');
+                focusWindow(appId);
+            });
+        });
+
+        document.getElementById('desktop-area').addEventListener('mousedown', () => {
+            document.querySelectorAll('.app-window .title-bar').forEach(tb => tb.classList.add('inactive'));
+            document.querySelectorAll('#taskbar-apps .win-button').forEach(btn => btn.classList.remove('active'));
+        });
+
+        // --- Dragging Logic ---
+        let isDragging = false;
+        let activeDragWindow = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        document.querySelectorAll('.app-window .title-bar').forEach(bar => {
+            bar.addEventListener('mousedown', (e) => {
+                if(e.target.classList.contains('title-bar-button')) return;
+
+                isDragging = true;
+                activeDragWindow = bar.closest('.app-window');
+                
+                const appId = activeDragWindow.id.replace('-window', '');
+                focusWindow(appId); 
+                
+                const rect = activeDragWindow.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+            });
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging && activeDragWindow) {
+                let newX = e.clientX - dragOffsetX;
+                let newY = e.clientY - dragOffsetY;
+                if (newY < 0) newY = 0; 
+                activeDragWindow.style.left = newX + 'px';
+                activeDragWindow.style.top = newY + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            activeDragWindow = null;
+        });
+
+        // --- Email App Logic ---
+        const emails = {
+            1: `<div class="mb-4 text-xs border-b border-gray-300 pb-2"><b>From:</b> Dir. Vance<br><b>To:</b> Dr. Jack<br><b>Date:</b> 10/24/1998<br><b>Subject:</b> RE: Anomalous Floppy Disk</div>
+                <div class="space-y-3">
+                    <p>Jack, I've reviewed your preliminary findings on the floppy disk recovered from the cabin. The idea that anomalous entities—or worse, human souls—are trapped inside a digital card game is absurd, even for us.</p>
+                    <p>However, the D-Class who played it has been completely unresponsive for 48 hours. He keeps muttering about "sacrificing squirrels".</p>
+                    <p>Continue your research, but do NOT execute the code found on the "Deathcard".</p>
+                </div>`,
+            2: `<div class="mb-4 text-xs border-b border-gray-300 pb-2"><b>From:</b> Dr. Jack<br><b>To:</b> Research Team Sigma<br><b>Date:</b> 10/25/1998<br><b>Subject:</b> The Stoat Card</div>
+                <div class="space-y-3">
+                    <p>The cards aren't just code. I'm certain of it.</p>
+                    <p>The Stoat card... it spoke to me today during the testing phase. It told me about a hidden directory, something called 'OLD_DATA' buried deep within the floppy disk's architecture.</p>
+                    <p>I need to access the Restricted Archive in the Terminal to cross-reference the disk's hash. If anyone needs me, I'll be in the lab.</p>
+                    <p>By the way, I set the temporary access passcode for the SCiPnet terminal directory to <b>LESHEYS_CABIN</b>. Keep it quiet.</p>
+                </div>`,
+            3: `<div class="mb-4 text-xs border-b border-gray-300 pb-2 text-red-800"><b>From:</b> SYSADMIN<br><b>To:</b> Dr. Jack<br><b>Date:</b> 10/26/1998<br><b>Subject:</b> AUTOMATED: OLD_DATA WARNING</div>
+                <div class="space-y-3">
+                    <p class="text-red-600 font-bold text-lg border-2 border-red-600 p-1 text-center">WARNING: UNAUTHORIZED ACCESS</p>
+                    <p>Dr. Jack, your terminal has attempted to access files designated as 'OLD_DATA'. This is a Class-A infraction.</p>
+                    <p>The floppy disk is to be surrendered to the Site Director immediately.</p>
+                    <p class="italic text-gray-500 font-serif text-center mt-4">Do not let it see the scale. Do not offer it teeth.</p>
+                </div>`
+        };
+
+        function showEmail(id) {
+            document.getElementById('email-content').innerHTML = emails[id];
+        }
+
+        // --- SCiPnet Terminal Logic (CLI) ---
+        const termOutput = document.getElementById('cmd-history');
+        const termInput = document.getElementById('cmd-input');
+        const termContent = document.getElementById('terminal-content');
+        let isTerminalUnlocked = false;
+
+        const terminalFiles = {
+            'readme.txt': 'Welcome to the Foundation. Remember: Secure, Contain, Protect.',
+            'project_lethe.log': 'ERROR: ENCRYPTION KEY REQUIRED. HINT: What year was Site-19 built?',
+            'scp-682.txt': 'Item: SCP-682. Object Class: Keter. \nNotes: Highly intelligent, hostile. See Inbox for override codes.'
+        };
+        
+        const unlockedFiles = {
+            'deathcard.exe': 'EXECUTABLE CORRUPTED. UNABLE TO LAUNCH. IT IS ALREADY HERE.',
+            'old_data.log': 'The scale tips. A life for a life. The Stoat watches from Quarantine. Do not let Leshy finish the game.'
+        };
+
+        if (termInput) {
+            termInput.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') {
+                    const val = termInput.value.trim();
+                    termInput.value = '';
+                    if (termOutput) {
+                        termOutput.innerHTML += `<div><span class="text-white">C:\\SCIPNET&gt;</span> ${val}</div>`;
+                    }
+                    if (val !== '') {
+                        processCommand(val.toLowerCase());
+                    }
+                    if (termContent) {
+                        termContent.scrollTop = termContent.scrollHeight;
+                    }
+                }
+            });
+        }
+
+        function processCommand(cmdString) {
+            const args = cmdString.split(' ');
+            const cmd = args[0];
+
+            if (cmd === 'help') {
+                termOutput.innerHTML += `<div class="text-gray-400 mb-2">AVAILABLE COMMANDS:<br>HELP - Show this menu<br>DIR - List directory contents<br>READ [filename] - Open a text file<br>UNLOCK [passcode] - Elevate terminal privileges<br>CLEAR - Clear terminal window</div>`;
+            } else if (cmd === 'dir' || cmd === 'ls') {
+                let dirList = `<div class="text-gray-400 mb-2">DIRECTORY /ARCHIVE/<br>  [DIR] SAFE<br>  [DIR] EUCLID<br>  [DIR] KETER<br>  README.TXT<br>  PROJECT_LETHE.LOG<br>  SCP-682.TXT`;
+                if (isTerminalUnlocked) {
+                    dirList += `<br>  <span class="text-red-500 font-bold">[DIR] OLD_DATA</span><br>  DEATHCARD.EXE<br>  OLD_DATA.LOG`;
+                }
+                dirList += `</div>`;
+                termOutput.innerHTML += dirList;
+            } else if (cmd === 'unlock') {
+                const pass = args[1];
+                if (pass === 'lesheys_cabin' || pass === 'lesheyscabin') {
+                    isTerminalUnlocked = true;
+                    termOutput.innerHTML += `<div class="text-[#00ff00] mb-2 font-bold">ACCESS GRANTED. LEVEL 4 CLEARANCE ACCEPTED.<br>WARNING: RESTRICTED FILES REVEALED.</div>`;
+                } else {
+                    termOutput.innerHTML += `<div class="text-red-500 mb-2">ACCESS DENIED. INVALID PASSCODE.</div>`;
+                }
+            } else if (cmd === 'clear') {
+                termOutput.innerHTML = '';
+            } else if (cmd === 'read' || cmd === 'cat' || cmd === 'run') {
+                const filename = args[1];
+                if (!filename) {
+                    termOutput.innerHTML += `<div class="text-red-500 mb-2">Error: Missing filename. Usage: READ [filename]</div>`;
+                } else if (terminalFiles[filename]) {
+                    termOutput.innerHTML += `<div class="text-yellow-400 mb-2">--- ${filename.toUpperCase()} ---<br>${terminalFiles[filename]}</div>`;
+                } else if (isTerminalUnlocked && unlockedFiles[filename]) {
+                    termOutput.innerHTML += `<div class="text-red-500 font-bold mb-2">--- ${filename.toUpperCase()} ---<br>${unlockedFiles[filename]}</div>`;
+                    if(filename === 'deathcard.exe') {
+                        setTimeout(() => openWindow('quarantine'), 1000);
+                    }
+                } else {
+                    termOutput.innerHTML += `<div class="text-red-500 mb-2">Error: File not found or access denied.</div>`;
+                }
+            } else {
+                termOutput.innerHTML += `<div class="text-red-500 mb-2">Command not recognized. Type HELP for assistance.</div>`;
+            }
+        }
+
+        // --- Settings App Logic ---
+        function toggleCRT() {
+            const layer = document.getElementById('crt-layer');
+            const toggle = document.getElementById('crt-toggle');
+            layer.style.display = toggle.checked ? 'block' : 'none';
+        }
+
+        function setBG(color) {
+            document.body.style.backgroundColor = color;
+        }
+
+        // --- Boot Sequence Logic ---
+        const bootScreen = document.getElementById('boot-screen');
+        const bootOutput = document.getElementById('boot-output');
+
+        const bootSequence = [
+            "FOUNDATION SECURE OS v3.1.4",
+            "(C) 1998 SCP FOUNDATION",
+            "",
+            "Initializing physical memory.......... OK",
+            "Loading crypto-keys................... OK",
+            "Establishing secure uplink to Site-19... OK",
+            "Verifying user credentials............ OK",
+            "",
+            "WARNING: UNAUTHORIZED ENTITY DETECTED IN BOOT SECTOR.",
+            "ANALYZING SIGNATURE...",
+            "SIGNATURE MATCH: HOSTILE APERTURE AI CONSTRUCT.",
+            "",
+            "INITIATING PURGE PROTOCOL...",
+            "ISOLATING MALICIOUS CODE BLOCKS..... 25%",
+            "ISOLATING MALICIOUS CODE BLOCKS..... 50%",
+            "ISOLATING MALICIOUS CODE BLOCKS..... 100%",
+            "DELETING CORRUPTED DIRECTORIES...... OK",
+            "FLUSHING KERNEL CACHE............... OK",
+            "",
+            "PURGE SUCCESSFUL. NO HOSTILE ENTITIES DETECTED.",
+            "RESUMING SECURE BOOT...",
+            "WELCOME, OVERSEER."
+        ];
+
+        let sequenceIndex = 0;
+
+        function printBootLine() {
+            if (sequenceIndex < bootSequence.length) {
+                const line = document.createElement('div');
+                line.textContent = bootSequence[sequenceIndex];
+                if(line.textContent.includes("ERROR") || line.textContent.includes("WARNING") || line.textContent.includes("HOSTILE")) {
+                    line.style.color = "red";
+                } else if (line.textContent.includes("SUCCESSFUL") || line.textContent.includes("WELCOME") || line.textContent.includes("OK") || line.textContent.includes("100%")) {
+                    line.style.color = "#00ff00";
+                }
+                bootOutput.appendChild(line);
+                sequenceIndex++;
+                setTimeout(printBootLine, Math.random() * 200 + 40);
+            } else {
+                setTimeout(() => {
+                    bootScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        bootScreen.style.display = 'none';
+                    }, 800);
+                }, 1000);
+            }
+        }
+
+        function startSCPBoot() {
+            bootScreen.style.display = 'flex';
+            setTimeout(printBootLine, 400);
+        }
+
+        // --- Aperture Intercept & QTE Logic ---
+        const apertureScreen = document.getElementById('aperture-screen');
+        const apertureText = document.getElementById('aperture-text');
+        const qteContainer = document.getElementById('qte-container');
+        const codeWall = document.getElementById('code-wall');
+        const qteInstructions = document.getElementById('qte-instructions');
+
+        const apertureMessage = "Redirection from Aperture Science facility corrupted...\n\nWarning: You are being followed.\n\nOPPOSING AI DETECTED. INITIATING DEFENSIVE FIREWALL.";
+        
+        let hackProgress = 50;
+        let isQTEActive = false;
+        let activeNodes = [];
+        let spawnTimeout;
+        let baseSpawnRate = 750;
+        let codeTokens = [];
+        
+        const bgSnippets = ["0x00", "0xFF", "void", "main()", "sys_halt", "ptr++", "mem_alloc", "return", "if(x>0)", "&&", "||", "socket.bind", "kernel32.dll", "thread_sleep", "0x80000000", "buffer"];
+
+        function initCodeWall(onComplete) {
+            codeWall.innerHTML = '';
+            codeTokens = [];
+            const numSpans = Math.floor((window.innerWidth * window.innerHeight) / 4000); 
+            let spansCreated = 0;
+            const chunkSize = Math.max(2, Math.floor(numSpans / 40));
+
+            function addChunk() {
+                for(let i=0; i<chunkSize && spansCreated < numSpans; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'code-token';
+                    span.textContent = bgSnippets[Math.floor(Math.random() * bgSnippets.length)];
+                    span.dataset.originalText = span.textContent;
+                    codeWall.appendChild(span);
+                    codeTokens.push(span);
+                    spansCreated++;
+                }
+                if (spansCreated < numSpans) {
+                    setTimeout(addChunk, 15);
+                } else if (onComplete) {
+                    onComplete();
+                }
+            }
+            setTimeout(addChunk, 500);
+        }
+
+        codeWall.addEventListener('click', (e) => {
+            if (!isQTEActive) return;
+            if (e.target.classList.contains('glitch-active') && !e.target.classList.contains('exploded')) {
+                const nodeObj = activeNodes.find(n => n.element === e.target);
+                if (nodeObj) purgeNode(nodeObj);
+            }
+        });
+
+        function startApertureSequence() {
+            if (!apertureScreen || !apertureText) {
+                if (bootScreen) startSCPBoot();
+                return;
+            }
+            if (bootScreen) bootScreen.style.display = 'none';
+            apertureText.style.display = 'inline-block';
+            let i = 0;
+            apertureText.innerHTML = "";
+            
+            function typeChar() {
+                if (i < apertureMessage.length) {
+                    if (apertureMessage.charAt(i) === '\n') {
+                        apertureText.innerHTML += '<br>';
+                    } else {
+                        apertureText.innerHTML += apertureMessage.charAt(i);
+                    }
+                    i++;
+                    setTimeout(typeChar, 25);
+                } else {
+                    setTimeout(startQTE, 1000);
+                }
+            }
+            typeChar();
+        }
+
+        function startQTE() {
+            if (!apertureText || !qteContainer) return;
+            apertureText.style.display = 'none';
+            qteContainer.style.display = 'none';
+            
+            initCodeWall(() => {
+                qteContainer.style.display = 'flex';
+                hackProgress = 50;
+                updateBars();
+                isQTEActive = true;
+                activeNodes = [];
+                baseSpawnRate = 750;
+                if (qteInstructions) {
+                    qteInstructions.innerText = "CLICK CORRUPTED CODE NODES TO PURGE";
+                    qteInstructions.style.color = "#ffb000";
+                }
+                scheduleNextNode();
+            });
+        }
+
+        function scheduleNextNode() {
+            if (!isQTEActive) return;
+            spawnNode();
+            baseSpawnRate = Math.max(200, baseSpawnRate - 40);
+            spawnTimeout = setTimeout(scheduleNextNode, baseSpawnRate);
+        }
+
+        function spawnNode() {
+            if (!isQTEActive) return;
+            const availableTokens = codeTokens.filter(t => !t.classList.contains('glitch-active'));
+            if (availableTokens.length === 0) return;
+
+            const targetEl = availableTokens[Math.floor(Math.random() * availableTokens.length)];
+            targetEl.className = 'code-token glitch-active glitch-level-1';
+
+            const nodeObj = {
+                element: targetEl,
+                level: 1,
+                timerId: null
+            };
+            activeNodes.push(nodeObj);
+            nodeObj.timerId = setInterval(() => intensifyNode(nodeObj), 650);
+        }
+
+        function purgeNode(nodeObj) {
+            clearInterval(nodeObj.timerId);
+            nodeObj.element.className = 'code-token popped';
+            hackProgress += (nodeObj.level * 2.2); 
+            if(hackProgress > 100) hackProgress = 100;
+            updateBars();
+            
+            activeNodes = activeNodes.filter(n => n !== nodeObj);
+            setTimeout(() => {
+                nodeObj.element.className = 'code-token';
+                nodeObj.element.textContent = nodeObj.element.dataset.originalText;
+            }, 350);
+
+            checkWinLoss();
+        }
+
+        function intensifyNode(nodeObj) {
+            if (!isQTEActive) {
+                clearInterval(nodeObj.timerId);
+                return;
+            }
+            nodeObj.element.classList.remove(`glitch-level-${nodeObj.level}`);
+            nodeObj.level++;
+            if (nodeObj.level > 5) {
+                clearInterval(nodeObj.timerId);
+                explodeNode(nodeObj);
+            } else {
+                nodeObj.element.classList.add(`glitch-level-${nodeObj.level}`);
+            }
+        }
+
+        function explodeNode(nodeObj) {
+            nodeObj.element.className = 'code-token exploded';
+            hackProgress -= 14; 
+            if(hackProgress < 0) hackProgress = 0;
+            updateBars();
+            
+            apertureScreen.style.transform = `translate(${Math.random()*12-6}px, ${Math.random()*12-6}px)`;
+            setTimeout(() => apertureScreen.style.transform = 'none', 100);
+
+            activeNodes = activeNodes.filter(n => n !== nodeObj);
+            setTimeout(() => {
+                nodeObj.element.className = 'code-token';
+                nodeObj.element.textContent = nodeObj.element.dataset.originalText;
+            }, 500);
+            
+            checkWinLoss();
+        }
+
+        function checkWinLoss() {
+            if (!isQTEActive) return;
+            if (hackProgress >= 100) finishQTE(true);
+            else if (hackProgress <= 0) finishQTE(false);
+        }
+
+        function updateBars() {
+            const progressEl = document.getElementById('tug-of-war-progress');
+            if(progressEl) progressEl.style.width = hackProgress + '%';
+        }
+
+        function finishQTE(won) {
+            isQTEActive = false;
+            clearTimeout(spawnTimeout);
+            activeNodes.forEach(node => {
+                clearInterval(node.timerId);
+                node.element.className = 'code-token';
+                node.element.textContent = node.element.dataset.originalText;
+            });
+            activeNodes = [];
+
+            apertureText.style.display = 'inline-block';
+            codeWall.innerHTML = '';
+
+            if (won) {
+                qteInstructions.innerText = "OVERRIDE SUCCESSFUL. SECURING...";
+                qteInstructions.style.color = "#00ff00";
+                apertureText.innerHTML += "<br><br><span style='color:#00ff00'>ATTACK DEFLECTED. ROUTING TO FOUNDATION SERVERS...</span>";
+                setTimeout(() => {
+                    apertureScreen.style.opacity = "0";
+                    setTimeout(() => {
+                        apertureScreen.style.display = "none";
+                        startSCPBoot();
+                    }, 800);
+                }, 1500);
+            } else {
+                qteInstructions.innerText = "DEFENSE FAILED. AI INTRUSION IMMINENT.";
+                qteInstructions.style.color = "#ff0000";
+                apertureText.innerHTML += "<br><br><span style='color:#ff0000'>SYSTEM COMPROMISED. REBOOTING DEFENSE PROTOCOLS...</span>";
+                setTimeout(() => {
+                    apertureText.innerHTML = "RE-ENGAGING FIREWALL...";
+                    qteInstructions.innerText = "CLICK CORRUPTED CODE NODES TO PURGE";
+                    startQTE();
+                }, 2500);
+            }
+        }
+
+        // Skip intro helper (Exclusively called via j3llybean cheat code)
+        function skipIntro() {
+            isQTEActive = false;
+            clearTimeout(spawnTimeout);
+            apertureScreen.style.display = "none";
+            bootScreen.style.display = "none";
+            showDevToast("DEV OVERRIDE: BYPASS TO DESKTOP");
+        }
+
+        window.onload = startApertureSequence;
+
+        // --- Recycle Bin Interactions ---
+        function inspectTrashFile(type) {
+            const preview = document.getElementById('trash-file-preview');
+            if (!preview) return;
+            preview.classList.remove('hidden');
+
+            if (type === 'sticky') {
+                preview.innerHTML = `
+                    <div class="text-blue-900 font-bold mb-1">[JACK_STICKY.TXT - FOUNDATION ARCHIVE TRASH]</div>
+                    <div class="text-gray-800">
+                        "Note to self: Vance is breathing down my neck. If the SCiPnet terminal locks me out, remember the Lethe log decryption key is Site-19's founding year (<span class="font-bold text-red-600">1998</span>).<br>
+                        Also, do not let anyone speak the name of the Stoat card in the terminal."
+                    </div>
+                `;
+            } else if (type === 'map') {
+                preview.innerHTML = `
+                    <div class="text-blue-900 font-bold mb-1">[CABIN_MAP.BMP]</div>
+                    <div class="text-gray-800">
+                        Scanned blueprint of an unidentified wooden log cabin. Marked locations: CUCKOO CLOCK, HEAVY SAFE, CARVING TABLE.
+                    </div>
+                `;
+            } else if (type === 'save') {
+                preview.innerHTML = `
+                    <div class="text-red-600 font-bold mb-1">[SAVE0.GME - DATA CORRUPTED]</div>
+                    <div class="text-gray-800">
+                        ERROR 0xDEADBEEF: An active digital conscience is bound to sector 0x40. Manual deletion rejected by system kernel.
+                    </div>
+                `;
+            }
+        }
+
+        function alertTrashPolicy() {
+            const preview = document.getElementById('trash-file-preview');
+            if (!preview) return;
+            preview.classList.remove('hidden');
+            preview.innerHTML = `
+                <div class="text-red-600 font-bold">[SECURITY OVERRIDE REJECTED]</div>
+                <div class="text-gray-800">
+                    Foundation Protocol 4-A: Trash deletion is restricted during active quarantine investigation. All recovered floppy data must remain logged.
+                </div>
+            `;
+        }
+
+        // --- Calculator Engine ---
+        let calcVal = '0';
+        let calcPrev = null;
+        let calcOp = null;
+        let calcResetNext = false;
+
+        function updateCalcDisplay() {
+            const disp = document.getElementById('calc-display');
+            if (disp) disp.innerText = calcVal;
+        }
+
+        function calcNum(n) {
+            if (calcResetNext) {
+                calcVal = n;
+                calcResetNext = false;
+            } else {
+                calcVal = (calcVal === '0' && n !== '.') ? n : calcVal + n;
+            }
+            updateCalcDisplay();
+            checkCalcEasterEggs();
+        }
+
+        function calcAction(act) {
+            const statusEl = document.getElementById('calc-status');
+            if (act === 'C') {
+                calcVal = '0';
+                calcPrev = null;
+                calcOp = null;
+                if (statusEl) statusEl.innerText = "Ready.";
+            } else if (act === 'CE') {
+                calcVal = '0';
+            } else if (act === 'BK') {
+                calcVal = calcVal.length > 1 ? calcVal.slice(0, -1) : '0';
+            } else if (act === '=') {
+                if (calcOp && calcPrev !== null) {
+                    const a = parseFloat(calcPrev);
+                    const b = parseFloat(calcVal);
+                    let res = 0;
+                    if (calcOp === '+') res = a + b;
+                    if (calcOp === '-') res = a - b;
+                    if (calcOp === '*') res = a * b;
+                    if (calcOp === '/') res = b !== 0 ? (a / b) : 'ERR';
+                    calcVal = res.toString().slice(0, 10);
+                    calcOp = null;
+                    calcPrev = null;
+                    calcResetNext = true;
+                }
+            } else {
+                calcPrev = calcVal;
+                calcOp = act;
+                calcResetNext = true;
+            }
+            updateCalcDisplay();
+            checkCalcEasterEggs();
+        }
+
+        function checkCalcEasterEggs() {
+            const statusEl = document.getElementById('calc-status');
+            if (!statusEl) return;
+            if (calcVal === '173') {
+                statusEl.innerText = "SCP-173: Euclid. Do not look away.";
+                statusEl.style.color = "#b91c1c";
+            } else if (calcVal === '682') {
+                statusEl.innerText = "SCP-682: Hard-to-Destroy Reptile.";
+                statusEl.style.color = "#b91c1c";
+            } else if (calcVal === '1998') {
+                statusEl.innerText = "YEAR VERIFIED: Lethe Decryption ready.";
+                statusEl.style.color = "#15803d";
+            } else {
+                statusEl.innerText = "Ready.";
+                statusEl.style.color = "#374151";
+            }
+        }
+
+        // --- Puzzle 1: Containment Lockbox Logic ---
+        const safeCombination = [2, 7, 3];
+        let currentSafeDigits = [0, 0, 0];
+        let isSafeOpened = false;
+
+        function changeSafeDigit(index, delta) {
+            if (isSafeOpened) return;
+            currentSafeDigits[index] = (currentSafeDigits[index] + delta + 10) % 10;
+            const el = document.getElementById('safe-digit-' + index);
+            if (el) {
+                el.innerText = currentSafeDigits[index];
+                el.classList.add('border-amber-400');
+                setTimeout(() => el.classList.remove('border-amber-400'), 150);
+            }
+        }
+
+        function attemptOpenSafe() {
+            if (isSafeOpened) return;
+
+            const isMatch = currentSafeDigits[0] === safeCombination[0] &&
+                            currentSafeDigits[1] === safeCombination[1] &&
+                            currentSafeDigits[2] === safeCombination[2];
+
+            const hint = document.getElementById('safe-hint-text');
+
+            if (isMatch) {
+                unlockSafeSuccess();
+            } else {
+                const box = document.getElementById('safe-closed-view');
+                if (box) {
+                    box.style.transform = 'translateX(-6px)';
+                    setTimeout(() => box.style.transform = 'translateX(6px)', 80);
+                    setTimeout(() => box.style.transform = 'translateX(-3px)', 160);
+                    setTimeout(() => box.style.transform = 'none', 240);
+                }
+                if (hint) {
+                    hint.innerText = "CLANK! Bolt rejected. Combination incorrect.";
+                    hint.className = "text-[11px] text-red-400 font-mono text-center font-bold";
+                }
+            }
+        }
+
+        function unlockSafeSuccess() {
+            isSafeOpened = true;
+            const statusPill = document.getElementById('safe-status-pill');
+            if (statusPill) {
+                statusPill.innerText = "UNLATCHED";
+                statusPill.className = "text-green-400 font-bold bg-green-950/80 px-2 py-0.5 rounded border border-green-800";
+            }
+
+            document.getElementById('safe-closed-view').classList.add('hidden');
+            document.getElementById('safe-open-view').classList.remove('hidden');
+            document.getElementById('safe-open-view').classList.add('flex');
+        }
+
+        // --- Puzzle 2: Power Grid Relay Bypass Engine (Circuit.exe) ---
+        let hasCircuitFuse = false;
+        let isCircuitSolved = false;
+
+        // Tile base connections: [North, East, South, West] (1 = conduit lead open, 0 = wall)
+        // Solved board route:
+        // Enters at (0,0) West -> (0,1) -> (0,2) -> (1,2) -> (2,2) -> (2,3) -> exits at (3,3) East
+        const solutionTileTypes = [
+            [0, 1, 1, 1], // 0: (0,0) - In from West, feeds East and South
+            [0, 1, 0, 1], // 1: (0,1) - Straight West-East
+            [0, 0, 1, 1], // 2: (0,2) - Corner West to South
+            [0, 0, 1, 1], // 3: (0,3) - Corner West to South
+            [1, 0, 1, 0], // 4: (1,0) - Straight North-South
+            [1, 1, 0, 0], // 5: (1,1) - Corner North to East
+            [1, 0, 1, 0], // 6: (1,2) - Straight North-South
+            [1, 0, 1, 1], // 7: (1,3) - T-junction
+            [1, 1, 0, 0], // 8: (2,0) - Corner North to East
+            [0, 1, 0, 1], // 9: (2,1) - Straight West-East
+            [1, 1, 0, 0], // 10: (2,2) - Corner North to East
+            [0, 0, 1, 1], // 11: (2,3) - Corner West to South
+            [0, 1, 0, 1], // 12: (3,0) - Straight West-East
+            [1, 1, 0, 0], // 13: (3,1) - Corner North to East
+            [0, 1, 0, 1], // 14: (3,2) - Straight West-East
+            [1, 1, 0, 0]  // 15: (3,3) - Receives North and exits to East (MAG-LOCK)
+        ];
+
+        // Scrambled initial rotations: [0..3] quarter turns
+        let tileRotations = [1, 3, 2, 1, 2, 1, 3, 2, 3, 1, 2, 3, 1, 2, 3, 2];
+
+        function insertFuseIntoCircuit() {
+            hasCircuitFuse = true;
+            openWindow('circuit');
+            
+            const fuseLabel = document.getElementById('circuit-fuse-status');
+            if (fuseLabel) {
+                fuseLabel.innerText = "INSTALLED [JUMPER-7G]";
+                fuseLabel.className = "text-emerald-400 font-bold bg-emerald-950/70 border border-emerald-600 px-1.5 py-0.5 rounded";
+            }
+
+            renderCircuitGrid();
+            recalculateCircuit();
+        }
+
+        // Get rotated conduit leads [N, E, S, W]
+        function getTileConduits(index) {
+            const base = solutionTileTypes[index];
+            const rot = tileRotations[index] % 4;
+            return [
+                base[(4 - rot) % 4],
+                base[(5 - rot) % 4],
+                base[(6 - rot) % 4],
+                base[(7 - rot) % 4]
+            ];
+        }
+
+        function rotateTile(index) {
+            if (!hasCircuitFuse) {
+                const log = document.getElementById('circuit-log');
+                if (log) log.innerHTML = `<span class="text-red-600 font-bold">[CIRCUIT INERT]: Insert the Relay Fuse from the Lockbox before energizing conduit relays.</span>`;
+                return;
+            }
+            if (isCircuitSolved) return;
+
+            tileRotations[index] = (tileRotations[index] + 1) % 4;
+            renderCircuitGrid();
+            recalculateCircuit();
+        }
+
+        // SVG conduit graphics
+        function createTileSVG(conduits, isPowered) {
+            const [n, e, s, w] = conduits;
+            const wireColor = isPowered ? '#10b981' : '#475569';
+            const wireGlow = isPowered ? 'filter: drop-shadow(0 0 5px #10b981);' : '';
+            const centerFill = isPowered ? '#34d399' : '#334155';
+
+            let svg = `<svg viewBox="0 0 40 40" class="w-full h-full circuit-tile-svg" style="${wireGlow}">`;
+            svg += `<rect width="40" height="40" fill="#0f172a" rx="4" />`;
+            svg += `<circle cx="20" cy="20" r="5" fill="${centerFill}" stroke="#1e293b" stroke-width="1.5" />`;
+
+            if (n) svg += `<line x1="20" y1="20" x2="20" y2="0" stroke="${wireColor}" stroke-width="5" stroke-linecap="round"/>`;
+            if (e) svg += `<line x1="20" y1="20" x2="40" y2="20" stroke="${wireColor}" stroke-width="5" stroke-linecap="round"/>`;
+            if (s) svg += `<line x1="20" y1="20" x2="20" y2="40" stroke="${wireColor}" stroke-width="5" stroke-linecap="round"/>`;
+            if (w) svg += `<line x1="20" y1="20" x2="0" y2="20" stroke="${wireColor}" stroke-width="5" stroke-linecap="round"/>`;
+
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function renderCircuitGrid(poweredSet = new Set()) {
+            const gridEl = document.getElementById('circuit-grid');
+            if (!gridEl) return;
+            gridEl.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const conduits = getTileConduits(i);
+                const isPowered = poweredSet.has(i);
+
+                const tileBtn = document.createElement('button');
+                tileBtn.className = `w-14 h-14 p-0.5 rounded win-border-outset hover:border-emerald-400 transition-all cursor-pointer relative ${isPowered ? 'bg-emerald-950/60' : 'bg-gray-800'}`;
+                tileBtn.onclick = () => rotateTile(i);
+                tileBtn.innerHTML = createTileSVG(conduits, isPowered);
+                gridEl.appendChild(tileBtn);
+            }
+        }
+
+        // Trace electrical current via BFS
+        function recalculateCircuit() {
+            if (!hasCircuitFuse) {
+                renderCircuitGrid(new Set());
+                return;
+            }
+
+            const powered = new Set();
+            const queue = [];
+
+            // Power enters at tile (0, 0) from the West
+            const startConduits = getTileConduits(0);
+            if (startConduits[3] === 1) {
+                powered.add(0);
+                queue.push(0);
+            }
+
+            while (queue.length > 0) {
+                const curr = queue.shift();
+                const r = Math.floor(curr / 4);
+                const c = curr % 4;
+                const [n, e, s, w] = getTileConduits(curr);
+
+                // Check North (r-1, c)
+                if (n && r > 0) {
+                    const next = (r - 1) * 4 + c;
+                    const nextC = getTileConduits(next);
+                    if (nextC[2] && !powered.has(next)) {
+                        powered.add(next);
+                        queue.push(next);
+                    }
+                }
+                // Check East (r, c+1)
+                if (e && c < 3) {
+                    const next = r * 4 + (c + 1);
+                    const nextC = getTileConduits(next);
+                    if (nextC[3] && !powered.has(next)) {
+                        powered.add(next);
+                        queue.push(next);
+                    }
+                }
+                // Check South (r+1, c)
+                if (s && r < 3) {
+                    const next = (r + 1) * 4 + c;
+                    const nextC = getTileConduits(next);
+                    if (nextC[0] && !powered.has(next)) {
+                        powered.add(next);
+                        queue.push(next);
+                    }
+                }
+                // Check West (r, c-1)
+                if (w && c > 0) {
+                    const next = r * 4 + (c - 1);
+                    const nextC = getTileConduits(next);
+                    if (nextC[1] && !powered.has(next)) {
+                        powered.add(next);
+                        queue.push(next);
+                    }
+                }
+            }
+
+            renderCircuitGrid(powered);
+
+            // Output check at tile 15 (3,3) exit East to MAG-LOCK
+            const endConduits = getTileConduits(15);
+            const isConnectedToOutput = powered.has(15) && endConduits[1] === 1;
+
+            const pwrStatus = document.getElementById('circuit-power-status');
+            const outLabel = document.getElementById('circuit-out-label');
+            const logEl = document.getElementById('circuit-log');
+
+            if (isConnectedToOutput) {
+                isCircuitSolved = true;
+                if (pwrStatus) {
+                    pwrStatus.innerText = "CURRENT DELIVERED [CLOSED LOOP]";
+                    pwrStatus.className = "text-emerald-400 font-bold animate-pulse";
+                }
+                if (outLabel) {
+                    outLabel.className = "text-emerald-400 font-bold animate-pulse";
+                    outLabel.innerText = "► MAG-LOCK [DISENGAGED]";
+                }
+                if (logEl) {
+                    logEl.innerHTML = `
+                        <div class="text-emerald-700 font-bold mb-1 border-b border-emerald-300 pb-1 flex justify-between">
+                            <span>[SECTOR-7G RELAY ENERGIZED: LOCK BYPASS COMPLETE]</span>
+                            <span>CLEARANCE ACCEPTED</span>
+                        </div>
+                        <div class="text-black space-y-1">
+                            <p class="font-bold text-red-700">EMERGENCY CONTAINMENT OVERRIDE LOG [SITE-19]:</p>
+                            <p>"The auxiliary relay has restored power to the cryogenic isolation vault. Leshy's floppy disk isolation sector is stabilized."</p>
+                            <p class="bg-emerald-50 p-1.5 border-l-4 border-emerald-600 font-bold text-emerald-950">
+                                "FloppyDump.exe spindle drive is now energized on the desktop. Track alignment required to read Track 0x00."
+                            </p>
+                        </div>
+                    `;
+                }
+
+                // Activate Floppy Sector Extractor
+                energizeFloppyExtractor();
+            } else {
+                if (pwrStatus) {
+                    pwrStatus.innerText = `CIRCUIT OPEN (${powered.size}/16 NODES ENERGIZED)`;
+                    pwrStatus.className = "text-amber-400 font-bold";
+                }
+                if (outLabel) {
+                    outLabel.className = "text-gray-500";
+                    outLabel.innerText = "► MAG-LOCK";
+                }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCircuitGrid(new Set());
+        });
+
+        // --- Puzzle 3: Floppy Sector Extractor Logic ---
+        let isFloppyDriveEnergized = false;
+        let isFloppySolved = false;
+        const targetTrackParity = [1, 3, 5, 4]; // Blood: 1, Bones: 3, Teeth: 5, Souls: 4
+        const currentTrackParity = [0, 0, 0, 0];
+
+        function energizeFloppyExtractor() {
+            if (isFloppyDriveEnergized) return;
+            isFloppyDriveEnergized = true;
+
+            const pwrBadge = document.getElementById('floppy-pwr-badge');
+            if (pwrBadge) {
+                pwrBadge.innerText = "DRIVE ENERGIZED [250V AUX]";
+                pwrBadge.className = "text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600";
+            }
+
+            const offlineView = document.getElementById('floppy-offline-view');
+            const onlineView = document.getElementById('floppy-online-view');
+            if (offlineView) offlineView.classList.add('hidden');
+            if (onlineView) {
+                onlineView.classList.remove('hidden');
+                onlineView.classList.add('flex');
+            }
+
+            showDevToast("AUX POWER ONLINE: FloppyDump.exe Ready");
+        }
+
+        function adjustTrack(index, delta) {
+            if (isFloppySolved) return;
+            currentTrackParity[index] = Math.max(0, Math.min(9, currentTrackParity[index] + delta));
+            
+            const valEl = document.getElementById('track-val-' + index);
+            if (valEl) valEl.innerText = currentTrackParity[index];
+
+            checkFloppyParity();
+        }
+
+        function checkFloppyParity() {
+            let matchedCount = 0;
+            for (let i = 0; i < 4; i++) {
+                const lockEl = document.getElementById('track-lock-' + i);
+                if (currentTrackParity[i] === targetTrackParity[i]) {
+                    matchedCount++;
+                    if (lockEl) {
+                        lockEl.innerText = "SYNC ✓";
+                        lockEl.className = "text-[9px] text-emerald-400 font-bold";
+                    }
+                } else {
+                    if (lockEl) {
+                        lockEl.innerText = "DESYNC";
+                        lockEl.className = "text-[9px] text-slate-500 font-bold";
+                    }
+                }
+            }
+
+            const syncStatus = document.getElementById('floppy-sync-status');
+            if (syncStatus) {
+                syncStatus.innerText = `SYNC (${matchedCount}/4 MATCHED)`;
+                syncStatus.className = matchedCount === 4 ? "text-emerald-400 font-bold animate-pulse" : "text-amber-400 font-bold";
+            }
+
+            if (matchedCount === 4 && !isFloppySolved) {
+                isFloppySolved = true;
+                const resultBox = document.getElementById('floppy-extract-box');
+                if (resultBox) {
+                    resultBox.className = "bg-emerald-950/80 p-2.5 rounded border-2 border-emerald-500 text-xs font-mono text-center";
+                    resultBox.innerHTML = `
+                        <div class="text-emerald-300 font-bold tracking-widest text-[11px] mb-1">>>> TRACK 0x00 DECOMPILATION COMPLETE <<<</div>
+                        <div class="text-gray-200 text-[11px]">DECRYPTED OLD_DATA MASTER KEY:</div>
+                        <div class="text-amber-300 text-base font-black tracking-widest my-1 select-all cursor-pointer bg-black/60 p-1 rounded border border-amber-500">TOTAL_MISPLAY</div>
+                        <div class="text-[10px] text-emerald-400 mt-1">Double-click the OLD_DATA folder on your desktop to input this key.</div>
+                    `;
+                }
+                showDevToast("FLOPPY DECRYPTED: TOTAL_MISPLAY");
+            }
+        }
+
+        // --- Glitch Audio Synthesizer (Web Audio API) ---
+        function playGlitchSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
+                osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.8);
+                
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 1.2);
+            } catch (err) {
+                // AudioContext autoplay restrictions fallback gracefully
+            }
+        }
+
+        // --- OLD_DATA Folder Validation & Boot Transition to cabin.html ---
+        function verifyOldDataPasscode() {
+            const input = document.getElementById('olddata-key-input');
+            const statusMsg = document.getElementById('olddata-status-msg');
+            if (!input) return;
+
+            const val = input.value.trim().toUpperCase();
+
+            if (val === 'TOTAL_MISPLAY' || val === 'TOTAL MISPLAY' || val === 'MISPLAY') {
+                if (statusMsg) {
+                    statusMsg.innerText = "KEY ACCEPTED: PURGING SYSTEM KERNEL...";
+                    statusMsg.className = "text-[10px] text-emerald-400 font-bold";
+                }
+                triggerOldDataGlitchTransition();
+            } else {
+                if (statusMsg) {
+                    statusMsg.innerText = "ACCESS REJECTED: INVALID CHECKSUM. DECOMPILATION ABORTED.";
+                    statusMsg.className = "text-[10px] text-red-500 font-bold animate-pulse";
+                }
+                input.value = '';
+            }
+        }
+
+        // Listen for Enter key inside the OLD_DATA input
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const activeEl = document.activeElement;
+                if (activeEl && activeEl.id === 'olddata-key-input') {
+                    verifyOldDataPasscode();
+                }
+            }
+        });
+
+        function triggerOldDataGlitchTransition() {
+            playGlitchSound();
+
+            // Apply full body glitch class
+            document.body.classList.add('screen-corrupted');
+
+            // Sound intervals
+            const audioInterval = setInterval(playGlitchSound, 400);
+
+            setTimeout(() => {
+                clearInterval(audioInterval);
+                document.body.classList.remove('screen-corrupted');
+
+                // Hide windows & desktop, reveal boot screen
+                document.getElementById('olddata-boot-screen').style.display = 'flex';
+                startOldDataBootSequence();
+            }, 1800);
+        }
+
+        const oldDataLines = [
+            "CRITICAL: SECURITY PERIMETER DESTABILIZED.",
+            "OVERWRITING FOUNDATION KERNEL IN PHYSICAL SECTOR 0x40...",
+            "UNPACKING BINARY ARCHIVE: 'INSCRYPTION_ACT_1.BIN' ...",
+            "INITIALIZING CABIN ENVIRONMENT: [LESHY'S TABLE, CANDLESTICK, SCALE, BONE CARVINGS]...",
+            "CONSTRUCTING CARD COMPONENT MATRICES: OK",
+            "MAPPING PROCEDURAL ENCOUNTER ENGINE: OK",
+            "COMPILING SYSTEM CALLS TO TARGET HOST: cabin.html ...",
+            "THE STOAT WHISPERS: 'Total misplay...'",
+            "TRANSFERRING EXECUTION TO CABIN.HTML..."
+        ];
+
+        function startOldDataBootSequence() {
+            const outEl = document.getElementById('olddata-boot-output');
+            const linkEl = document.getElementById('olddata-redirect-link');
+            let idx = 0;
+
+            function printLine() {
+                if (idx < oldDataLines.length) {
+                    const row = document.createElement('div');
+                    row.textContent = oldDataLines[idx];
+                    if (row.textContent.includes("STOAT") || row.textContent.includes("TRANSFERRING")) {
+                        row.className = "text-amber-400 font-black";
+                    } else if (row.textContent.includes("OK") || row.textContent.includes("INITIALIZING")) {
+                        row.className = "text-emerald-400 font-bold";
+                    }
+                    outEl.appendChild(row);
+                    idx++;
+                    setTimeout(printLine, Math.random() * 250 + 150);
+                } else {
+                    linkEl.classList.remove('hidden');
+                    setTimeout(() => {
+                        window.location.href = 'cabin.html';
+                    }, 1200);
+                }
+            }
+
+            printLine();
+        }
+
+        // --- Retro Notification Toast ---
+        function showDevToast(msg) {
+            let toast = document.getElementById('os-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'os-toast';
+                toast.className = 'fixed bottom-12 right-4 bg-gray-900 border-2 border-yellow-400 text-yellow-300 px-3 py-2 rounded text-xs font-mono shadow-2xl z-50 pointer-events-none transition-opacity duration-500';
+                document.body.appendChild(toast);
+            }
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+        }
+
+        // --- Developer Cheat Code: "j3llybean" ---
+        let cheatInput = '';
+        window.addEventListener('keydown', (e) => {
+            cheatInput += e.key.toLowerCase();
+            if (cheatInput.length > 15) {
+                cheatInput = cheatInput.slice(-15);
+            }
+            if (cheatInput.includes('j3llybean')) {
+                cheatInput = '';
+                if (isQTEActive) {
+                    hackProgress = 100;
+                    updateBars();
+                    finishQTE(true);
+                    showDevToast("DEV OVERRIDE: FIREWALL CLEARED");
+                } else if (bootScreen.style.display !== 'none' || apertureScreen.style.display !== 'none') {
+                    skipIntro();
+                } else if (openApps.has('olddata')) {
+                    const input = document.getElementById('olddata-key-input');
+                    if (input) input.value = "TOTAL_MISPLAY";
+                    verifyOldDataPasscode();
+                    showDevToast("DEV OVERRIDE: EXECUTING CABIN TRANSITION");
+                } else {
+                    // Auto-solve Lockbox
+                    currentSafeDigits = [2, 7, 3];
+                    for (let i = 0; i < 3; i++) {
+                        const el = document.getElementById('safe-digit-' + i);
+                        if (el) el.innerText = currentSafeDigits[i];
+                    }
+                    unlockSafeSuccess();
+
+                    // Auto-solve Circuit Relay Bypass
+                    hasCircuitFuse = true;
+                    tileRotations = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                    const fuseLabel = document.getElementById('circuit-fuse-status');
+                    if (fuseLabel) {
+                        fuseLabel.innerText = "INSTALLED [DEV OVERRIDE]";
+                        fuseLabel.className = "text-emerald-400 font-bold bg-emerald-950/70 border border-emerald-600 px-1.5 py-0.5 rounded";
+                    }
+                    recalculateCircuit();
+
+                    // Auto-solve Floppy Extractor
+                    energizeFloppyExtractor();
+                    for (let t = 0; t < 4; t++) {
+                        currentTrackParity[t] = targetTrackParity[t];
+                        const valEl = document.getElementById('track-val-' + t);
+                        if (valEl) valEl.innerText = targetTrackParity[t];
+                    }
+                    checkFloppyParity();
+
+                    showDevToast("DEV OVERRIDE: ALL PUZZLES SOLVED // KEY: TOTAL_MISPLAY");
+                }
+            }
+        });
+    </script>
+</body>
+</html>
